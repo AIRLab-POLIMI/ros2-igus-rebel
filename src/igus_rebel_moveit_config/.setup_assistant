@@ -1,0 +1,11 @@
+moveit_setup_assistant_config:
+  URDF:
+    package: igus_rebel_description_ros2
+    relative_path: urdf/igus_rebel_mod.description.xacro
+    xacro_args: ""
+  SRDF:
+    relative_path: config/igus_rebel.sdrf
+  CONFIG:
+    author_name: Simone Giampà
+    author_email: simone.giampa@mail.polimi.it
+    generated_timestamp: 1604035007

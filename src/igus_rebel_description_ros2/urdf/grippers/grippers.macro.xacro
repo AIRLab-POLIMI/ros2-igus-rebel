@@ -1,0 +1,36 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro"
+	name="grippers">
+
+	<!-- Include all gripper macros -->
+	<xacro:include filename="$(find igus_rebel_description_ros2)/urdf/grippers/ext_dio_gripper.description.xacro" />
+	<xacro:include filename="$(find igus_rebel_description_ros2)/urdf/grippers/ext_dio_gripper.ros2_control.xacro" />
+
+	<xacro:include filename="$(find igus_rebel_description_ros2)/urdf/grippers/schmalz_ecbpmi.description.xacro" />
+
+	<xacro:macro name="gripper" params="gripper_type parent_link hardware_protocol">
+		<!-- Call macros once -->
+		<xacro:if value="${gripper_type == 'ext_dio_gripper'}">
+			<xacro:ext_dio_gripper_description parent_link="${parent_link}" />
+			<xacro:ext_dio_gripper_ros2_control parent_link="${parent_link}" hardware_protocol="${hardware_protocol}" />
+		</xacro:if>
+		<xacro:if value="${gripper_type == 'schmalz_ecbpmi'}">
+			<xacro:schmalz_ecbpmi_description parent_link="${parent_link}" />
+		</xacro:if>
+		<xacro:if value="${gripper_type == 'none'}">
+			<!-- Make sure tcp exists even if no tool is attached -->
+			<joint name="flange_to_tcp" type="fixed">
+				<parent link="flange" />
+				<child link="tcp" />
+				<origin rpy="0.0 0.0 0.0" xyz="0.0 0.0 0.0" />
+				<axis xyz="0 0 0" />
+			</joint>
+			<link name="tcp">
+				<inertial>
+					<mass value="0.1" />
+					<inertia ixx="0.03" ixy="0.0" ixz="0.0" iyy="0.03" iyz="0.0" izz="0.03" />
+				</inertial>
+			</link>
+		</xacro:if>
+	</xacro:macro>
+</robot>

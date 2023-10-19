@@ -1,0 +1,9 @@
+<library path="igus_rebel_hw_controller">
+	<class name="igus_rebel_hw_controller/FakeController"
+		type="igus_rebel_hw_controller::FakeController"
+		base_class_type="hardware_interface::SystemInterface">
+		<description>
+			Fake controller interface for igus ReBeL
+		</description>
+	</class>
+</library>

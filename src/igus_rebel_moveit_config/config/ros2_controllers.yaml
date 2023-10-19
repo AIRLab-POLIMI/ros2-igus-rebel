@@ -1,0 +1,45 @@
+# This config file is used by ros2_control
+controller_manager:
+    ros__parameters:
+        update_rate: 50 # Hz
+
+        rebel_arm_controller:
+            type: "joint_trajectory_controller/JointTrajectoryController" # ros2 controller doesn't work with velocity or effort command interfaces
+            #type: "velocity_controllers/JointGroupVelocityController" # action client not connected to action server --> publishes on topic instead of using actions
+            #type: "position_controllers/JointGroupPositionController" # action client not connected to action server --> publishes on topic instead of using actions
+            #type: "joint_effort_trajectory_controller/JointTrajectoryController" # from franka ros2 repo
+
+        joint_state_broadcaster:
+            type: "joint_state_broadcaster/JointStateBroadcaster"
+
+        #gripper_controller:
+            #type: position_controllers/GripperActionController
+
+
+rebel_arm_controller:
+    ros__parameters:
+        joints:
+            - joint1
+            - joint2
+            - joint3
+            - joint4
+            - joint5
+            - joint6
+        command_interfaces:
+            - position
+            #- velocity
+            #- effort # torque -> works like velocity control via PID loop
+        state_interfaces:
+            - position
+            - velocity
+        state_publish_rate: 50.0
+        
+        gains:
+            joint1: { p: 300.0, d: 100.0, i: 0.02, i_clamp: 10000.0, ff_velocity_scale: 0.01 }
+            joint2: { p: 300.0, d: 100.0, i: 0.02, i_clamp: 10000.0, ff_velocity_scale: 0.01 }
+            joint3: { p: 300.0, d: 100.0, i: 0.02, i_clamp: 10000.0, ff_velocity_scale: 0.01 }
+            joint4: { p: 300.0, d: 100.0, i: 0.02, i_clamp: 10000.0, ff_velocity_scale: 0.01 }
+            joint5: { p: 300.0, d: 100.0, i: 0.02, i_clamp: 10000.0, ff_velocity_scale: 0.01 }
+            joint6: { p: 300.0, d: 100.0, i: 0.02, i_clamp: 10000.0, ff_velocity_scale: 0.01 }
+        #action_monitor_rate: 20.0
+        #allow_partial_joints_goal: true

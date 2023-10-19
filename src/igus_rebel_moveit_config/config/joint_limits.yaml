@@ -1,0 +1,50 @@
+# joint_limits.yaml allows the dynamics properties specified in the URDF to be overwritten or augmented as needed
+# robot_description_planning:
+
+# For beginners, we downscale velocity and acceleration limits.
+# You can always specify higher scaling factors (<= 2.0) in your motion requests.  # Increase the values below to 2.0 to always move at maximum speed.
+default_velocity_scaling_factor: 0.1
+default_acceleration_scaling_factor: 0.1
+
+# Check the irc_ros_description readme before you change these settings
+joint_limits:
+    joint1:
+        has_velocity_limits: true
+        max_velocity: 0.785
+        has_acceleration_limits: true
+        max_acceleration: 5.240
+    joint2:
+        has_velocity_limits: true
+        max_velocity: 0.785
+        has_acceleration_limits: true
+        max_acceleration: 5.240
+    joint3:
+        has_velocity_limits: true
+        max_velocity: 0.785
+        has_acceleration_limits: true
+        max_acceleration: 5.240
+    joint4:
+        has_velocity_limits: true
+        max_velocity: 0.785
+        has_acceleration_limits: true
+        max_acceleration: 5.240
+    joint5:
+        has_velocity_limits: true
+        max_velocity: 0.785
+        has_acceleration_limits: true
+        max_acceleration: 5.240
+    joint6:
+        has_velocity_limits: true
+        max_velocity: 0.785
+        has_acceleration_limits: true
+        max_acceleration: 5.240
+
+        
+# Limits for the Pilz planner
+# TODO: Currently not used, remove in case pilz won't be supported
+#cartesian_limits:
+#  max_trans_vel: 1.0
+#  max_trans_acc: 2.25
+#  max_trans_dec: -5.0
+#  max_rot_vel: 1.57
+
