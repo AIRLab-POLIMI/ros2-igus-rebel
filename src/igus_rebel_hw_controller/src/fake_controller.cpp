@@ -50,6 +50,22 @@ hardware_interface::CallbackReturn FakeController::on_init(const hardware_interf
         pos_offset_.push_back(cri_joint_offset);
     }
 
+    // print command interfaces names
+    for (const hardware_interface::InterfaceInfo &cmd_interface : info.joints.at(0).command_interfaces) {
+        RCLCPP_INFO(rclcpp::get_logger("hw_controller::fake_controller"), "Command interface found: %s", cmd_interface.name.c_str());
+    }
+    // print state interfaces names
+    for (const hardware_interface::InterfaceInfo &state_interface : info.joints.at(0).state_interfaces) {
+        RCLCPP_INFO(rclcpp::get_logger("hw_controller::fake_controller"), "State interface found: %s", state_interface.name.c_str());
+    }
+
+    // initialize the vectors with NaN values
+    for (unsigned int i = 0; i < n_joints; i++) {
+        cmd_position_.push_back(std::numeric_limits<double>::quiet_NaN());
+        cmd_last_position_.push_back(std::numeric_limits<double>::quiet_NaN());
+        cmd_velocity_.push_back(std::numeric_limits<double>::quiet_NaN());
+    }
+
     RCLCPP_INFO(rclcpp::get_logger("hw_controller::fake_controller"), "Detected %lu joints in the urdf file", jogs_.size());
     return hardware_interface::CallbackReturn::SUCCESS;
 }
@@ -109,9 +125,10 @@ std::vector<hardware_interface::CommandInterface> FakeController::export_command
 
     // Add the position and velocity command signals for each joint defined
     for (unsigned int i = 0; i < info_.joints.size(); i++) {
-        command_interfaces.emplace_back(hardware_interface::CommandInterface(
-            info_.joints[i].name, hardware_interface::HW_IF_POSITION, &cmd_position_[i]));
+        // command_interfaces.emplace_back(hardware_interface::CommandInterface(
+        //     info_.joints[i].name, hardware_interface::HW_IF_POSITION, &cmd_position_[i]));
 
+        // command only with velocity
         command_interfaces.emplace_back(hardware_interface::CommandInterface(
             info_.joints[i].name, hardware_interface::HW_IF_VELOCITY, &cmd_velocity_[i]));
     }
@@ -132,12 +149,30 @@ std::vector<hardware_interface::CommandInterface> FakeController::export_command
  * @return hardware_interface::return_type::OK if the read was successful
  */
 hardware_interface::return_type FakeController::read(const rclcpp::Time &time, const rclcpp::Duration &duration) {
-    // derivate position to get estimated velocity vector
-    for (unsigned int i = 0; i < n_joints; i++) {
-        velocity_feedback_[i] = (cmd_position_[i] - position_feedback_[i]) / duration.seconds();
+    /*
+    // feedback for controller by position
+for (unsigned int i = 0; i < n_joints; i++) {
+            // derivate position to get estimated velocity vector
+    velocity_feedback_[i] = (cmd_position_[i] - position_feedback_[i]) / duration.seconds();
 
+    // position directly from the command vector (measured input = command)
+    position_feedback_[i] = cmd_position_[i];
+}
+    */
+    std::vector<double> temp_pos;
+    temp_pos.reserve(n_joints);
+
+    // feedback fror controller by velocity
+    for (unsigned int i = 0; i < n_joints; i++) {
         // position directly from the command vector (measured input = command)
-        position_feedback_[i] = cmd_position_[i] ;
+        temp_pos[i] = position_feedback_[i] + velocity_feedback_[i] * duration.seconds();
+        if (std::isfinite(cmd_velocity_[i])) {
+            velocity_feedback_[i] = cmd_velocity_[i];
+			velocity_feedback_[i] = std::abs(velocity_feedback_[i]) < 0.07 ? 0.0f : velocity_feedback_[i];
+        }
+        // velocity_feedback_[i] = (temp_pos[i] - position_feedback_[i]) / duration.seconds();
+
+        position_feedback_[i] = temp_pos[i];
     }
 
     return hardware_interface::return_type::OK;
@@ -158,31 +193,40 @@ hardware_interface::return_type FakeController::write(const rclcpp::Time &time, 
     // Make it possible to use different movement commands after another.
 
     // if all cmd_position_ and cmd_velocity_ are filled with zeros, return OK
-    if (std::all_of(cmd_position_.begin(), cmd_position_.end(), [](double d) { return d == 0.0; }) &&
-        std::all_of(cmd_velocity_.begin(), cmd_velocity_.end(), [](double d) { return d == 0.0; })) {
+    if (std::any_of(cmd_position_.begin(), cmd_position_.end(), [](double d) { return !std::isfinite(d); }) &&
+        std::any_of(cmd_velocity_.begin(), cmd_velocity_.end(), [](double d) { return !std::isfinite(d); })) {
         std::fill(jogs_.begin(), jogs_.end(), 0.0f);
         return hardware_interface::return_type::OK;
     }
 
     // print the set pos and set vel vectors in the console
     std::string output = "";
-    for (unsigned int i = 0; i < cmd_position_.size(); i++) {
+    for (unsigned int i = 0; i < n_joints; i++) {
         output += std::to_string(cmd_position_[i]) + " ";
     }
-    RCLCPP_INFO(rclcpp::get_logger("hw_controller::fake_controller"), "cmd_position_: %s", output.c_str());
+    // RCLCPP_INFO(rclcpp::get_logger("hw_controller::fake_controller"), "cmd_position_: %s", output.c_str());
     output = "";
-    for (unsigned int i = 0; i < cmd_velocity_.size(); i++) {
+    for (unsigned int i = 0; i < n_joints; i++) {
         output += std::to_string(cmd_velocity_[i]) + " ";
     }
     RCLCPP_INFO(rclcpp::get_logger("hw_controller::fake_controller"), "cmd_velocity_: %s", output.c_str());
 
     // Velocity command
-    if (std::none_of(cmd_velocity_.begin(), cmd_velocity_.end(), [](double d) { return d == 0.0; })) {
+    if (std::none_of(cmd_velocity_.begin(), cmd_velocity_.end(), [](double d) { return !std::isfinite(d); })) {
         // Use the velocities from the command vector and convert them to the right unit
-        std::copy(cmd_velocity_.begin(), cmd_velocity_.end(), jogs_.begin());
-        RCLCPP_INFO(rclcpp::get_logger("hw_controller::fake_controller"), "Moved with velocity control");
+		output = "";
+		for (unsigned int i = 0; i < n_joints; i++) {
+			cmd_velocity_[i] = std::abs(cmd_velocity_[i]) < 0.07 ? 0.0f : cmd_velocity_[i];
 
-    } else if (std::none_of(cmd_position_.begin(), cmd_position_.end(), [](double d) { return d == 0.0; })) {  // Position command
+			// conversion from [rad/s] to jogs [%max/s]
+			int sign = cmd_velocity_[i] >= 0 ? 1 : -1;
+			jogs_[i] = sign * (cmd_velocity_[i] * 100.0 / ( M_PI / 4.0) ) * move_velocity_factor;
+			output += std::to_string(jogs_[i]) + " ";
+		}
+		
+        RCLCPP_INFO(rclcpp::get_logger("hw_controller::fake_controller"), "Moved with velocity %s", output.c_str());
+
+    } else if (std::none_of(cmd_position_.begin(), cmd_position_.end(), [](double d) { return !std::isfinite(d); })) {  // Position command
 
         // Only send a message if the command changed. Since the CRI controller can't handle new
         // position goals while still moving we only want to send the goal position without any

@@ -26,20 +26,33 @@ rebel_arm_controller:
             - joint5
             - joint6
         command_interfaces:
-            - position
-            #- velocity
+            #- position
+            - velocity
             #- effort # torque -> works like velocity control via PID loop
         state_interfaces:
             - position
             - velocity
         state_publish_rate: 50.0
-        
+
+        # gains structure used in ros1 control (real rebel) with velocity
         gains:
-            joint1: { p: 300.0, d: 100.0, i: 0.02, i_clamp: 10000.0, ff_velocity_scale: 0.01 }
-            joint2: { p: 300.0, d: 100.0, i: 0.02, i_clamp: 10000.0, ff_velocity_scale: 0.01 }
-            joint3: { p: 300.0, d: 100.0, i: 0.02, i_clamp: 10000.0, ff_velocity_scale: 0.01 }
-            joint4: { p: 300.0, d: 100.0, i: 0.02, i_clamp: 10000.0, ff_velocity_scale: 0.01 }
-            joint5: { p: 300.0, d: 100.0, i: 0.02, i_clamp: 10000.0, ff_velocity_scale: 0.01 }
-            joint6: { p: 300.0, d: 100.0, i: 0.02, i_clamp: 10000.0, ff_velocity_scale: 0.01 }
-        #action_monitor_rate: 20.0
+            joint1: { p: 1.0, i: 0.1, d: 0.1, i_clamp: 10.0, ff_velocity_scale: 0.05}
+            joint2: { p: 1.0, i: 0.1, d: 0.1, i_clamp: 10.0, ff_velocity_scale: 0.05}
+            joint3: { p: 1.0, i: 0.1, d: 0.1, i_clamp: 10.0, ff_velocity_scale: 0.05}
+            joint4: { p: 1.0, i: 0.1, d: 0.1, i_clamp: 10.0, ff_velocity_scale: 0.05}
+            joint5: { p: 1.0, i: 0.1, d: 0.1, i_clamp: 10.0, ff_velocity_scale: 0.05}
+            joint6: { p: 1.0, i: 0.1, d: 0.1, i_clamp: 10.0, ff_velocity_scale: 0.05}
+        
+        constraints:
+            stopped_velocity_tolerance: 0.05
+            
+        # gains structure used in
+        #gains:
+            #joint1: { p: 30000.0, d: 100.0, i: 0.02, i_clamp: 10000.0, ff_velocity_scale: 0.01 }
+            #joint2: { p: 30000.0, d: 100.0, i: 0.02, i_clamp: 10000.0, ff_velocity_scale: 0.01 }
+            #joint3: { p: 30000.0, d: 100.0, i: 0.02, i_clamp: 10000.0, ff_velocity_scale: 0.01 }
+            #joint4: { p: 30000.0, d: 100.0, i: 0.02, i_clamp: 10000.0, ff_velocity_scale: 0.01 }
+            #joint5: { p: 30000.0, d: 100.0, i: 0.02, i_clamp: 10000.0, ff_velocity_scale: 0.01 }
+            #joint6: { p: 30000.0, d: 100.0, i: 0.02, i_clamp: 10000.0, ff_velocity_scale: 0.01 }
+        action_monitor_rate: 25.0
         #allow_partial_joints_goal: true

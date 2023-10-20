@@ -345,6 +345,13 @@ hardware_interface::CallbackReturn RebelController::on_init(const hardware_inter
         pos_offset_.push_back(cri_joint_offset);
     }
 
+	 // initialize the vectors with NaN values
+    for (unsigned int i = 0; i < n_joints; i++) {
+        cmd_position_.push_back(std::numeric_limits<double>::quiet_NaN());
+        cmd_last_position_.push_back(std::numeric_limits<double>::quiet_NaN());
+        cmd_velocity_.push_back(std::numeric_limits<double>::quiet_NaN());
+    }
+
     // print command interfaces names
     for (const hardware_interface::InterfaceInfo &cmd_interface : info.joints.at(0).command_interfaces) {
         RCLCPP_INFO(rclcpp::get_logger("hw_controller::rebel_controller"), "Command interface found: %s", cmd_interface.name.c_str());
@@ -449,8 +456,9 @@ std::vector<hardware_interface::CommandInterface> RebelController::export_comman
 
     // Add the position and velocity command signals for each joint defined
     for (unsigned int i = 0; i < info_.joints.size(); i++) {
-        command_interfaces.emplace_back(hardware_interface::CommandInterface(
-            info_.joints[i].name, hardware_interface::HW_IF_POSITION, &cmd_position_[i]));
+		// commanding only with velocity
+        //command_interfaces.emplace_back(hardware_interface::CommandInterface(
+        //    info_.joints[i].name, hardware_interface::HW_IF_POSITION, &cmd_position_[i]));
 
         command_interfaces.emplace_back(hardware_interface::CommandInterface(
             info_.joints[i].name, hardware_interface::HW_IF_VELOCITY, &cmd_velocity_[i]));
@@ -472,14 +480,16 @@ std::vector<hardware_interface::CommandInterface> RebelController::export_comman
  * @return hardware_interface::return_type::OK if the read was successful
  */
 hardware_interface::return_type RebelController::read(const rclcpp::Time & /*time*/, const rclcpp::Duration &duration) {
+	// this function works for both position and velocity control, since the state interfaces used are the same
+
     std::vector<double> temp_pos;
     temp_pos.reserve(n_joints);
 
     // copy joint rotation angles [deg] values into temp_pos
-    std::copy(currentStatus.posJointCurrent.begin(), currentStatus.posJointCurrent.begin() + position_feedback_.size(), temp_pos.begin());
-
-    // degrees to radians and apply offset
+    std::copy(currentStatus.posJointCurrent.begin(), currentStatus.posJointCurrent.begin() + n_joints, temp_pos.begin());
+    
     for (size_t i = 0; i < n_joints; i++) {
+		// degrees to radians and apply offset
         temp_pos[i] = temp_pos[i] * M_PI / 180.0 + pos_offset_[i];
 
         // compute estimated velocity by derivating positions in time
@@ -505,49 +515,49 @@ hardware_interface::return_type RebelController::read(const rclcpp::Time & /*tim
  */
 hardware_interface::return_type RebelController::write(const rclcpp::Time & /*time*/, const rclcpp::Duration & /*duration*/) {
     // Make it possible to use different movement commands after another.
-    /* wrong check for new commands received
-        // If more than one set_... var is not NaN reset them all and wait for ros2 control to send a new goal.
-        if (std::none_of(cmd_position_.begin(), cmd_position_.end(), [](double d) { return std::isnan(d); }) &&
-                std::none_of(cmd_velocity_.begin(), cmd_velocity_.end(), [](double d) { return std::isnan(d); })) {
-                // if there are no NaN values in the cmd_position_ and cmd_velocity_ vectors then reset them
-                std::fill(cmd_position_.begin(), cmd_position_.end(), std::numeric_limits<double>::quiet_NaN());
-                std::fill(cmd_velocity_.begin(), cmd_velocity_.end(), std::numeric_limits<double>::quiet_NaN());
-        }
-    */
+
     // if all cmd_position_ and cmd_velocity_ are filled with zeros, return OK
-    if (std::all_of(cmd_position_.begin(), cmd_position_.end(), [](double d) { return d == 0.0; }) &&
-        std::all_of(cmd_velocity_.begin(), cmd_velocity_.end(), [](double d) { return d == 0.0; })) {
+    if (std::any_of(cmd_position_.begin(), cmd_position_.end(), [](double d) { return !std::isfinite(d); }) &&
+        std::any_of(cmd_velocity_.begin(), cmd_velocity_.end(), [](double d) { return !std::isfinite(d); })) {
         std::fill(jogs_.begin(), jogs_.end(), 0.0f);
         return hardware_interface::return_type::OK;
     }
 
     // print the set pos and set vel vectors in the console
     std::string output = "";
-    for (unsigned int i = 0; i < cmd_position_.size(); i++) {
+    for (unsigned int i = 0; i < n_joints; i++) {
         output += std::to_string(cmd_position_[i]) + " ";
     }
-    RCLCPP_DEBUG(rclcpp::get_logger("hw_controller::fake_controller"), "cmd_position_: %s", output.c_str());
+    //RCLCPP_DEBUG(rclcpp::get_logger("hw_controller::fake_controller"), "cmd_position_: %s", output.c_str());
     output = "";
-    for (unsigned int i = 0; i < cmd_velocity_.size(); i++) {
+    for (unsigned int i = 0; i < n_joints; i++) {
         output += std::to_string(cmd_velocity_[i]) + " ";
     }
-    // RCLCPP_DEBUG(rclcpp::get_logger("hw_controller::fake_controller"), "cmd_velocity_: %s", output.c_str());
+    RCLCPP_DEBUG(rclcpp::get_logger("hw_controller::rebel_controller"), "cmd_velocity_: %s", output.c_str());
 
     // Velocity command
-    if (std::none_of(cmd_velocity_.begin(), cmd_velocity_.end(), [](double d) { return d == 0.0; })) {
-        // Use the velocities from the command vector and convert them to the right unit
-        // make sure the alive status messaging thread is still running
-        std::copy(cmd_velocity_.begin(), cmd_velocity_.end(), jogs_.begin());
-        RCLCPP_INFO(rclcpp::get_logger("hw_controller::fake_controller"), "Moved with velocity control");
+    if (std::none_of(cmd_velocity_.begin(), cmd_velocity_.end(), [](double d) { return !std::isfinite(d); })) {
+        // take command velocities and place them in the jog vector
+		output = "";
+		for (unsigned int i = 0; i < n_joints; i++) {
+			// TODO: final velocity is never zero. This is an issue of the controller that has been fixed for ROS2-Iron. 
+			// Wait for an update of the joint trajectory controller to fix this issue
+			//cmd_velocity_[i] = std::abs(cmd_velocity_[i]) < 0.07 ? 0.0f : cmd_velocity_[i];
 
-    } else if (std::none_of(cmd_position_.begin(), cmd_position_.end(), [](double d) { return d == 0.0; })) {  // Position command
+			// Use the velocities from the command vector and convert them to the right unit
+			// conversion from [rad/s] to jogs [%max/s]
+			int sign = cmd_velocity_[i] >= 0 ? 1 : -1;
+			jogs_[i] = sign * (cmd_velocity_[i] * 100.0 / ( M_PI / 4.0) );
+			output += std::to_string(jogs_[i]) + " ";
+		}
+		
+        RCLCPP_INFO(rclcpp::get_logger("hw_controller::rebel_controller"), "Moved with velocity %s", output.c_str());
+
+    } else if (std::none_of(cmd_position_.begin(), cmd_position_.end(), [](double d) { return !std::isfinite(d); })) {  // Position command
 
         // Only send a message if the command changed. Since the CRI controller can't handle new
         // position goals while still moving we only want to send the goal position without any
-        // interpolation.
-        //
-        // TODO: Find ros2_controller which only sends the final position once or wait for a protocol
-        // update for CRI (Issue #72)
+        // interpolation. Refer to Issue #72 for more information.
 
         if (cmd_position_ != cmd_last_position_) {
             std::ostringstream msg;

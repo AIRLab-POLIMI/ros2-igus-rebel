@@ -30,7 +30,7 @@ namespace igus_rebel_hw_controller {
 class FakeController : public hardware_interface::SystemInterface {
 
    private:
-    int n_joints = 6;
+    const unsigned int n_joints = 6;
     int aliveWaitMs;
 
     int cmd_counter;
@@ -49,14 +49,14 @@ class FakeController : public hardware_interface::SystemInterface {
     std::vector<double> velocity_feedback_ = {0, 0, 0, 0, 0, 0 };  // [rad/s]
 
     // command values given from the controller to the hardware_interface
-    std::vector<double> cmd_position_ = {0, 0, 0, 0, 0, 0 };  // [rad]
-    std::vector<double> cmd_last_position_ = {0, 0, 0, 0, 0, 0 }; // [rad]
-    std::vector<double> cmd_velocity_= {0, 0, 0, 0, 0, 0 };  // [rad/s]
+    std::vector<double> cmd_position_;  // [rad]
+    std::vector<double> cmd_last_position_; // [rad]
+    std::vector<double> cmd_velocity_;  // [rad/s]
 
     // Used to counteract the offsets in EmbeddedCtrl, read from .ros2_control.xacro files
     std::vector<double> pos_offset_;  // [rad]
 
-    double move_velocity = 20.0f; // from 0 to 100% of the maximum speed
+    const double move_velocity_factor = 1.0; // from 0 to 1 of the maximum speed
 
    public:
     FakeController(void);
