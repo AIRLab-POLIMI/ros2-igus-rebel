@@ -133,7 +133,7 @@ class Status : public CriMessage {
     Kinstate kinstate;
 
     explicit Status(const std::string&);
-    explicit Status();
+    Status();
     void Print();
 
    private:
@@ -175,10 +175,15 @@ class KinematicLimits : public Config {
    public:
     explicit KinematicLimits();
 
-    // We are using a vector here, instead of a fixed size array, because the documentation
-    // is unclear on the question if the robot will always return the same number of pairs.
-    // (Probably it will, but why risk it?)
-    std::vector<std::pair<float, float>> minMaxPairs;
+	  explicit KinematicLimits(const std::string &);
+
+  // We are using a vector here, instead of a fixed size array, because the documentation
+  // is unclear on the question if the robot will always return the same number of paris.
+  // (Probably it will, but why risk it?)
+  std::vector<std::pair<float, float>> minMaxPairs;
+
+  std::string ToString();
+  void Print();
 
     void print_once(const std::string& messageString);
     std::string kinematic_msg;

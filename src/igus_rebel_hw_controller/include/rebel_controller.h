@@ -40,8 +40,6 @@ class RebelController : public hardware_interface::SystemInterface {
 
     cri_messages::Status currentStatus;
 
-   	std::string controlMode;
-
     bool continueAlive;
     bool continueMessage;
     std::thread aliveThread;

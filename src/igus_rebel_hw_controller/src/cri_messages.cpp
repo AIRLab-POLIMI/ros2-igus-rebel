@@ -6,9 +6,10 @@ namespace igus_rebel_hw_controller {
 namespace cri_messages {
 MessageType CriMessage::GetMessageType(const std::string& msg) {
 	size_t typeStart = 0;
+	/*
 	while(msg[typeStart] == ' ') {
 		typeStart += 1;  // skip multiple spaces
-	}
+	}*/
     typeStart = msg.find(" ", typeStart) + 1;
 	
     size_t typeEnd = msg.find(" ", typeStart);
@@ -179,7 +180,7 @@ Status::Status(const std::string& messageString) : CriMessage(MessageType::STATU
             (currentallStart < currentjointsStart) &&
             (currentjointsStart < errorStart) &&
             (errorStart < kinstateStart))) {
-        //RCLCPP_ERROR(rclcpp::get_logger("hw_controller::cri_messages"), "Bad parsing error for message \"%s\"", messageString.c_str());
+        RCLCPP_ERROR(rclcpp::get_logger("hw_controller::cri_messages"), "Bad parsing error for message \"%s\"", messageString.c_str());
         return;
     }
 
@@ -276,7 +277,13 @@ void Status::Print() {
     std::cout << msg.str();
 }
 
+/** 
+ * @brief Returns the current mode. As of now only joint is used
+ * TODO: Throw warning if its not the correct mode and switch it?
+ */
 Mode Status::GetMode(const std::string& modeString) {
+	RCLCPP_DEBUG(rclcpp::get_logger("iRC_ROS::CRI"), "Converting Mode %s", modeString.c_str());
+
     if (modeString == "joint") {
         return Mode::JOINT;
     }
@@ -395,6 +402,48 @@ KinematicLimits::KinematicLimits() : Config(ConfigType::KINEMATICLIMITS) {
     kinematic_msg = "";
 }
 
+KinematicLimits::KinematicLimits(const std::string & messageString)
+: Config(ConfigType::KINEMATICLIMITS)
+{
+  std::string::size_type answerStart =
+    messageString.find(cri_keywords::CONFIG_GETKINEMATICLIMITS_ANSWER);
+  answerStart += cri_keywords::CONFIG_GETKINEMATICLIMITS_ANSWER.size() + 1;
+
+  std::vector<float> minMax;
+  FillVector(minMax, messageString.substr(answerStart));
+
+  if (minMax.size() % 2 != 0) {
+    RCLCPP_ERROR(
+      rclcpp::get_logger("iRC_ROS::CRI"), "Error parsing config message of type %d",
+      (int)configType);
+    return;
+  }
+
+  for (int i = 0; i < minMax.size(); i += 2) {
+    minMaxPairs.push_back(std::pair<float, float>(minMax.at(i), minMax.at(i + 1)));
+  }
+}
+
+
+std::string KinematicLimits::ToString()
+{
+  std::ostringstream msg;
+
+  for (int i = 0; i < minMaxPairs.size() - 1; i++) {
+    msg << "(" << minMaxPairs.at(i).first << ", " << minMaxPairs.at(i).second << ") ";
+  }
+
+  msg << "(" << minMaxPairs.at(minMaxPairs.size() - 1).first << ", "
+      << minMaxPairs.at(minMaxPairs.size() - 1).second << ")";
+
+  return msg.str();
+}
+
+void KinematicLimits::Print()
+{
+  RCLCPP_INFO(rclcpp::get_logger("iRC_ROS"), "Kinematic limits: %s", ToString().c_str());
+}
+
 void KinematicLimits::print_once(const std::string& messageString) {
     // print kinematics values only when they change, i.e. at the loading of the robot
     if (kinematic_msg != messageString) {
@@ -410,6 +459,7 @@ void KinematicLimits::print_once(const std::string& messageString) {
             RCLCPP_ERROR(rclcpp::get_logger("hw_controller::cri_messages"), "Error parsing config message of type %d", (int)configType);
             return;
         }
+		std::vector<std::pair<float, float>> minMaxPairs;
 
         for (unsigned int i = 0; i < minMax.size(); i += 2) {
             minMaxPairs.push_back(std::pair<float, float>(minMax.at(i), minMax.at(i + 1)));

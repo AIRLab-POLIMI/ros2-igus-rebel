@@ -10,7 +10,7 @@ namespace igus_rebel_hw_controller {
  */
 RebelController::RebelController(const std::string &ip, const int &port) : cri_socket(ip, port, 200),
                                                                            currentStatus(),
-                                                                           controlMode("velocity"),
+                                                                           // controlMode("velocity"),
                                                                            continueAlive(false),
                                                                            continueMessage(false),
                                                                            aliveWaitMs(50),
@@ -25,10 +25,10 @@ RebelController::RebelController(const std::string &ip, const int &port) : cri_s
  */
 RebelController::RebelController() : cri_socket(ip_address, port, 200),
                                      currentStatus(),
-                                     controlMode("velocity"),
+                                     // controlMode("velocity"),
                                      continueAlive(false),
                                      continueMessage(false),
-                                     aliveWaitMs(1000),
+                                     aliveWaitMs(50),
                                      cmd_counter(1),
                                      lastKinstate(cri_messages::Kinstate::NO_ERROR),
                                      kinematicLimits(cri_messages::KinematicLimits()) {
@@ -89,20 +89,17 @@ void RebelController::MessageThreadFunction() {
         if (cri_socket.hasMessage()) {
             std::string msg = cri_socket.getMessage();
 
-            //RCLCPP_INFO(rclcpp::get_logger("hw_controller::rebel_controller"), "raw msg data: %s", msg.c_str());
+            // RCLCPP_INFO(rclcpp::get_logger("hw_controller::rebel_controller"), "raw msg data: %s", msg.c_str());
             cri_messages::MessageType type = cri_messages::CriMessage::GetMessageType(msg);
             // RCLCPP_DEBUG(rclcpp::get_logger("hw_controller::rebel_controller"), "data type: %d", type);
 
             switch (type) {
                 case cri_messages::MessageType::STATUS: {
-                    try {
-                        cri_messages::Status status = cri_messages::Status(msg);
-                        // status.Print();
-                        currentStatus = status;
-                        ProcessStatus(currentStatus);
-                    } catch (std::invalid_argument &e) {
-						RCLCPP_ERROR(rclcpp::get_logger("hw_controller::cri_messages"), "Conversion error from string to integer/float: %s", e.what());
-                    }
+                    cri_messages::Status status = cri_messages::Status(msg);
+                    // status.Print();
+                    currentStatus = status;
+                    ProcessStatus(currentStatus);
+
                     break;
                 }
 
@@ -125,7 +122,9 @@ void RebelController::MessageThreadFunction() {
                     cri_messages::ConfigType configType = cri_messages::Config::GetConfigType(msg);
                     // print kinematic limits as degree angles once the robot is set up
                     if (configType == cri_messages::ConfigType::KINEMATICLIMITS) {
-                        kinematicLimits.print_once(msg);
+                        // kinematicLimits.print_once(msg); // this function bugs the entire communication for some obscure reason
+                        cri_messages::KinematicLimits kinematicLimits = cri_messages::KinematicLimits(msg);
+                        kinematicLimits.Print();
                     }
                     break;
                 }
@@ -137,6 +136,10 @@ void RebelController::MessageThreadFunction() {
                 }
                 case cri_messages::MessageType::CMDERROR: {
                     RCLCPP_ERROR(rclcpp::get_logger("hw_controller::rebel_controller"), "command error received: %s", msg.c_str());
+                    break;
+                }
+                case cri_messages::MessageType::EXECACK: {
+                    RCLCPP_INFO(rclcpp::get_logger("hw_controller::rebel_controller"), "EXECACK received");
                     break;
                 }
 
@@ -239,7 +242,7 @@ void RebelController::ProcessStatus(const cri_messages::Status &status) {
 
     if (currentErrorJoints != lastErrorJoints) {
         // loop throught the 6 joint errors
-        for (unsigned int i = 0; i < 6; i++) {
+        for (unsigned int i = 0; i < n_joints; i++) {
             int errorJoint = currentErrorJoints.at(i);
             // std::array<int, 8> errorJointBit; // could be represented as a uint8_t
 
@@ -334,7 +337,7 @@ hardware_interface::CallbackReturn RebelController::on_init(const hardware_inter
         double cri_joint_offset = 0.0;
         if (joint.parameters.count("cri_joint_offset") > 0) {
             // convert string to double
-            cri_joint_offset = stod(joint.parameters.at("cri_joint_offset"));
+            cri_joint_offset = std::stod(joint.parameters.at("cri_joint_offset"));
         } else {
             RCLCPP_WARN(rclcpp::get_logger("hw_controller::rebel_controller"),
                         "No cri_joint_offset specified for joint %s, using default value of %lf", joint.name.c_str(), cri_joint_offset);
@@ -379,8 +382,6 @@ hardware_interface::CallbackReturn RebelController::on_activate(const rclcpp_lif
     aliveThread = std::thread(&RebelController::AliveThreadFunction, this);
 
     GetConfig(cri_keywords::CONFIG_GETKINEMATICLIMITS);
-
-    // setControlMode("velocity");
 
     return hardware_interface::CallbackReturn::SUCCESS;
 }
@@ -479,8 +480,7 @@ hardware_interface::return_type RebelController::read(const rclcpp::Time & /*tim
 
     // degrees to radians and apply offset
     for (size_t i = 0; i < n_joints; i++) {
-        temp_pos[i] = temp_pos[i] + pos_offset_[i];
-        temp_pos[i] = temp_pos[i] * M_PI / 180.0;
+        temp_pos[i] = temp_pos[i] * M_PI / 180.0 + pos_offset_[i];
 
         // compute estimated velocity by derivating positions in time
         velocity_feedback_[i] = (temp_pos[i] - position_feedback_[i]) / duration.seconds();
@@ -553,11 +553,11 @@ hardware_interface::return_type RebelController::write(const rclcpp::Time & /*ti
             std::ostringstream msg;
             // command move function
             // Limit the precision to one digit behind the decimal point
-            msg << "Move Joint " << std::fixed << std::setprecision(2);
+            msg << "Move Joint " << std::fixed << std::setprecision(1);
 
             // Add the joint goals as degrees, one value per joint
             for (unsigned int i = 0; i < n_joints; i++) {
-                msg << ((cmd_position_[i] + pos_offset_[i]) * 180.0 / M_PI) << " ";
+                msg << ((cmd_position_[i] - pos_offset_[i]) * 180.0 / M_PI) << " ";
             }
             // 3 additional control variables, add zeros as padding
             for (int i = n_joints; i < 9; i++) {
@@ -586,159 +586,3 @@ hardware_interface::return_type RebelController::write(const rclcpp::Time & /*ti
 #include "pluginlib/class_list_macros.hpp"
 // export the class as a callable plugin for ROS2-control
 PLUGINLIB_EXPORT_CLASS(igus_rebel_hw_controller::RebelController, hardware_interface::SystemInterface)
-
-/***********************************************
- * hardware interfaces setup for ros1 controller
- * *********************************************
- */
-/*
-// interfaces definitions equivalent to the export_state_interfaces() and export_command_interfaces() methods in ros2 control
-// first initializes the joints states and then the joints commands interfaces
-void Rebel::SetUpRosHardwareInterface() {
-    // connect and register the joint state interface
-    hardware_interface::JointStateHandle state_handle_1(JOINT_NAME_1, &pos[0], &vel[0], &eff[0]);
-    hardware_interface::JointStateHandle state_handle_2(JOINT_NAME_2, &pos[1], &vel[1], &eff[1]);
-    hardware_interface::JointStateHandle state_handle_3(JOINT_NAME_3, &pos[2], &vel[2], &eff[2]);
-    hardware_interface::JointStateHandle state_handle_4(JOINT_NAME_4, &pos[3], &vel[3], &eff[3]);
-    hardware_interface::JointStateHandle state_handle_5(JOINT_NAME_5, &pos[4], &vel[4], &eff[4]);
-    hardware_interface::JointStateHandle state_handle_6(JOINT_NAME_6, &pos[5], &vel[5], &eff[5]);
-
-    jnt_state_interface.registerHandle(state_handle_1);
-    jnt_state_interface.registerHandle(state_handle_2);
-    jnt_state_interface.registerHandle(state_handle_3);
-    jnt_state_interface.registerHandle(state_handle_4);
-    jnt_state_interface.registerHandle(state_handle_5);
-    jnt_state_interface.registerHandle(state_handle_6);
-
-    registerInterface(&jnt_state_interface);
-
-    // connect and register the joint velocity interface
-    hardware_interface::JointHandle vel_handle_1(jnt_state_interface.getHandle(JOINT_NAME_1), &vel_cmd[0]);
-    hardware_interface::JointHandle vel_handle_2(jnt_state_interface.getHandle(JOINT_NAME_2), &vel_cmd[1]);
-    hardware_interface::JointHandle vel_handle_3(jnt_state_interface.getHandle(JOINT_NAME_3), &vel_cmd[2]);
-    hardware_interface::JointHandle vel_handle_4(jnt_state_interface.getHandle(JOINT_NAME_4), &vel_cmd[3]);
-    hardware_interface::JointHandle vel_handle_5(jnt_state_interface.getHandle(JOINT_NAME_5), &vel_cmd[4]);
-    hardware_interface::JointHandle vel_handle_6(jnt_state_interface.getHandle(JOINT_NAME_6), &vel_cmd[5]);
-
-    jnt_vel_interface.registerHandle(vel_handle_1);
-    jnt_vel_interface.registerHandle(vel_handle_2);
-    jnt_vel_interface.registerHandle(vel_handle_3);
-    jnt_vel_interface.registerHandle(vel_handle_4);
-    jnt_vel_interface.registerHandle(vel_handle_5);
-    jnt_vel_interface.registerHandle(vel_handle_6);
-
-    registerInterface(&jnt_vel_interface);
-}
-
-void Rebel::SetJog(const float &joint1, const float &joint2, const float &joint3,
-                   const float &joint4, const float &joint5, const float &joint6) {
-    j1 = joint1;
-    j2 = joint2;
-    j3 = joint3;
-    j4 = joint4;
-    j5 = joint5;
-    j6 = joint6;
-}
-
-void Rebel::GetJoints(float &joint1, float &joint2, float &joint3,
-                      float &joint4, float &joint5, float &joint6) {
-    joint1 = currentStatus.posJointCurrent.at(0);
-    joint2 = currentStatus.posJointCurrent.at(1);
-    joint3 = currentStatus.posJointCurrent.at(2);
-    joint4 = currentStatus.posJointCurrent.at(3);
-    joint5 = currentStatus.posJointCurrent.at(4);
-    joint6 = currentStatus.posJointCurrent.at(5);
-}
-
-void Rebel::read(const ros::Time & time, const ros::Duration &period) {
-    read();
-
-    vel[0] = (pos[0] - last_pos[0]) / period.toSec();
-    vel[1] = (pos[1] - last_pos[1]) / period.toSec();
-    vel[2] = (pos[2] - last_pos[2]) / period.toSec();
-    vel[3] = (pos[3] - last_pos[3]) / period.toSec();
-    vel[4] = (pos[4] - last_pos[4]) / period.toSec();
-    vel[5] = (pos[5] - last_pos[5]) / period.toSec();
-
-    last_pos[0] = pos[0];
-    last_pos[1] = pos[1];
-    last_pos[2] = pos[2];
-    last_pos[3] = pos[3];
-    last_pos[4] = pos[4];
-    last_pos[5] = pos[5];
-}
-
-void Rebel::read() {
-    pos[0] = currentStatus.posJointCurrent.at(0) * degToRad;
-    pos[1] = currentStatus.posJointCurrent.at(1) * degToRad;
-    pos[2] = currentStatus.posJointCurrent.at(2) * degToRad;
-    pos[3] = currentStatus.posJointCurrent.at(3) * degToRad;
-    pos[4] = currentStatus.posJointCurrent.at(4) * degToRad;
-    pos[5] = currentStatus.posJointCurrent.at(5) * degToRad;
-}
-
-void Rebel::write(const rclcpp::Time & time, const rclcpp::Duration & period) {
-    // Curently no use for time or period, here.
-    write();
-}
-
-void Rebel::write() {
-    j1 = (float)vel_cmd[0];
-    j2 = (float)vel_cmd[1];
-    j3 = (float)vel_cmd[2];
-    j4 = (float)vel_cmd[3];
-    j5 = (float)vel_cmd[4];
-    j6 = (float)vel_cmd[5];
-}
-
-// equivalent to the on_activate method in ros2_control
-void Rebel::Start() {
-    continueMessage = true;
-    messageThread = std::thread(&Rebel::MessageThreadFunction, this);
-
-    rebelSocket.Start();
-
-    // std::this_thread::sleep_for(std::chrono::milliseconds(500));
-
-    Command(cri_keywords::COMMAND_CONNECT);
-    Command(cri_keywords::COMMAND_RESET);
-    Command(cri_keywords::COMMAND_ENABLE);
-
-    continueAlive = true;
-    aliveThread = std::thread(&Rebel::AliveThreadFunction, this);
-
-    GetConfig(cri_keywords::CONFIG_GETKINEMATICLIMITS);
-}
-
-// equivalent to the on_deactivate method in ros2_control
-void Rebel::Stop() {
-    j1 = 0.0f;
-    j2 = 0.0f;
-    j3 = 0.0f;
-    j4 = 0.0f;
-    j5 = 0.0f;
-    j6 = 0.0f;
-
-    std::this_thread::sleep_for(std::chrono::milliseconds(aliveWaitMs + 10));
-
-    Command(cri_keywords::COMMAND_DISABLE);
-    Command(cri_keywords::COMMAND_DISCONNECT);
-
-    continueAlive = false;
-
-    // waits for the alive thread to finish its execution and terminates it
-    if (aliveThread.joinable()) {
-        aliveThread.join();
-    }
-
-    cri_socket.Stop();
-
-    continueMessage = false;
-
-    // waits for the message thread to finish its execution and terminates it
-    if (messageThread.joinable()) {
-        messageThread.join();
-    }
-}
-*/
-//}  // namespace igus_rebel_hw_controller

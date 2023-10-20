@@ -4,7 +4,7 @@
 
 #include <stdio.h>
 #include <sys/socket.h>
-
+#include <array>
 #include <list>
 #include <mutex>
 #include <string>
@@ -36,13 +36,13 @@ class CriSocket {
     std::mutex socketWriteLock;
     std::mutex connectionLock;
     std::mutex messageLock;
-    unsigned int maxUnprocessedMessages;
+    int maxUnprocessedMessages;
     int listCheckWaitMs;
 
     bool connectionNeeded;
     static const int bufferSize = 4096;
 
-    char fragmentBuffer[bufferSize];
+    std::array<char, bufferSize> fragmentBuffer;
     int fragmentLength;
 
     void makeConnection();

@@ -66,7 +66,7 @@ void CriSocket::separateMessages(const char* msg) {
         if (end == nullptr || (start != nullptr && end > start)) {
             RCLCPP_ERROR(rclcpp::get_logger("hw_controller::cri_socket"), "There was a partial robot message, but could not find the end of it in the next message.");
         } else {
-            std::string result1(fragmentBuffer, fragmentLength);
+            std::string result1(fragmentBuffer.front(), fragmentLength);
             std::string result2(msg, end - msg);
 
             {  // defines the local scope of the lockGuard, critical section here
@@ -107,8 +107,7 @@ void CriSocket::separateMessages(const char* msg) {
 
         {  // defines the local scope of the lockGuard, critical section here
             std::lock_guard<std::mutex> lockGuard(messageLock);
-            unprocessedMessages.push_front(
-                std::string(
+            unprocessedMessages.push_front(std::string(
                     start + cri_keywords::START.size() + 1,
                     end - (start + cri_keywords::START.size() + 1) - 1));
         }
