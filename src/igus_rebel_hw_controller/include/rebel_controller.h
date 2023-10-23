@@ -91,7 +91,8 @@ class RebelController : public hardware_interface::SystemInterface {
     // Function to react to specific status values, to display warnings, error messages, etc.
     void ProcessStatus(const cri_messages::Status&);
 
-    const double move_velocity = 20.0f;
+	const double move_velocity = 20.0; // [20 % max velocity]
+    const double rads_to_jogs_ratio = 100.0 / (move_velocity / 100.0 * M_PI);
 	const size_t n_joints = 6;
 
    public:

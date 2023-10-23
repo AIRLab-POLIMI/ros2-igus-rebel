@@ -155,8 +155,7 @@ void RebelController::MessageThreadFunction() {
         }
     }
 
-    // NOTE: this should be a debug message
-    RCLCPP_WARN(rclcpp::get_logger("hw_controller::rebel_controller"), "Stopped to process robot messages");
+    RCLCPP_DEBUG(rclcpp::get_logger("hw_controller::rebel_controller"), "Stopped to process robot messages");
 }
 
 /**
@@ -526,28 +525,19 @@ hardware_interface::return_type RebelController::write(const rclcpp::Time & /*ti
     // print the set pos and set vel vectors in the console
     std::string output = "";
     for (unsigned int i = 0; i < n_joints; i++) {
-        output += std::to_string(cmd_position_[i]) + " ";
-    }
-    //RCLCPP_DEBUG(rclcpp::get_logger("hw_controller::fake_controller"), "cmd_position_: %s", output.c_str());
-    output = "";
-    for (unsigned int i = 0; i < n_joints; i++) {
         output += std::to_string(cmd_velocity_[i]) + " ";
     }
-    RCLCPP_DEBUG(rclcpp::get_logger("hw_controller::rebel_controller"), "cmd_velocity_: %s", output.c_str());
+    RCLCPP_INFO(rclcpp::get_logger("hw_controller::rebel_controller"), "cmd_velocity_: %s", output.c_str());
 
     // Velocity command
     if (std::none_of(cmd_velocity_.begin(), cmd_velocity_.end(), [](double d) { return !std::isfinite(d); })) {
         // take command velocities and place them in the jog vector
 		output = "";
 		for (unsigned int i = 0; i < n_joints; i++) {
-			// TODO: final velocity is never zero. This is an issue of the controller that has been fixed for ROS2-Iron. 
-			// Wait for an update of the joint trajectory controller to fix this issue
-			//cmd_velocity_[i] = std::abs(cmd_velocity_[i]) < 0.07 ? 0.0f : cmd_velocity_[i];
 
 			// Use the velocities from the command vector and convert them to the right unit
 			// conversion from [rad/s] to jogs [%max/s]
-			int sign = cmd_velocity_[i] >= 0 ? 1 : -1;
-			jogs_[i] = sign * (cmd_velocity_[i] * 100.0 / ( M_PI / 4.0) );
+			jogs_[i] = cmd_velocity_[i] * rads_to_jogs_ratio;
 			output += std::to_string(jogs_[i]) + " ";
 		}
 		

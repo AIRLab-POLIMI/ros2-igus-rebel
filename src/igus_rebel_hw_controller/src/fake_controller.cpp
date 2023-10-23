@@ -168,9 +168,7 @@ for (unsigned int i = 0; i < n_joints; i++) {
         temp_pos[i] = position_feedback_[i] + velocity_feedback_[i] * duration.seconds();
         if (std::isfinite(cmd_velocity_[i])) {
             velocity_feedback_[i] = cmd_velocity_[i];
-			velocity_feedback_[i] = std::abs(velocity_feedback_[i]) < 0.07 ? 0.0f : velocity_feedback_[i];
         }
-        // velocity_feedback_[i] = (temp_pos[i] - position_feedback_[i]) / duration.seconds();
 
         position_feedback_[i] = temp_pos[i];
     }
@@ -216,7 +214,7 @@ hardware_interface::return_type FakeController::write(const rclcpp::Time &time, 
         // Use the velocities from the command vector and convert them to the right unit
 		output = "";
 		for (unsigned int i = 0; i < n_joints; i++) {
-			cmd_velocity_[i] = std::abs(cmd_velocity_[i]) < 0.07 ? 0.0f : cmd_velocity_[i];
+			//cmd_velocity_[i] = std::abs(cmd_velocity_[i]) < 0.07 ? 0.0f : cmd_velocity_[i];
 
 			// conversion from [rad/s] to jogs [%max/s]
 			int sign = cmd_velocity_[i] >= 0 ? 1 : -1;
