@@ -109,7 +109,7 @@
 		<joint name="joint_fixed_2" type="fixed">
 			<parent link="link_3" />
 			<child link="link_4" />
-			<origin rpy="0.0 -1.0 0.0" xyz="-0.035 0.003 0.055"/> 
+			<origin rpy="0.0 -1.0 0.0" xyz="-0.035 0.003 0.055" />
 			<dynamics damping="0.0" friction="0.0" />
 		</joint>
 
@@ -135,9 +135,9 @@
 		<joint name="joint3" type="revolute">
 			<parent link="link_4" />
 			<child link="link_5" />
-			<origin rpy="0.0 0 0.0" xyz="0.005 0.015 0.096" /> 
+			<origin rpy="0.0 0 0.0" xyz="0.005 0.015 0.096" />
 			<axis xyz="0 -1 0" />
-			<limit effort="330.0" lower="${-pi*11/18}" upper="${pi*11/18}" velocity="${pi*45/180}"/>
+			<limit effort="330.0" lower="${-pi*11/18}" upper="${pi*11/18}" velocity="${pi*45/180}" />
 			<dynamics damping="0.0" friction="0.0" />
 		</joint>
 
@@ -166,7 +166,7 @@
 			<child link="link_6" />
 			<origin rpy="-0.05 0.0 0.0" xyz="0.0 -0.025 0.145" />
 			<axis xyz="0 0 1" />
-			<limit effort="330.0" lower="${-pi*179/180}" upper="${pi*179/180}" velocity="${pi*45/180}"/>
+			<limit effort="330.0" lower="${-pi*179/180}" upper="${pi*179/180}" velocity="${pi*45/180}" />
 			<dynamics damping="0.0" friction="0.0" />
 		</joint>
 
@@ -194,7 +194,7 @@
 			<child link="link_7" />
 			<origin rpy="0.0 0.0 0.0" xyz="0.0 0.029 0.143" />
 			<axis xyz="0 -1 0" />
-			<limit effort="330.0" lower="${-pi*19/36}" upper="${pi*19/36}" velocity="${pi*45/180}"/>
+			<limit effort="330.0" lower="${-pi*19/36}" upper="${pi*19/36}" velocity="${pi*45/180}" />
 			<dynamics damping="0.0" friction="0.0" />
 		</joint>
 
@@ -223,7 +223,7 @@
 			<child link="link_8" />
 			<origin rpy="0.0 0.0 0.0" xyz="0.0 -0.029 0.11" />
 			<axis xyz="0 0 1" />
-			<limit effort="330.0" lower="${-pi*179/180}" upper="${pi*179/180}" velocity="${pi*45/180}"/>
+			<limit effort="330.0" lower="${-pi*179/180}" upper="${pi*179/180}" velocity="${pi*45/180}" />
 			<dynamics damping="0.0" friction="0.0" />
 		</joint>
 
@@ -245,12 +245,12 @@
 				<inertia ixx="0.03" iyy="0.03" izz="0.03" ixy="0.0" ixz="0.0" iyz="0.0" />
 			</inertial>
 		</link>
-		
+
 
 		<joint name="joint7" type="fixed">
 			<parent link="link_8" />
 			<child link="flange" />
-			<origin rpy="0.0 ${-pi/2} 0.0" xyz="0.0 0 0.0012"/>
+			<origin rpy="0.0 ${-pi/2} 0.0" xyz="0.0 0 0.0012" />
 			<axis xyz="0 0 0" />
 		</joint>
 
@@ -265,9 +265,13 @@
 		</joint>
 
 		<link name="tool0">
+			<inertial>
+				<mass value="0.1" />
+				<inertia ixx="0.03" ixy="0.0" ixz="0.0" iyy="0.03" iyz="0.0" izz="0.03" />
+			</inertial>
 		</link>
 
-		
+
 	</xacro:macro>
 
 </robot>

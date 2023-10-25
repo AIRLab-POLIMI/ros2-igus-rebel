@@ -10,16 +10,6 @@ lib/
 /cfg/cpp/
 /cfg/*.py
 
-# Ignore generated docs
-*.dox
-*.wikidoc
-
-# eclipse stuff
-.project
-.cproject
-
-# qcreator stuff
-CMakeLists.txt.user
 
 srv/_*.py
 *.pcd
@@ -31,3 +21,4 @@ qtcreator-*
 /planning/docs
 /planning/src
 
+.vscode/

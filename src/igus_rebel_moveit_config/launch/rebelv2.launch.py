@@ -37,13 +37,13 @@ def generate_launch_description():
 
     hardware_protocol_arg = DeclareLaunchArgument(
         name="hardware_protocol",
-        default_value="mock_hardware",
+        default_value="fake",
         choices=["mock_hardware", "cri", "fake"],
         description="Which hardware protocol or mock hardware should be used",
     )
 
     rviz_file = PathJoinSubstitution(
-        [FindPackageShare("igus_rebel_moveit_config"), "rviz", "moveit.rviz"]
+        [FindPackageShare("igus_rebel_moveit_config"), "rviz", "moveit_cpp.rviz"]
     )
 
     ros2_controllers_file = PathJoinSubstitution([
@@ -72,8 +72,8 @@ def generate_launch_description():
                                 publish_geometry_updates=True,
                                 publish_state_updates=True,
                                 publish_transforms_updates=True,
-                                publish_robot_description=False,
-                                publish_robot_description_semantic=False)
+                                publish_robot_description=True,
+                                publish_robot_description_semantic=True)
 		#.moveit_cpp(file_path="config/moveit_py.yaml")
         #.sensors_3d()
         .to_moveit_configs()

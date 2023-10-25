@@ -1,75 +1,71 @@
 <?xml version="1.0"?>
 
-<robot xmlns:xacro="http://wiki.ros.org/xacro" name="igus_rebel_mod" >
+<robot xmlns:xacro="http://wiki.ros.org/xacro" name="igus_rebel_mod">
 
-    <group name="rebel_arm">
-        
-        <joint name="joint1"/>
-        <joint name="joint2"/>
-        <joint name="joint3"/>
-        <joint name="joint4"/>
-        <joint name="joint5"/>
-        <joint name="joint6"/>
-        <joint name="joint7"/>
-		<joint name="joint_fixed_2"/>
-        <joint name="joint_fixed_1"/>
-		<joint name="flange_to_tool0"/>
-        <chain base_link="world" tip_link="link_8"/>
-    </group>
-    <group_state name="zero" group="rebel_arm">
-        <joint name="joint1" value="0"/>
-        <joint name="joint2" value="0"/>
-        <joint name="joint3" value="0"/>
-        <joint name="joint4" value="0"/>
-        <joint name="joint5" value="0"/>
-        <joint name="joint6" value="0"/>
-    </group_state>
-    <virtual_joint name="world_to_base" type="fixed" parent_frame="world" child_link="base_link"/>
+	<group name="rebel_arm">
+		<joint name="joint1" />
+		<joint name="joint2" />
+		<joint name="joint3" />
+		<joint name="joint4" />
+		<joint name="joint5" />
+		<joint name="joint6" />
+		<joint name="joint_fixed_2" />
+		<joint name="joint_fixed_1" />
+		<link name="base_link" />
+		<link name="link_1" />
+		<link name="link_2" />
+		<link name="link_3" />
+		<link name="link_4" />
+		<link name="link_5" />
+		<link name="link_6" />
+		<link name="link_7" />
+		<link name="link_8" />
+	</group>
 
-	<!-- gripper collisions
-    <disable_collisions link1="$(arg prefix)gripper_base" link2="$(arg prefix)gripper_mount" reason="Adjacent"/>
-    <disable_collisions link1="$(arg prefix)gripper_base" link2="$(arg prefix)link_2" reason="Never"/>
-    <disable_collisions link1="$(arg prefix)gripper_base" link2="$(arg prefix)link_5" reason="Never"/>
-    <disable_collisions link1="$(arg prefix)gripper_base" link2="$(arg prefix)link_6" reason="Never"/>
-    <disable_collisions link1="$(arg prefix)gripper_base" link2="$(arg prefix)link_7" reason="Never"/>
-    <disable_collisions link1="$(arg prefix)gripper_base" link2="$(arg prefix)link_8" reason="Default"/>
-    <disable_collisions link1="$(arg prefix)gripper_mount" link2="$(arg prefix)link_2" reason="Never"/>
-    <disable_collisions link1="$(arg prefix)gripper_mount" link2="$(arg prefix)link_5" reason="Never"/>
-    <disable_collisions link1="$(arg prefix)gripper_mount" link2="$(arg prefix)link_6" reason="Never"/>
-    <disable_collisions link1="$(arg prefix)gripper_mount" link2="$(arg prefix)link_7" reason="Never"/>
-    <disable_collisions link1="$(arg prefix)gripper_mount" link2="$(arg prefix)link_8" reason="Adjacent"/>
-	
-    <disable_collisions link1="link_1" link2="link_2" reason="Adjacent"/>
-    <disable_collisions link1="link_2" link2="link_5" reason="Adjacent"/>
-    <disable_collisions link1="link_2" link2="link_6" reason="Never"/>
-    <disable_collisions link1="link_2" link2="link_7" reason="Never"/>
-    <disable_collisions link1="link_2" link2="link_8" reason="Never"/>
-    <disable_collisions link1="link_5" link2="link_6" reason="Adjacent"/>
-    <disable_collisions link1="link_5" link2="link_7" reason="Never"/>
-    <disable_collisions link1="link_5" link2="link_8" reason="Never"/>
-    <disable_collisions link1="link_6" link2="link_7" reason="Adjacent"/>
-    <disable_collisions link1="link_6" link2="link_8" reason="Never"/>
-    <disable_collisions link1="link_7" link2="link_8" reason="Adjacent"/>
-	-->
+	<group name="tool">
+		<joint name="joint7" />
+		<link name="flange" />
+		<joint name="flange_to_tool0" />
+		<link name="tool0"/>
+	</group>
 
-	<disable_collisions link1="base_link" link2="link_1" reason="Adjacent"/>
-    <disable_collisions link1="base_link" link2="link_2" reason="Never"/>
-    <disable_collisions link1="base_link" link2="link_3" reason="Never"/>
-    <disable_collisions link1="link_1" link2="link_2" reason="Adjacent"/>
-    <disable_collisions link1="link_2" link2="link_3" reason="Adjacent"/>
-    <disable_collisions link1="link_2" link2="link_4" reason="Never"/>
-    <disable_collisions link1="link_3" link2="link_4" reason="Adjacent"/>
-    <disable_collisions link1="link_3" link2="link_7" reason="Never"/>
-    <disable_collisions link1="link_3" link2="link_8" reason="Never"/>
-    <disable_collisions link1="link_4" link2="link_5" reason="Adjacent"/>
-    <disable_collisions link1="link_4" link2="link_6" reason="Never"/>
-    <disable_collisions link1="link_4" link2="link_7" reason="Never"/>
-    <disable_collisions link1="link_4" link2="link_8" reason="Never"/>
-    <disable_collisions link1="link_5" link2="link_6" reason="Adjacent"/>
-    <disable_collisions link1="link_5" link2="link_7" reason="Never"/>
-    <disable_collisions link1="link_5" link2="link_8" reason="Never"/>
-    <disable_collisions link1="link_6" link2="link_7" reason="Adjacent"/>
-    <disable_collisions link1="link_6" link2="link_8" reason="Never"/>
-    <disable_collisions link1="link_7" link2="link_8" reason="Adjacent"/>
+	<group name="mount">
+		<chain base_link="base_link" tip_link="tool0" />
+	</group>
+
+	<end_effector name="manipulator" parent_link="tool0" group="rebel_arm" parent_group="mount"/>
+
+
+	<group_state name="zero" group="rebel_arm">
+		<joint name="joint1" value="0" />
+		<joint name="joint2" value="0" />
+		<joint name="joint3" value="0" />
+		<joint name="joint4" value="0" />
+		<joint name="joint5" value="0" />
+		<joint name="joint6" value="0" />
+	</group_state>
+
+	<virtual_joint name="world_to_base" type="fixed" parent_frame="world" child_link="base_link" />
+
+
+	<disable_collisions link1="base_link" link2="link_1" reason="Adjacent" />
+	<disable_collisions link1="base_link" link2="link_2" reason="Never" />
+	<disable_collisions link1="base_link" link2="link_3" reason="Never" />
+	<disable_collisions link1="link_1" link2="link_2" reason="Adjacent" />
+	<disable_collisions link1="link_2" link2="link_3" reason="Adjacent" />
+	<disable_collisions link1="link_2" link2="link_4" reason="Never" />
+	<disable_collisions link1="link_3" link2="link_4" reason="Adjacent" />
+	<disable_collisions link1="link_3" link2="link_7" reason="Never" />
+	<disable_collisions link1="link_3" link2="link_8" reason="Never" />
+	<disable_collisions link1="link_4" link2="link_5" reason="Adjacent" />
+	<disable_collisions link1="link_4" link2="link_6" reason="Never" />
+	<disable_collisions link1="link_4" link2="link_7" reason="Never" />
+	<disable_collisions link1="link_4" link2="link_8" reason="Never" />
+	<disable_collisions link1="link_5" link2="link_6" reason="Adjacent" />
+	<disable_collisions link1="link_5" link2="link_7" reason="Never" />
+	<disable_collisions link1="link_5" link2="link_8" reason="Never" />
+	<disable_collisions link1="link_6" link2="link_7" reason="Adjacent" />
+	<disable_collisions link1="link_6" link2="link_8" reason="Never" />
+	<disable_collisions link1="link_7" link2="link_8" reason="Adjacent" />
 
 </robot>

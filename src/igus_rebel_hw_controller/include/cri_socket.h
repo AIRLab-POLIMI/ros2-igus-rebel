@@ -36,7 +36,7 @@ class CriSocket {
     std::mutex socketWriteLock;
     std::mutex connectionLock;
     std::mutex messageLock;
-    int maxUnprocessedMessages;
+    unsigned int maxUnprocessedMessages;
     int listCheckWaitMs;
 
     bool connectionNeeded;

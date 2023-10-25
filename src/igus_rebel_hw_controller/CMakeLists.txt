@@ -45,7 +45,6 @@ set(INCLUDE_DEPENDS
 	controller_manager
 	controller_manager_msgs
 	hardware_interface
-	# irc_ros_msgs # messages definitions not ported yet
 	pluginlib # added according to wiki
 	rclcpp_lifecycle # added according to wiki
 
@@ -67,9 +66,6 @@ add_library(${PROJECT_NAME} SHARED
 	src/cri_socket.cpp
 )
 
-target_include_directories( ${PROJECT_NAME} PRIVATE
-  include
-)
 
 # Export hardware plugins library: definitions of the library hardware_interface::SystemInterface in an xml file
 pluginlib_export_plugin_description_file(hardware_interface igus_rebel_hw_controller.xml)
@@ -92,8 +88,6 @@ install(DIRECTORY include/ DESTINATION include)
 ament_target_dependencies(${PROJECT_NAME} ${INCLUDE_DEPENDS} )
 
 ament_export_dependencies(${INCLUDE_DEPENDS})
-
-ament_export_include_directories( include )
 
 
 ament_export_libraries(${PROJECT_NAME})

@@ -52,11 +52,13 @@ class FakeController : public hardware_interface::SystemInterface {
     std::vector<double> cmd_position_;  // [rad]
     std::vector<double> cmd_last_position_; // [rad]
     std::vector<double> cmd_velocity_;  // [rad/s]
+	std::vector<double> cmd_last_velocity_;  // [rad/s]
 
     // Used to counteract the offsets in EmbeddedCtrl, read from .ros2_control.xacro files
     std::vector<double> pos_offset_;  // [rad]
 
-    const double move_velocity_factor = 1.0; // from 0 to 1 of the maximum speed
+    const double move_velocity = 20.0; // [20 % max velocity]
+    const double rads_to_jogs_ratio = 100.0 / (move_velocity / 100.0 * M_PI);
 
    public:
     FakeController(void);

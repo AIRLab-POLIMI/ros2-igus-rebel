@@ -108,8 +108,8 @@ void CriSocket::separateMessages(const char* msg) {
         {  // defines the local scope of the lockGuard, critical section here
             std::lock_guard<std::mutex> lockGuard(messageLock);
             unprocessedMessages.push_front(std::string(
-                    start + cri_keywords::START.size() + 1,
-                    end - (start + cri_keywords::START.size() + 1) - 1));
+                start + cri_keywords::START.size() + 1,
+                end - (start + cri_keywords::START.size() + 1) - 1));
         }
     }
 }
