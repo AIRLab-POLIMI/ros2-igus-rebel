@@ -35,12 +35,12 @@ def opaque_test(context, *args, **kwargs):
     hardware_protocol = LaunchConfiguration("hardware_protocol")
 
     rviz_file = PathJoinSubstitution(
-        [FindPackageShare("igus_rebel_moveit2_config"), "rviz", "moveit.rviz"]
+        [FindPackageShare("igus_rebel_moveit_config"), "rviz", "moveit.rviz"]
     )
 
     ros2_controllers_file = PathJoinSubstitution(
         [
-            FindPackageShare("igus_rebel_moveit2_config"),
+            FindPackageShare("igus_rebel_moveit_config"),
             "config",
             "ros2_controllers.yaml",
         ]
@@ -49,7 +49,7 @@ def opaque_test(context, *args, **kwargs):
 
     joint_limits_file = PathJoinSubstitution(
         [
-            FindPackageShare("igus_rebel_moveit2_config"),
+            FindPackageShare("igus_rebel_moveit_config"),
             "config",
             "joint_limits.yaml",
         ]
@@ -76,9 +76,9 @@ def opaque_test(context, *args, **kwargs):
     )
     robot_description_semantic_file = PathJoinSubstitution(
         [
-            FindPackageShare("igus_rebel_moveit2_config"),
+            FindPackageShare("igus_rebel_moveit_config"),
             "config",
-            "igus_rebel_mod.srdf.xacro",
+            "igus_rebel.srdf",
         ]
     )
     robot_description_semantic = Command(
@@ -90,19 +90,13 @@ def opaque_test(context, *args, **kwargs):
     )
 
 
-    controllers = PathJoinSubstitution(
-        [
-            FindPackageShare("igus_rebel_moveit2_config"),
-            "config",
-        	"controllers.yaml",
-		]
-	)
+
             
-    controllers_dict = load_yaml(Path(controllers.perform(context)))
+
 
     ompl_file = PathJoinSubstitution(
         [
-            FindPackageShare("igus_rebel_moveit2_config"),
+            FindPackageShare("igus_rebel_moveit_config"),
             "config",
             "ompl.yaml",
         ]
@@ -116,7 +110,7 @@ def opaque_test(context, *args, **kwargs):
 
     robot_description_kinematics_file = PathJoinSubstitution(
         [
-            FindPackageShare("igus_rebel_moveit2_config"),
+            FindPackageShare("igus_rebel_moveit_config"),
             "config",
             "kinematics.yaml",
         ]
