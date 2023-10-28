@@ -25,7 +25,7 @@
 			<parent link="base_link" />
 			<child link="link_1" />
 			<origin rpy="0.0 0.0 ${pi}" xyz="0.0 0 0.126" />
-			<axis xyz="0 0 -1" />
+			<axis xyz="0 0 1" />
 			<limit effort="330.0" lower="${-pi*179/180}" upper="${pi*179/180}" velocity="${pi*45/180}" />
 			<dynamics damping="0.0" friction="0.0" />
 		</joint>

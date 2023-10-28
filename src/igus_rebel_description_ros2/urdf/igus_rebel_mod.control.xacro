@@ -37,9 +37,6 @@
 						<param name="max">${pi/4}</param>
 					</command_interface>
 
-					<!--<command_interface
-					name="effort" />-->
-
 					<state_interface name="position">
 						<param name="initial_value">0.0</param>
 					</state_interface>
@@ -47,11 +44,7 @@
 					<state_interface name="velocity">
 						<param name="initial_value">0.0</param>
 					</state_interface>
-					<!--
-					<state_interface name="effort">
-						<param name="initial_value">0.0</param>
-					</state_interface>
-					-->
+					
 					<!-- CRI specific parameters -->
 					<param name="cri_joint_offset">${cri_joint_offset}</param>
 				</joint>
@@ -63,7 +56,7 @@
 			<xacro:rebel_joint name="joint2" position_min="${-pi*2/3}" position_max="${pi*2/3}" cri_joint_offset="${-pi/6.0}" />
 			<xacro:rebel_joint name="joint3" position_min="${-pi*2/3}" position_max="${pi*2/3}" cri_joint_offset="${-pi/6.0}" />
 			<xacro:rebel_joint name="joint4" position_min="${-pi*179/180}" position_max="${pi*179/180}" />
-			<xacro:rebel_joint name="joint5" position_min="${-pi*19/36}" position_max="${pi*19/36}" cri_joint_offset="0" />
+			<xacro:rebel_joint name="joint5" position_min="${-pi*19/36}" position_max="${pi*19/36}" />
 			<xacro:rebel_joint name="joint6" position_min="${-pi*179/180}" position_max="${pi*179/180}" />
 
 			<!-- 

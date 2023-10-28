@@ -65,6 +65,7 @@ class RebelController : public hardware_interface::SystemInterface {
     std::vector<double> cmd_position_;  // [rad]
     std::vector<double> cmd_last_position_; // [rad]
     std::vector<double> cmd_velocity_;  // [rad/s]
+	std::vector<double> cmd_last_velocity_;  // [rad/s]
 
     // Used to counteract the offsets in EmbeddedCtrl, read from .ros2_control.xacro files
     std::vector<double> pos_offset_;  // [rad]
@@ -92,8 +93,10 @@ class RebelController : public hardware_interface::SystemInterface {
     void ProcessStatus(const cri_messages::Status&);
 
 	const double move_velocity = 20.0; // [20 % max velocity]
+	// NOTE: this constant is valid as long as the override value in the STATUS message = 80.0
+	// otherwise if it's lower, then the robot will move slower than expected
     const double rads_to_jogs_ratio = 100.0 / (move_velocity / 100.0 * M_PI);
-	const size_t n_joints = 6;
+	const unsigned int n_joints = 6;
 
    public:
     RebelController(const std::string& ip, const int& port);
@@ -102,14 +105,17 @@ class RebelController : public hardware_interface::SystemInterface {
 
     // ROS2 Control functions override for defining the system hardware interface
     hardware_interface::CallbackReturn on_init(const hardware_interface::HardwareInfo& info) override;
-    hardware_interface::CallbackReturn on_activate(const rclcpp_lifecycle::State& previous_state) override;
-    hardware_interface::CallbackReturn on_deactivate(const rclcpp_lifecycle::State& previous_state) override;
+    hardware_interface::CallbackReturn on_activate(const rclcpp_lifecycle::State& previous_state);
+	void shutdown(void);
+    hardware_interface::CallbackReturn on_deactivate(const rclcpp_lifecycle::State& previous_state);
     std::vector<hardware_interface::StateInterface> export_state_interfaces() override;
     std::vector<hardware_interface::CommandInterface> export_command_interfaces() override;
 
     // ROS2 Control functions override for reading and writing control variables
     hardware_interface::return_type read(const rclcpp::Time& time, const rclcpp::Duration& duration) override;
     hardware_interface::return_type write(const rclcpp::Time& time, const rclcpp::Duration& duration) override;
+
+	bool detect_change(std::vector<double> &v1, std::vector<double> &v2);
 
 
 };

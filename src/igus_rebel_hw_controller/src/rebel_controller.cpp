@@ -17,6 +17,7 @@ RebelController::RebelController(const std::string &ip, const int &port) : cri_s
                                                                            cmd_counter(1),
                                                                            lastKinstate(cri_messages::Kinstate::NO_ERROR),
                                                                            kinematicLimits(cri_messages::KinematicLimits()) {
+    rclcpp::on_shutdown(std::bind(&RebelController::shutdown, this)); // shutdown is called when the node is terminated
 }
 
 /**
@@ -32,6 +33,7 @@ RebelController::RebelController() : cri_socket(ip_address, port, 200),
                                      cmd_counter(1),
                                      lastKinstate(cri_messages::Kinstate::NO_ERROR),
                                      kinematicLimits(cri_messages::KinematicLimits()) {
+    rclcpp::on_shutdown(std::bind(&RebelController::shutdown, this)); // shutdown is called when the node is terminated
 }
 
 // empty destructor because not needed
@@ -284,8 +286,6 @@ void RebelController::ProcessStatus(const cri_messages::Status &status) {
 
                 if (errorMsg != "") {
                     RCLCPP_ERROR(rclcpp::get_logger("hw_controller::rebel_controller"), "Joint %i Error: [%s]", i, errorMsg.c_str());
-                } else {
-                    RCLCPP_INFO(rclcpp::get_logger("hw_controller::rebel_controller"), "Joint %i Error: Cleaned (empty error message string)", i);
                 }
             }
         }
@@ -344,11 +344,12 @@ hardware_interface::CallbackReturn RebelController::on_init(const hardware_inter
         pos_offset_.push_back(cri_joint_offset);
     }
 
-	 // initialize the vectors with NaN values
+    // initialize the vectors with NaN values
     for (unsigned int i = 0; i < n_joints; i++) {
         cmd_position_.push_back(std::numeric_limits<double>::quiet_NaN());
         cmd_last_position_.push_back(std::numeric_limits<double>::quiet_NaN());
         cmd_velocity_.push_back(std::numeric_limits<double>::quiet_NaN());
+        cmd_last_velocity_.push_back(std::numeric_limits<double>::quiet_NaN());
     }
 
     // print command interfaces names
@@ -389,7 +390,19 @@ hardware_interface::CallbackReturn RebelController::on_activate(const rclcpp_lif
 
     GetConfig(cri_keywords::CONFIG_GETKINEMATICLIMITS);
 
+    Command("Override 80.0"); // needed for accurate velocity control
+
     return hardware_interface::CallbackReturn::SUCCESS;
+}
+
+/**
+ * @brief where hardware “power” is disabled. The on_deactivate should be called once when the controller
+ * 	is deactivated. This method serves to force the deactivation of the hardware interface since ros2 control
+ * 	does not provide a way to do so.
+ */
+void RebelController::shutdown() {
+    RCLCPP_INFO(rclcpp::get_logger("hw_controller::rebel_controller"), "Shutting down the robot");
+    this->on_deactivate(rclcpp_lifecycle::State());
 }
 
 /**
@@ -402,6 +415,8 @@ hardware_interface::CallbackReturn RebelController::on_deactivate(const rclcpp_l
     std::fill(jogs_.begin(), jogs_.end(), 0.0f);
 
     std::this_thread::sleep_for(std::chrono::milliseconds(aliveWaitMs + 10));
+
+    RCLCPP_INFO(rclcpp::get_logger("hw_controller::rebel_controller"), "Stopping the robot");
 
     Command(cri_keywords::COMMAND_DISABLE);
     Command(cri_keywords::COMMAND_DISCONNECT);
@@ -455,9 +470,9 @@ std::vector<hardware_interface::CommandInterface> RebelController::export_comman
 
     // Add the position and velocity command signals for each joint defined
     for (unsigned int i = 0; i < info_.joints.size(); i++) {
-		// commanding only with velocity
-        //command_interfaces.emplace_back(hardware_interface::CommandInterface(
-        //    info_.joints[i].name, hardware_interface::HW_IF_POSITION, &cmd_position_[i]));
+        // commanding only with velocity
+        // command_interfaces.emplace_back(hardware_interface::CommandInterface(
+        //     info_.joints[i].name, hardware_interface::HW_IF_POSITION, &cmd_position_[i]));
 
         command_interfaces.emplace_back(hardware_interface::CommandInterface(
             info_.joints[i].name, hardware_interface::HW_IF_VELOCITY, &cmd_velocity_[i]));
@@ -479,16 +494,16 @@ std::vector<hardware_interface::CommandInterface> RebelController::export_comman
  * @return hardware_interface::return_type::OK if the read was successful
  */
 hardware_interface::return_type RebelController::read(const rclcpp::Time & /*time*/, const rclcpp::Duration &duration) {
-	// this function works for both position and velocity control, since the state interfaces used are the same
+    // this function works for both position and velocity control, since the state interfaces used are the same
 
     std::vector<double> temp_pos;
     temp_pos.reserve(n_joints);
 
     // copy joint rotation angles [deg] values into temp_pos
     std::copy(currentStatus.posJointCurrent.begin(), currentStatus.posJointCurrent.begin() + n_joints, temp_pos.begin());
-    
+
     for (size_t i = 0; i < n_joints; i++) {
-		// degrees to radians and apply offset
+        // degrees to radians and apply offset
         temp_pos[i] = temp_pos[i] * M_PI / 180.0 + pos_offset_[i];
 
         // compute estimated velocity by derivating positions in time
@@ -522,26 +537,27 @@ hardware_interface::return_type RebelController::write(const rclcpp::Time & /*ti
         return hardware_interface::return_type::OK;
     }
 
-    // print the set pos and set vel vectors in the console
-    std::string output = "";
-    for (unsigned int i = 0; i < n_joints; i++) {
-        output += std::to_string(cmd_velocity_[i]) + " ";
-    }
-    RCLCPP_INFO(rclcpp::get_logger("hw_controller::rebel_controller"), "cmd_velocity_: %s", output.c_str());
-
     // Velocity command
     if (std::none_of(cmd_velocity_.begin(), cmd_velocity_.end(), [](double d) { return !std::isfinite(d); })) {
         // take command velocities and place them in the jog vector
-		output = "";
-		for (unsigned int i = 0; i < n_joints; i++) {
+        // print the set pos and set vel vectors in the console
+        if (detect_change(cmd_velocity_, cmd_last_velocity_)) {
+            std::string output = "";
+            for (unsigned int i = 0; i < n_joints; i++) {
+                output += std::to_string(cmd_velocity_[i]) + " ";
+            }
+            RCLCPP_INFO(rclcpp::get_logger("hw_controller::rebel_controller"), "cmd_velocity_: %s", output.c_str());
+            output = "";
+            for (unsigned int i = 0; i < n_joints; i++) {
+                // Use the velocities from the command vector and convert them to the right unit
+                // conversion from [rad/s] to jogs [%max/s]
+                jogs_[i] = cmd_velocity_[i] * rads_to_jogs_ratio;
+                output += std::to_string(jogs_[i]) + " ";
+            }
 
-			// Use the velocities from the command vector and convert them to the right unit
-			// conversion from [rad/s] to jogs [%max/s]
-			jogs_[i] = cmd_velocity_[i] * rads_to_jogs_ratio;
-			output += std::to_string(jogs_[i]) + " ";
-		}
-		
-        RCLCPP_INFO(rclcpp::get_logger("hw_controller::rebel_controller"), "Moved with velocity %s", output.c_str());
+            RCLCPP_INFO(rclcpp::get_logger("hw_controller::rebel_controller"), "Moved with velocity %s", output.c_str());
+            cmd_last_velocity_ = cmd_velocity_;
+        }
 
     } else if (std::none_of(cmd_position_.begin(), cmd_position_.end(), [](double d) { return !std::isfinite(d); })) {  // Position command
 
@@ -549,7 +565,7 @@ hardware_interface::return_type RebelController::write(const rclcpp::Time & /*ti
         // position goals while still moving we only want to send the goal position without any
         // interpolation. Refer to Issue #72 for more information.
 
-        if (cmd_position_ != cmd_last_position_) {
+        if (detect_change(cmd_position_, cmd_last_position_)) {
             std::ostringstream msg;
             // command move function
             // Limit the precision to one digit behind the decimal point
@@ -578,6 +594,16 @@ hardware_interface::return_type RebelController::write(const rclcpp::Time & /*ti
     }
 
     return hardware_interface::return_type::OK;
+}
+
+bool RebelController::detect_change(std::vector<double> &v1, std::vector<double> &v2) {
+    for (unsigned int i = 0; i < n_joints; i++) {
+        if (std::round(v1[i] * 1000000.0) / 1000000.0 != std::round(v2[i] * 1000000.0) / 1000000.0) {
+            return true;
+        }
+    }
+
+    return false;
 }
 
 }  // namespace igus_rebel_hw_controller

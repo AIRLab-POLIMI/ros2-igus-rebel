@@ -30,10 +30,10 @@
 	</group>
 
 	<group name="mount">
-		<chain base_link="base_link" tip_link="tool0" />
+		<chain base_link="base_link" tip_link="link_8" />
 	</group>
 
-	<end_effector name="manipulator" parent_link="tool0" group="rebel_arm" parent_group="mount"/>
+	<end_effector name="manipulator" parent_link="link_8" group="mount" parent_group="rebel_arm"/>
 
 
 	<group_state name="zero" group="rebel_arm">

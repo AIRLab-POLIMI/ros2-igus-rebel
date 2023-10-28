@@ -66,14 +66,17 @@ class FakeController : public hardware_interface::SystemInterface {
 
     // ROS2 Control functions override for defining the system hardware interface
     hardware_interface::CallbackReturn on_init(const hardware_interface::HardwareInfo& info) override;
-    hardware_interface::CallbackReturn on_activate(const rclcpp_lifecycle::State& previous_state) override;
-    hardware_interface::CallbackReturn on_deactivate(const rclcpp_lifecycle::State& previous_state) override;
+    hardware_interface::CallbackReturn on_activate(const rclcpp_lifecycle::State& previous_state);
+	void shutdown(void);
+    hardware_interface::CallbackReturn on_deactivate(const rclcpp_lifecycle::State& previous_state);
     std::vector<hardware_interface::StateInterface> export_state_interfaces() override;
     std::vector<hardware_interface::CommandInterface> export_command_interfaces() override;
 
     // ROS2 Control functions override for reading and writing control variables
     hardware_interface::return_type read(const rclcpp::Time& time, const rclcpp::Duration& duration) override;
     hardware_interface::return_type write(const rclcpp::Time& time, const rclcpp::Duration& duration) override;
+
+	bool detect_change(std::vector<double> &v1, std::vector<double> &v2);
 };
 }  // namespace igus_rebel_hw_controller
 

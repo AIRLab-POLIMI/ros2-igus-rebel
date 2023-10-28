@@ -7,9 +7,7 @@ import os
 from pathlib import Path
 
 from ament_index_python.packages import get_package_share_directory
-from launch.actions import (
-    DeclareLaunchArgument,
-)
+from launch.actions import DeclareLaunchArgument
 from launch.conditions import IfCondition
 from launch_ros.descriptions import ParameterValue
 from launch.substitutions import (
@@ -42,17 +40,12 @@ def generate_launch_description():
         description="Which hardware protocol or mock hardware should be used",
     )
 
-    rviz_file = PathJoinSubstitution(
-        [FindPackageShare("igus_rebel_moveit_config"), "rviz", "moveit_cpp.rviz"]
-    )
 
     ros2_controllers_file = PathJoinSubstitution([
         FindPackageShare("igus_rebel_moveit_config"),
         "config",
         "ros2_controllers.yaml",
     ])
-
-
 
     moveit_config = (
         MoveItConfigsBuilder(robot_name="igus_rebel")
@@ -74,8 +67,8 @@ def generate_launch_description():
                                 publish_transforms_updates=True,
                                 publish_robot_description=True,
                                 publish_robot_description_semantic=True)
-		#.moveit_cpp(file_path="config/moveit_py.yaml")
-        #.sensors_3d()
+        # .moveit_cpp(file_path="config/moveit_py.yaml")
+        # .sensors_3d()
         .to_moveit_configs()
     )
 
@@ -116,22 +109,6 @@ def generate_launch_description():
                    "--controller-manager", "/controller_manager"],
     )
 
-    rviz2_node = Node(
-        package="rviz2",
-        executable="rviz2",
-        name="rviz2",
-        output="log",
-        arguments=["-d", rviz_file],
-        parameters=[
-            moveit_config.robot_description,
-            moveit_config.robot_description_semantic,
-            moveit_config.planning_pipelines,
-            moveit_config.robot_description_kinematics,
-            moveit_config.planning_scene_monitor,
-            moveit_config.trajectory_execution,
-        ],
-    )
-
     return LaunchDescription([
         gripper_arg,
         hardware_protocol_arg,
@@ -140,5 +117,4 @@ def generate_launch_description():
         robot_state_publisher_node,
         joint_state_broadcaster_node,
         rebel_arm_controller_node,
-        rviz2_node,
     ])

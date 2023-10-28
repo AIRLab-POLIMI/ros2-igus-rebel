@@ -8,6 +8,7 @@ namespace igus_rebel_hw_controller {
  */
 FakeController::FakeController() : aliveWaitMs(50),
                                    cmd_counter(1) {
+									rclcpp::on_shutdown(std::bind(&FakeController::shutdown, this));
 }
 
 // empty destructor because not needed
@@ -79,7 +80,18 @@ hardware_interface::CallbackReturn FakeController::on_init(const hardware_interf
  * 	else CallbackReturn::FAILURE
  */
 hardware_interface::CallbackReturn FakeController::on_activate(const rclcpp_lifecycle::State & /*previous_state*/) {
+	RCLCPP_INFO(rclcpp::get_logger("hw_controller::fake_controller"), "Starting the robot");
     return hardware_interface::CallbackReturn::SUCCESS;
+}
+
+/**
+ * @brief where hardware “power” is disabled. The on_deactivate should be called once when the controller
+ * 	is deactivated. This method serves to force the deactivation of the hardware interface since ros2 control
+ * 	does not provide a way to do so.
+*/
+void FakeController::shutdown() {
+	RCLCPP_INFO(rclcpp::get_logger("hw_controller::fake_controller"), "Shutting down the robot");
+	this->on_deactivate(rclcpp_lifecycle::State());
 }
 
 /**
@@ -207,7 +219,7 @@ hardware_interface::return_type FakeController::write(const rclcpp::Time & /*tim
 
     // Velocity command
     if (std::none_of(cmd_velocity_.begin(), cmd_velocity_.end(), [](double d) { return !std::isfinite(d); })) {
-        if (cmd_velocity_ != cmd_last_velocity_) {
+        if (detect_change(cmd_velocity_, cmd_last_velocity_)) {
             output = "";
             for (unsigned int i = 0; i < n_joints; i++) {
                 output += std::to_string(cmd_velocity_[i]) + " ";
@@ -234,7 +246,7 @@ hardware_interface::return_type FakeController::write(const rclcpp::Time & /*tim
         // position goals while still moving we only want to send the goal position without any
         // interpolation.
 
-        if (cmd_position_ != cmd_last_position_) {  // do not repeat command if it is the same as the last one
+        if (detect_change(cmd_position_, cmd_last_position_)) {  // do not repeat command if it is the same as the last one
             std::ostringstream msg;
             // command move function
             // Limit the precision to one digit behind the decimal point
@@ -257,6 +269,16 @@ hardware_interface::return_type FakeController::write(const rclcpp::Time & /*tim
     }
 
     return hardware_interface::return_type::OK;
+}
+
+bool FakeController::detect_change(std::vector<double> &v1, std::vector<double> &v2) {
+	for (unsigned int i = 0; i < n_joints; i++) {
+		if (std::round(v1[i] * 1000000.0) / 1000000.0 != std::round(v2[i] * 1000000.0) / 1000000.0) {
+			return true;
+		}
+	}
+
+	return false;
 }
 
 }  // namespace igus_rebel_hw_controller
