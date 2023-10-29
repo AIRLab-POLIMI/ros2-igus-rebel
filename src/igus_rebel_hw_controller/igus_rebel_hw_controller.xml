@@ -1,9 +1,0 @@
-<library path="igus_rebel_hw_controller">
-	<class name="igus_rebel_hw_controller/RebelController"
-		type="igus_rebel_hw_controller::RebelController"
-		base_class_type="hardware_interface::SystemInterface">
-		<description>
-			Hardware controller interface for igus ReBeL using CRI message protocol over socket connection
-		</description>
-	</class>
-</library>

@@ -1,0 +1,30 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="igus_rebel">
+
+	<!-- Controller settings, only enable a single one in the launch file -->
+	<xacro:arg name="hardware_protocol" default="cri" />
+
+	<!-- Gripper selection -->
+	<xacro:arg name="gripper" default="none" />
+
+	<!-- Include and call rebel macro -->
+	<xacro:include filename="$(find igus_rebel_description_ros2)/urdf/igus_rebel.description.xacro" />
+	<xacro:igus_rebel_description />
+
+	<!-- controller macro -->
+	<xacro:include filename="$(find igus_rebel_description_ros2)/urdf/igus_rebel_mod.control.xacro" />
+	<xacro:igus_rebel_mod_control hardware_protocol="$(arg hardware_protocol)"/>
+
+	<!-- Add world link -->
+	<link name="world" />
+	<joint name="world_to_base" type="fixed">
+		<parent link="world" />
+		<child link="base_link" />
+		<origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0" />
+	</joint>
+
+	<!-- Grippers -->
+	<!--<xacro:include filename="$(find igus_rebel_description_ros2)/urdf/grippers/grippers.macro.xacro" />-->
+	<!--<xacro:gripper gripper_type="$(arg gripper)" parent_link="flange" hardware_protocol="$(arg hardware_protocol)" /> -->
+
+</robot>
