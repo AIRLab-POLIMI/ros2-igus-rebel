@@ -22,15 +22,15 @@ rebel_arm_controller:
             - joint4
             - joint5
             - joint6
-        command_interfaces:
-            #- position
+        command_interfaces: # controller output
+            #- position # simmply forwards joint angles position commands to the hardware
             - velocity # uses PID regulator internally unless open_loop_control is true
             #- effort # torque -> works like velocity control via PID loop
-        state_interfaces:
+        state_interfaces: # controller input
             - position
             - velocity
         state_publish_rate: 50.0
-        open_loop_control: true
+        open_loop_control: true # if true, the controller does not use PID regulator
         constraints:
             stopped_velocity_tolerance: 0.05
         action_monitor_rate: 25.0

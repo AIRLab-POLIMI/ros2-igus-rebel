@@ -12,9 +12,6 @@
 					<mesh filename="file://$(find igus_rebel_description_ros2)/meshes/new/Joint0.dae" />
 				</geometry>
 			</collision>
-			<material name="black">
-				<color rgba="${0/255} ${0/255} ${0/255} 1.0" />
-			</material>
 			<inertial>
 				<mass value="1.0" />
 				<inertia ixx="1.0" ixy="0.0" ixz="0.0" iyy="1.0" iyz="0.0" izz="1.0" />
@@ -24,7 +21,7 @@
 			<parent link="base_link" />
 			<child link="link_1" />
 			<origin rpy="0.0 0.0 0.0" xyz="0.0 0 0.100" />
-			<axis xyz="0 0 -1" />
+			<axis xyz="0 0 1" />
 			<limit effort="330.0" lower="${-pi*179/180}" upper="${pi*179/180}" velocity="${pi*45/180}" />
 		</joint>
 		<link name="link_1">
@@ -185,13 +182,6 @@
 		</joint>
 		<link name="flange">
 		</link>
-		<joint name="flange_to_tool0" type="fixed">
-			<parent link="flange" />
-			<child link="tool0" />
-			<origin rpy="0.0 0.0 0.0" xyz="0.0 0.0 0.0" />
-			<axis xyz="0 0 0" />
-		</joint>
-		<link name="tool0">
-		</link>
+
 	</xacro:macro>
 </robot>

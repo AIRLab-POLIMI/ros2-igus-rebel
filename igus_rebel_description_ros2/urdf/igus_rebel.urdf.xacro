@@ -24,7 +24,7 @@
 	</joint>
 
 	<!-- Grippers -->
-	<!--<xacro:include filename="$(find igus_rebel_description_ros2)/urdf/grippers/grippers.macro.xacro" />-->
-	<!--<xacro:gripper gripper_type="$(arg gripper)" parent_link="flange" hardware_protocol="$(arg hardware_protocol)" /> -->
+	<xacro:include filename="$(find igus_rebel_description_ros2)/urdf/grippers/grippers.xacro" />
+	<xacro:gripper gripper_type="$(arg gripper)" />
 
 </robot>

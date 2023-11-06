@@ -3,76 +3,101 @@
 
 from launch import LaunchDescription
 from launch.substitutions import (
-    Command,
-    FindExecutable,
-    PathJoinSubstitution,
-    LaunchConfiguration,
+	Command,
+	FindExecutable,
+	PathJoinSubstitution,
+	LaunchConfiguration,
 )
 from launch_ros.substitutions import FindPackageShare
 from launch.actions import DeclareLaunchArgument
 from launch_ros.actions import Node
 from launch_ros.parameter_descriptions import ParameterValue
+from launch.conditions import IfCondition, LaunchConfigurationEquals
+from launch.substitutions import TextSubstitution, PythonExpression
+from launch import LaunchContext
 
 
 def generate_launch_description():
-    # Equals the name of the file in igus_rebel_description_ros2/urdf/
+	gripper_arg = DeclareLaunchArgument(
+		name="gripper",
+		default_value="camera",
+		choices=["none", "camera"],
+		description="Which gripper mount to attach to the flange",
+	)
 
-    gripper_arg = DeclareLaunchArgument(
-        name="gripper",
-        default_value="none",
-        choices=["none", "schmalz_ecbpmi", "ext_dio_gripper"],
-        description="Which gripper to attach to the flange",
-    )
+	hardware_protocol_arg = DeclareLaunchArgument(
+		name="hardware_protocol",
+		default_value="simulation",
+		choices=["mock_hardware", "cri", "simulation"],
+		description="Which hardware protocol or mock hardware should be used",
+	)
 
-    hardware_protocol_arg = DeclareLaunchArgument(
-        name="hardware_protocol",
-        default_value="simulation",
-        choices=["mock_hardware", "cri", "simulation"],
-        description="Which hardware protocol or mock hardware should be used",
-    )
+	robot_desc_arg = DeclareLaunchArgument(
+		name="urdf",
+		default_value="base",
+		description="Robot Description file to use",
+		choices=["base", "mod"],
+	)
+	
+	if (LaunchConfigurationEquals("urdf", "base")):
+		desc_file = "igus_rebel.urdf.xacro"
+	else:
+		desc_file = "igus_rebel_mod.urdf.xacro"
+	
+	robot_description_file = PathJoinSubstitution(
+		[
+			FindPackageShare("igus_rebel_description_ros2"),
+			"urdf",
+			desc_file,
+		]
+	)
 
-    robot_description_file = PathJoinSubstitution([
-        FindPackageShare("igus_rebel_description_ros2"),
-        "urdf",
-        "igus_rebel.urdf.xacro",  # baseline version of the robot
-    ])
+	robot_description = Command(
+		[
+			FindExecutable(name="xacro"),
+			" ",
+			robot_description_file,
+			" hardware_protocol:=",
+			LaunchConfiguration("hardware_protocol"),
+			" gripper:=",
+			LaunchConfiguration("gripper"),
+		]
+	)
 
-    robot_description = Command([
-        FindExecutable(name="xacro"), " ", robot_description_file,
-        " hardware_protocol:=", LaunchConfiguration("hardware_protocol"),
-        " gripper:=", LaunchConfiguration("gripper"),
-    ])
+	rviz_file = PathJoinSubstitution(
+		[FindPackageShare("igus_rebel_description_ros2"), "rviz", "rebel.rviz"]
+	)
 
-    rviz_file = PathJoinSubstitution(
-        [FindPackageShare("igus_rebel_description_ros2"),
-         "rviz", "rebel.rviz"]
-    )
+	# Nodes
+	robot_state_publisher_node = Node(
+		package="robot_state_publisher",
+		executable="robot_state_publisher",
+		name="robot_state_publisher",
+		parameters=[
+			{"robot_description": ParameterValue(robot_description, value_type=str)}
+		],
+	)
 
-    # Nodes
-    robot_state_publisher_node = Node(
-        package="robot_state_publisher",
-        executable="robot_state_publisher",
-        name="robot_state_publisher",
-        parameters=[{"robot_description": ParameterValue(robot_description, value_type=str)}],
-    )
+	joint_state_publisher_gui_node = Node(
+		package="joint_state_publisher_gui",
+		executable="joint_state_publisher_gui",
+		name="joint_state_publisher_gui",
+	)
 
-    joint_state_publisher_gui_node = Node(
-        package="joint_state_publisher_gui",
-        executable="joint_state_publisher_gui",
-        name="joint_state_publisher_gui",
-    )
+	rviz_node = Node(
+		package="rviz2",
+		executable="rviz2",
+		name="rviz2",
+		arguments=["-d", rviz_file],
+	)
 
-    rviz_node = Node(
-        package="rviz2",
-        executable="rviz2",
-        name="rviz2",
-        arguments=["-d", rviz_file],
-    )
-
-    return LaunchDescription([
-        gripper_arg,
-		hardware_protocol_arg,
-		robot_state_publisher_node,
-		joint_state_publisher_gui_node,
-		rviz_node,
-	])
+	return LaunchDescription(
+		[
+			gripper_arg,
+			hardware_protocol_arg,
+			robot_desc_arg,
+			robot_state_publisher_node,
+			joint_state_publisher_gui_node,
+			rviz_node,
+		]
+	)
