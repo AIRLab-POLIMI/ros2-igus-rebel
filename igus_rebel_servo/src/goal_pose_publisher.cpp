@@ -27,9 +27,9 @@ GoalPosePublisher::GoalPosePublisher() : Node("goal_pose_publisher") {
         "aruco_poses", 10, std::bind(&GoalPosePublisher::aruco_pose_callback, this, std::placeholders::_1));
 
     // create a publisher on topic aruco poses
-    test_pub = this->create_publisher<geometry_msgs::msg::PoseArray>("/aruco_poses", 10);
+    //test_pub = this->create_publisher<geometry_msgs::msg::PoseArray>("/aruco_poses", 10);
 
-    test_pub_thread_ = std::thread(&GoalPosePublisher::test_pub_thread, this);
+    //test_pub_thread_ = std::thread(&GoalPosePublisher::test_pub_thread, this);
 
     // Retrieve the camera frame parameter from the config YAML file of the aruco detector
 	this->declare_parameter("camera_frame", rclcpp::PARAMETER_STRING);
@@ -181,6 +181,8 @@ int main(int argc, char* argv[]) {
     return 0;
 }
 
+// creates a sample pose, then publishes it to the topic /aruco_poses
+// it is used to test whether the goal pose publisher is working correctly
 void GoalPosePublisher::test_pub_thread() {
     // create a test for a pose array
     geometry_msgs::msg::PoseArray test_pose_array;

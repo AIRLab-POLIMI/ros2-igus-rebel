@@ -17,17 +17,16 @@
 		<joint name="joint5" />
 		<joint name="joint6" />
 		<joint name="joint7" />
+	</group>
 
-	</group>
 	<group name="tool">
-		<joint name="joint7" />
 		<link name="flange" />
-		<joint name="flange_to_tool0" />
-		<link name="tool0" />
 	</group>
+
 	<group name="mount">
 		<chain base_link="base_link" tip_link="link_8" />
 	</group>
+
 	<end_effector name="manipulator" parent_link="link_8" group="mount" parent_group="rebel_arm" />
 
 

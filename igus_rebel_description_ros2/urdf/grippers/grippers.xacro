@@ -17,7 +17,7 @@
 				<origin rpy="0.0 0.0 0.0" xyz="0.0 0.0 0.0" />
 				<axis xyz="0 0 0" />
 			</joint>
-			
+
 			<!-- camera mount urdf produced with fusion 360 urdf converter plugin-->
 			<link name="camera_mount">
 				<inertial>
@@ -42,15 +42,24 @@
 				</collision>
 			</link>
 
+			<joint name="flange_to_toucher" type="fixed">
+				<parent link="flange" />
+				<child link="toucher" />
+				<origin rpy="0.0 0.0 0.0" xyz="0.1 0.0 0.0" /> <!-- 10 cm in front of the flange origin -->
+				<axis xyz="0 0 0" />
+			</joint>
+			<link name="toucher" />
+
+
 			<!-- positions the camera inside the structure -->
 			<joint name="mount_to_cam" type="fixed">
 				<parent link="camera_mount" />
 				<child link="camera_insert" />
-				<origin rpy="0.0 0.0 0.0" xyz="0.04 0.0 0.065" />
+				<origin rpy="0.0 0.0 0.0" xyz="0.038 0.0 0.065" />
 				<axis xyz="0 0 0" />
 			</joint>
 
-			<link name="camera_insert"/>
+			<link name="camera_insert" />
 
 			<!-- includes the realsense D435 ros2 description file and its collision box-->
 			<xacro:arg name="use_nominal_extrinsics" default="false" />

@@ -4,7 +4,8 @@ moveit_setup_assistant_config:
     relative_path: urdf/igus_rebel_mod.description.xacro
     xacro_args: ""
   SRDF:
-    relative_path: config/igus_rebel.sdrf
+    package: igus_rebel_moveit_config
+    relative_path: config/igus_rebel_camera.sdrf
   CONFIG:
     author_name: Simone Giampà
     author_email: simone.giampa@mail.polimi.it

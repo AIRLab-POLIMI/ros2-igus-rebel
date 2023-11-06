@@ -79,7 +79,7 @@ int main(int argc, char** argv) {
     //
     // We will start by instantiating a RobotModelLoader object, which will look up the robot description on the ROS
     // parameter server and construct a RobotModel for us to use.
-    const std::string PLANNING_GROUP = "rebel_arm";
+    const std::string PLANNING_GROUP = "chain_arm_manipulator"; // "rebel_arm" for simple robot movement
     robot_model_loader::RobotModelLoaderPtr robot_model_loader(
         new robot_model_loader::RobotModelLoader(commander_node, "robot_description"));
 
@@ -89,7 +89,9 @@ int main(int argc, char** argv) {
     RCLCPP_INFO(LOGGER, "Planning frame: %s", move_group.getPlanningFrame().c_str());
 
     // We can also print the name of the end-effector link for this group.
-    RCLCPP_INFO(LOGGER, "End effector link: %s", move_group.getEndEffectorLink().c_str());
+	// "flange" for simple robot movement, "toucher" for robot arm + camera
+	std::string end_effector_link = move_group.getEndEffectorLink();
+    RCLCPP_INFO(LOGGER, "End effector link: %s", end_effector_link.c_str());
 
     // We can get a list of all the groups in the robot:
     RCLCPP_INFO(LOGGER, "Available Planning Groups:");
@@ -202,7 +204,7 @@ int main(int argc, char** argv) {
 	move_group.setStartState(*robot_state);
 	move_group.setGoalPositionTolerance(0.001);
 	move_group.setGoalOrientationTolerance(0.001);
-	move_group.setPoseTarget(pose, "link_8");
+	move_group.setPoseTarget(pose, end_effector_link);
 
 	moveit::planning_interface::MoveGroupInterface::Plan my_plan;
     moveit::core::MoveItErrorCode response = move_group.plan(my_plan);
@@ -256,7 +258,7 @@ int main(int argc, char** argv) {
 	if (!valid_motion) RCLCPP_ERROR(LOGGER, "Target joints outside their phyisical limits");
 
 	// Get the pose of a specific link (e.g., the end-effector link).
-    const Eigen::Isometry3d goal_pose = goal_state.getGlobalLinkTransform("link_8");
+    const Eigen::Isometry3d goal_pose = goal_state.getGlobalLinkTransform(end_effector_link);
 
 	// use rviz visual tools to publish a coordinate axis corresponding to the goal pose defined
 	visual_tools.publishAxisLabeled(goal_pose, "goal");
