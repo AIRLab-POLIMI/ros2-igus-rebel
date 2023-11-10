@@ -1,177 +1,186 @@
-/*********************************************************************
- * Software License Agreement (BSD License)
+/*******************************************************************************
+ * BSD 3-Clause License
  *
- *  Copyright (c) 2020, PickNik Inc.
- *  All rights reserved.
+ * Copyright (c) 2023, PickNik Inc.
+ * All rights reserved.
  *
- *  Redistribution and use in source and binary forms, with or without
- *  modification, are permitted provided that the following conditions
- *  are met:
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
  *
- *   * Redistributions of source code must retain the above copyright
- *     notice, this list of conditions and the following disclaimer.
- *   * Redistributions in binary form must reproduce the above
- *     copyright notice, this list of conditions and the following
- *     disclaimer in the documentation and/or other materials provided
- *     with the distribution.
- *   * Neither the name of PickNik Inc. nor the names of its
- *     contributors may be used to endorse or promote products derived
- *     from this software without specific prior written permission.
+ * * Redistributions of source code must retain the above copyright notice, this
+ *   list of conditions and the following disclaimer.
  *
- *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- *  "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- *  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
- *  FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
- *  COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
- *  INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
- *  BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- *  LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
- *  CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
- *  LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
- *  ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- *  POSSIBILITY OF SUCH DAMAGE.
- *********************************************************************/
+ * * Redistributions in binary form must reproduce the above copyright notice,
+ *   this list of conditions and the following disclaimer in the documentation
+ *   and/or other materials provided with the distribution.
+ *
+ * * Neither the name of the copyright holder nor the names of its
+ *   contributors may be used to endorse or promote products derived from
+ *   this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE
+ * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+ * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+ * SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+ * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+ * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+ * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *******************************************************************************/
 
-/*      Title     : servo_cpp_interface_demo.cpp
- *      Project   : moveit2_tutorials
- *      Created   : 07/13/2020
- *      Author    : Adam Pettinger
- * 		Link	  : https://github.com/ros-planning/moveit2_tutorials/blob/humble/doc/examples/realtime_servo/src/servo_cpp_interface_demo.cpp
+/*      Title     : demo_pose.cpp
+ *      Project   : moveit_servo
+ *      Created   : 06/07/2023
+ *      Author    : V Mohammed Ibrahim
+ *      Description : Example of controlling a robot through pose commands via the C++ API.
+ * 		Link	  : https://moveit.picknik.ai/main/doc/examples/realtime_servo/realtime_servo_tutorial.html
+ * 		Code	  : https://github.com/ros-planning/moveit2/blob/iron/moveit_ros/moveit_servo/demos/cpp_interface/demo_pose.cpp
  */
 
-// ROS
+// ROS2 imports
 #include <rclcpp/rclcpp.hpp>
+#include <tf2_ros/transform_listener.h>
+#include <tf2_geometry_msgs/tf2_geometry_msgs.hpp>
 
-// Servo
-#include <moveit/planning_scene_monitor/planning_scene_monitor.h>
-#include <moveit_servo/servo.h>
-#include <moveit_servo/servo_parameters.h>
+// C++ imports
+#include <atomic>
+#include <chrono>
+#include <mutex>
 
-using namespace std::chrono_literals;
+// Moveit2 imports
+#include <moveit_servo/servo.hpp>
+#include <moveit_servo/utils/common.hpp>
 
-static const rclcpp::Logger LOGGER = rclcpp::get_logger("igus_rebel::realtime_servoing");
 
-// BEGIN_TUTORIAL
+using namespace moveit_servo;
 
-// Setup
-// ^^^^^
-// First we declare pointers to the node and publisher that will publish commands to Servo
-rclcpp::Node::SharedPtr node_;
-rclcpp::Publisher<control_msgs::msg::JointJog>::SharedPtr joint_cmd_pub_;
-rclcpp::Publisher<geometry_msgs::msg::TwistStamped>::SharedPtr twist_cmd_pub_;
-size_t count_ = 0;
-
-// BEGIN_SUB_TUTORIAL publishCommands
-// Here is the timer callback for publishing commands. The C++ interface sends commands through internal ROS topics,
-// just like if Servo was launched using ServoNode.
-void publishCommands() {
-    // First we will publish 100 joint jogging commands. The :code:`joint_names` field allows you to specify individual
-    // joints to move, at the velocity in the corresponding :code:`velocities` field. It is important that the message
-    // contains a recent timestamp, or Servo will think the command is stale and will not move the robot.
-    if (count_ < 100) {
-        auto msg = std::make_unique<control_msgs::msg::JointJog>();
-        msg->header.stamp = node_->now();
-        msg->joint_names.push_back("panda_joint1");
-        msg->velocities.push_back(0.3);
-        joint_cmd_pub_->publish(std::move(msg));
-        ++count_;
-    }
-
-    // After a while, we switch to publishing twist commands. The provided frame is the frame in which the twist is
-    // defined, not the robot frame that will follow the command. Again, we need a recent timestamp in the message
-    else {
-        auto msg = std::make_unique<geometry_msgs::msg::TwistStamped>();
-        msg->header.stamp = node_->now();
-        msg->header.frame_id = "panda_link0";
-        msg->twist.linear.x = 0.3;
-        msg->twist.angular.z = 0.5;
-        twist_cmd_pub_->publish(std::move(msg));
-    }
+namespace {
+const rclcpp::Logger LOGGER = rclcpp::get_logger("rt_pose_demo");
 }
-// END_SUB_TUTORIAL
 
-// Next we will set up the node, planning_scene_monitor, and collision object
-int main(int argc, char** argv) {
+int main(int argc, char* argv[]) {
     rclcpp::init(argc, argv);
-    rclcpp::NodeOptions node_options;
 
-    // This is false for now until we fix the QoS settings in moveit to enable intra process comms
-    node_options.use_intra_process_comms(false);
-    node_ = std::make_shared<rclcpp::Node>("servo_demo_node", node_options);
+    // The servo object expects to get a ROS node.
+    const rclcpp::Node::SharedPtr demo_node = std::make_shared<rclcpp::Node>("rt_servo_demo");
 
-    // Pause for RViz to come up. This is necessary in an integrated demo with a single launch file
-    rclcpp::sleep_for(std::chrono::seconds(4));
+    // Get the servo parameters from the config file passed as parameter to this node
+    const std::string param_namespace = "moveit_servo";
+    const std::shared_ptr<const servo::ParamListener> servo_param_listener =
+        std::make_shared<const servo::ParamListener>(demo_node, param_namespace);
+    const servo::Params servo_params = servo_param_listener->get_params();
 
-    // Create the planning_scene_monitor. We need to pass this to Servo's constructor, and we should set it up first
-    // before initializing any collision objects
-    auto tf_buffer = std::make_shared<tf2_ros::Buffer>(node_->get_clock());
-    auto planning_scene_monitor = std::make_shared<planning_scene_monitor::PlanningSceneMonitor>(
-        node_, "robot_description", tf_buffer, "planning_scene_monitor");
+    // The publisher to send trajectory message to the robot controller.
+    rclcpp::Publisher<trajectory_msgs::msg::JointTrajectory>::SharedPtr trajectory_outgoing_cmd_pub =
+        demo_node->create_publisher<trajectory_msgs::msg::JointTrajectory>(servo_params.command_out_topic,
+                                                                           rclcpp::SystemDefaultsQoS());
 
-    // Here we make sure the planning_scene_monitor is updating in real time from the joint states topic
-    if (planning_scene_monitor->getPlanningScene()) {
-        planning_scene_monitor->startStateMonitor("/joint_states");
-        planning_scene_monitor->setPlanningScenePublishingFrequency(25);
-        planning_scene_monitor->startPublishingPlanningScene(planning_scene_monitor::PlanningSceneMonitor::UPDATE_SCENE,
-                                                             "/moveit_servo/publish_planning_scene");
-        planning_scene_monitor->startSceneMonitor();
-        planning_scene_monitor->providePlanningSceneService();
-    } else {
-        RCLCPP_ERROR(LOGGER, "Planning scene not configured");
-        return EXIT_FAILURE;
+    // Create the servo object
+    const planning_scene_monitor::PlanningSceneMonitorPtr planning_scene_monitor =
+        createPlanningSceneMonitor(demo_node, servo_params);
+    Servo servo(demo_node, servo_param_listener, planning_scene_monitor);
+
+	// create target pose publisher
+	rclcpp::Publisher<geometry_msgs::msg::PoseStamped>::SharedPtr target_pose_pub =
+		demo_node->create_publisher<geometry_msgs::msg::PoseStamped>("target_pose", rclcpp::SystemDefaultsQoS());
+	
+
+    // Wait for some time, so that the planning scene is loaded in rviz.
+    // This is just for convenience, should not be used for sync in real application.
+    std::this_thread::sleep_for(std::chrono::seconds(5));
+
+    // For syncing pose tracking thread and main thread.
+    std::mutex pose_guard;
+    std::atomic<bool> stop_tracking (false);
+
+    // Set the command type for servo.
+	// Objective: take as input the goal_pose and output the joint_trajectory required to reach it
+    servo.setCommandType(CommandType::POSE);
+
+    // The dynamically updated target pose.
+    PoseCommand target_pose;
+    target_pose.frame_id = servo_params.planning_frame;
+    // generate random feasible pose
+	target_pose.pose = Eigen::Isometry3d(Eigen::Translation3d(0.5160676836967468, 0.044317007064819336, 0.1));
+	target_pose.pose.rotate(Eigen::Quaterniond(0.0, 0.0, -0.7443628133564246, 0.6677754129137345) );
+
+	// create posestamped message with the target pose to be published
+	geometry_msgs::msg::PoseStamped target_pose_msg;
+	target_pose_msg.header.frame_id = servo_params.planning_frame;
+	target_pose_msg.header.stamp = rclcpp::Clock().now();
+	tf2::convert(target_pose.pose, target_pose_msg.pose);
+	target_pose_pub->publish(target_pose_msg);
+	
+    // The pose tracking lambda function that will be run in a separate thread
+    auto pose_tracker = [&]() {
+        KinematicState joint_state;
+        rclcpp::WallRate tracking_rate(1.0 / servo_params.publish_period);
+        while (!stop_tracking && rclcpp::ok()) {
+
+            { // mutex lock on target_pose
+                std::lock_guard<std::mutex> pguard(pose_guard);
+                joint_state = servo.getNextJointState(target_pose);
+            }
+			
+            StatusCode status = servo.getStatus();
+            if (status != StatusCode::INVALID) {
+                trajectory_outgoing_cmd_pub->publish(composeTrajectoryMessage(servo_params, joint_state));
+			}
+			if (status != StatusCode::NO_WARNING) {
+				RCLCPP_INFO(LOGGER, "status = %s", servo.getStatusMessage().c_str());
+			}
+			tracking_rate.sleep();
+        }
+    };
+
+    // Pose tracking thread will exit upon reaching this pose.
+	Eigen::Isometry3d current_pose, target_pose_copy;
+	{
+		std::lock_guard<std::mutex> pguard(pose_guard);
+		current_pose = target_pose.pose;
+		target_pose_copy = target_pose.pose;
+	}
+    
+    std::thread tracker_thread(pose_tracker);
+    tracker_thread.detach();
+
+    // The target pose (frame being tracked) moves by this step size each iteration.
+    //Eigen::Vector3d linear_step_size{0.0, 0.0, -0.002};
+    //Eigen::AngleAxisd angular_step_size(0.01, Eigen::Vector3d::UnitZ());
+
+    // Frequency at which commands will be sent to the robot controller.
+    rclcpp::WallRate command_rate(50);
+    RCLCPP_INFO_STREAM(LOGGER, servo.getStatusMessage());
+
+    while (!stop_tracking && rclcpp::ok()) {
+        {
+            std::lock_guard<std::mutex> pguard(pose_guard);
+            current_pose = servo.getEndEffectorPose();
+            const bool satisfies_linear_tolerance = target_pose_copy.translation().isApprox(
+                current_pose.translation(), servo_params.pose_tracking.linear_tolerance);
+            const bool satisfies_angular_tolerance =
+                target_pose_copy.rotation().isApprox(current_pose.rotation(), servo_params.pose_tracking.angular_tolerance);
+            stop_tracking = satisfies_linear_tolerance && satisfies_angular_tolerance;
+            // Dynamically update the target pose.
+            //if (!satisfies_linear_tolerance)
+                //target_pose.pose.translate(linear_step_size);
+            //if (!satisfies_angular_tolerance)
+                //target_pose.pose.rotate(angular_step_size);
+			target_pose_pub->publish(target_pose_msg);
+        }
+
+        command_rate.sleep();
     }
 
-    // These are the publishers that will send commands to MoveIt Servo. Two command types are supported: JointJog
-    // messages which will directly jog the robot in the joint space, and TwistStamped messages which will move the
-    // specified link with the commanded Cartesian velocity. In this demo, we jog the end effector link.
-    joint_cmd_pub_ = node_->create_publisher<control_msgs::msg::JointJog>("servo_demo_node/delta_joint_cmds", 10);
-    twist_cmd_pub_ = node_->create_publisher<geometry_msgs::msg::TwistStamped>("servo_demo_node/delta_twist_cmds", 10);
+    RCLCPP_INFO_STREAM(LOGGER, "REACHED : " << stop_tracking);
+    stop_tracking = true;
 
+    if (tracker_thread.joinable())
+        tracker_thread.join();
 
-	// Collision Object -- not implemented here
-
-    // Create the message to publish the collision object
-    moveit_msgs::msg::PlanningSceneWorld psw;
-    //psw.collision_objects.push_back(collision_object);
-    moveit_msgs::msg::PlanningScene ps;
-    ps.is_diff = true;
-    ps.world = psw;
-
-    // Publish the collision object to the planning scene
-    auto scene_pub = node_->create_publisher<moveit_msgs::msg::PlanningScene>("planning_scene", 10);
-    scene_pub->publish(ps);
-
-    // Initializing Servo
-    // ^^^^^^^^^^^^^^^^^^
-    // Servo requires a number of parameters to dictate its behavior. These can be read automatically by using the
-    // :code:`makeServoParameters` helper function
-    auto servo_parameters = moveit_servo::ServoParameters::makeServoParameters(node_);
-    if (!servo_parameters) {
-        RCLCPP_FATAL(LOGGER, "Failed to load the servo parameters");
-        return EXIT_FAILURE;
-    }
-
-    // Initialize the Servo C++ interface by passing a pointer to the node, the parameters, and the PSM
-    auto servo = std::make_unique<moveit_servo::Servo>(node_, servo_parameters, planning_scene_monitor);
-
-    // You can start Servo directly using the C++ interface. If launched using the alternative ServoNode, a ROS
-    // service is used to start Servo. Before it is started, MoveIt Servo will not accept any commands or move the robot
-    servo->start();
-
-    // Sending Commands
-    // ^^^^^^^^^^^^^^^^
-    // For this demo, we will use a simple ROS timer to send joint and twist commands to the robot
-    rclcpp::TimerBase::SharedPtr timer = node_->create_wall_timer(50ms, publishCommands);
-
-    // CALL_SUB_TUTORIAL publishCommands
-
-    // We use a multithreaded executor here because Servo has concurrent processes for moving the robot and avoiding collisions
-    auto executor = std::make_unique<rclcpp::executors::MultiThreadedExecutor>();
-    executor->add_node(node_);
-    executor->spin();
-
-    // END_TUTORIAL
-
+    RCLCPP_INFO(LOGGER, "Exiting demo.");
     rclcpp::shutdown();
-    return 0;
 }

@@ -13,7 +13,7 @@ RebelController::RebelController(const std::string &ip, const int &port) : cri_s
                                                                            // controlMode("velocity"),
                                                                            continueAlive(false),
                                                                            continueMessage(false),
-                                                                           aliveWaitMs(50),
+                                                                           aliveWaitMs(20),
                                                                            cmd_counter(1),
                                                                            lastKinstate(cri_messages::Kinstate::NO_ERROR),
                                                                            kinematicLimits(cri_messages::KinematicLimits()) {
@@ -29,7 +29,7 @@ RebelController::RebelController() : cri_socket(ip_address, port, 200),
                                      // controlMode("velocity"),
                                      continueAlive(false),
                                      continueMessage(false),
-                                     aliveWaitMs(50),
+                                     aliveWaitMs(20),
                                      cmd_counter(1),
                                      lastKinstate(cri_messages::Kinstate::NO_ERROR),
                                      kinematicLimits(cri_messages::KinematicLimits()) {
@@ -555,7 +555,7 @@ hardware_interface::return_type RebelController::write(const rclcpp::Time & /*ti
                 output += std::to_string(jogs_[i]) + " ";
             }
 
-            RCLCPP_INFO(rclcpp::get_logger("hw_controller::rebel_controller"), "Moved with velocity %s", output.c_str());
+            //RCLCPP_INFO(rclcpp::get_logger("hw_controller::rebel_controller"), "Moved with velocity %s", output.c_str());
             cmd_last_velocity_ = cmd_velocity_;
         }
 

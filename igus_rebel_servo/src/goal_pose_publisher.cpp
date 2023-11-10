@@ -16,19 +16,18 @@
 
 static const rclcpp::Logger LOGGER = rclcpp::get_logger("igus_rebel::goal_pose_pub");
 
-std::thread test_pub_thread_;
-rclcpp::Publisher<geometry_msgs::msg::PoseArray>::SharedPtr test_pub;
+//std::thread test_pub_thread_;
+//rclcpp::Publisher<geometry_msgs::msg::PoseArray>::SharedPtr test_pub;
 
 GoalPosePublisher::GoalPosePublisher() : Node("goal_pose_publisher") {
     // Create a publisher for the goal pose
-    goal_pose_pub_ = this->create_publisher<geometry_msgs::msg::PoseStamped>("goal_pose", 10);
+    goal_pose_pub_ = this->create_publisher<geometry_msgs::msg::PoseStamped>("/goal_pose", 10);
     // Create a subscriber for the aruco pose array
     aruco_pose_sub_ = this->create_subscription<geometry_msgs::msg::PoseArray>(
-        "aruco_poses", 10, std::bind(&GoalPosePublisher::aruco_pose_callback, this, std::placeholders::_1));
+        "/aruco_poses", 10, std::bind(&GoalPosePublisher::aruco_pose_callback, this, std::placeholders::_1));
 
     // create a publisher on topic aruco poses
     //test_pub = this->create_publisher<geometry_msgs::msg::PoseArray>("/aruco_poses", 10);
-
     //test_pub_thread_ = std::thread(&GoalPosePublisher::test_pub_thread, this);
 
     // Retrieve the camera frame parameter from the config YAML file of the aruco detector
@@ -40,51 +39,60 @@ GoalPosePublisher::GoalPosePublisher() : Node("goal_pose_publisher") {
         RCLCPP_ERROR(LOGGER, "Failed to get my_string_parameter");
     }
 
-    camera_frame_name = "base_link";  // NOTE: only for testing without aruco detector
+    //camera_frame_name = "base_link";  // NOTE: only for testing without aruco detector
+
+	// Initialize the TF2 transform listener
+    tf_buffer_ = std::make_unique<tf2_ros::Buffer>(this->get_clock());
+    tf2 = std::make_shared<tf2_ros::TransformListener>(*tf_buffer_);
+
+    // The source frame (aruco's base frame)
+    source_frame = camera_frame_name;
+
 }
 
 void GoalPosePublisher::aruco_pose_callback(const geometry_msgs::msg::PoseArray aruco_pose_array) {
+	if (aruco_pose_array.poses.size() == 0) {
+		return; // do not process callback if pose array is empty
+	}
     // Read the first pose in the array
     geometry_msgs::msg::Pose aruco_pose = aruco_pose_array.poses[0];
 
-    // read pose of base_link
-    // Initialize the TF2 transform listener
-    auto tf_buffer_ = std::make_unique<tf2_ros::Buffer>(this->get_clock());
-    std::shared_ptr<tf2_ros::TransformListener> tf2 = std::make_shared<tf2_ros::TransformListener>(*tf_buffer_);
-
-    // The source frame (aurco's base frame)
-    const std::string source_frame_ = camera_frame_name;
-
-    // The target frame (desired link's frame)
-    const std::string target_frame_ = "base_link";
-
     geometry_msgs::msg::TransformStamped transform;
-
     try {
-        transform = tf_buffer_->lookupTransform(source_frame_, target_frame_, tf2::TimePointZero);
+        transform = tf_buffer_->lookupTransform(target_frame, source_frame, tf2::TimePointZero);
     } catch (tf2::TransformException& ex) {
         RCLCPP_ERROR(LOGGER, "Failed to lookup transform: %s", ex.what());
         return;
     }
 
-    // apply the TF transform to the aruco pose to get the position in the base_link frame
-    aruco_pose.position.x = transform.transform.translation.x + aruco_pose.position.x;
-    aruco_pose.position.y = transform.transform.translation.y + aruco_pose.position.y;
-    aruco_pose.position.z = transform.transform.translation.z + aruco_pose.position.z;
-    // apply the TF transform to the aruco pose to get the rotation in the base_link frame
-    tf2::Quaternion transform_q, aruco_q;
-    tf2::fromMsg(aruco_pose.orientation, aruco_q);
-    tf2::fromMsg(transform.transform.rotation, transform_q);
-    aruco_pose.orientation = tf2::toMsg(transform_q * aruco_q);
+	// apply the TF transform to the aruco pose to get the position in the link_1 frame
+	tf2::doTransform(aruco_pose, aruco_pose, transform); // in, out, transform
+
+	// apply a 90 degree rotation so that the aruco pose x axis is aligned with the computed z axis
+	tf2::Quaternion alignment, current_alignment;
+	alignment.setRPY(0.0, M_PI/2.0, 0.0);
+	tf2::fromMsg(aruco_pose.orientation, current_alignment);
+	alignment = alignment * current_alignment;
+	alignment.normalize();
+	aruco_pose.orientation = tf2::toMsg(alignment);
+
+	// get the position of the link_1 frame with respect to base link
+	geometry_msgs::msg::TransformStamped link_1_transform;
+	try {
+		link_1_transform = tf_buffer_->lookupTransform("base_link", "link_1", tf2::TimePointZero);
+	} catch (tf2::TransformException& ex) {
+		RCLCPP_ERROR(LOGGER, "Failed to lookup transform: %s", ex.what());
+		return;
+	}
 
     // Calculate the Cartesian distance
     float distance = std::sqrt(
-        std::pow(aruco_pose.position.x, 2) +
-        std::pow(aruco_pose.position.y, 2) +
-        std::pow(aruco_pose.position.z, 2));
+        std::pow(aruco_pose.position.x + link_1_transform.transform.translation.x, 2) +
+        std::pow(aruco_pose.position.y + link_1_transform.transform.translation.y, 2) +
+        std::pow(aruco_pose.position.z + link_1_transform.transform.translation.z, 2));
 
     // log the distance
-    RCLCPP_INFO(LOGGER, "Distance from base_link to aruco: %f", distance);
+    RCLCPP_INFO(LOGGER, "Distance from link_1 to aruco: %f", distance);
 
     processPoseArray(aruco_pose, distance);
 }
@@ -93,10 +101,10 @@ void GoalPosePublisher::processPoseArray(const geometry_msgs::msg::Pose aruco_po
     // compute the closest reachable pose of the end effector to the aruco pose
 
     geometry_msgs::msg::PoseStamped goal_pose;
+	// if the aruco pose is reachable, then the goal pose is the aruco pose
+    goal_pose.header.frame_id = "link_1";
 
-    if (distance < 1.0) {
-        // if the aruco pose is reachable, then the goal pose is the aruco pose
-        goal_pose.header.frame_id = "base_link";
+    if (distance < goal_radius) {
 
 		// goal pose corresponds to the aruco pose
 		goal_pose.pose.position.x = aruco_pose.position.x;
@@ -120,8 +128,6 @@ void GoalPosePublisher::processPoseArray(const geometry_msgs::msg::Pose aruco_po
         // compute new x, y, z coordinates such that the new distance from link_1 to goal_pose is at a fixed distance of 0.7m
         // the new goal pose should be in the same direction as the vector pointing the aruco pose from link_1
 
-		//TODO: compute pose of link_1 by subscribing to the joint states
-
         // compute the unit vector of the aruco pose
         float aruco_pose_unit_vector_x = aruco_pose.position.x / distance;
         float aruco_pose_unit_vector_y = aruco_pose.position.y / distance;
@@ -132,8 +138,7 @@ void GoalPosePublisher::processPoseArray(const geometry_msgs::msg::Pose aruco_po
         float goal_pose_y = aruco_pose_unit_vector_y * 0.7;
         float goal_pose_z = aruco_pose_unit_vector_z * 0.7;
 
-        // set the new goal pose
-        goal_pose.header.frame_id = "base_link";
+        // set the new goal pose coordinates
         goal_pose.pose.position.x = goal_pose_x;
         goal_pose.pose.position.y = goal_pose_y;
         goal_pose.pose.position.z = goal_pose_z;
@@ -208,7 +213,7 @@ void GoalPosePublisher::test_pub_thread() {
     // Publish a the test pose every second
     while (count < 100) {
         test_pose_array.header.stamp = this->now();
-        test_pub->publish(test_pose_array);
+        //test_pub->publish(test_pose_array);
 
         loop_rate.sleep();
         count++;

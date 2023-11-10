@@ -8,21 +8,29 @@ from launch_ros.actions import Node
 from launch_ros.substitutions import FindPackageShare
 from launch.substitutions import PathJoinSubstitution, LaunchConfiguration
 from launch.actions import DeclareLaunchArgument
-from launch.substitutions import TextSubstitution
-from launch.conditions import IfCondition
-from launch.actions import LogInfo
+from launch.substitutions import TextSubstitution, Command, FindExecutable
+from launch_ros.descriptions import ParameterValue
+from launch.actions import OpaqueFunction
+from launch.actions import IncludeLaunchDescription
+from launch.launch_description_sources import PythonLaunchDescriptionSource
 
 from ament_index_python.packages import get_package_share_directory
 
 
+# launches only the URDF version 2 robot description
 def generate_launch_description():
-	# A node to publish world -> panda_link0 transform
-	static_tf = Node(
-		package="tf2_ros",
-		executable="static_transform_publisher",
-		name="static_transform_publisher",
-		output="log",
-		arguments=["0.0", "0.0", "0.0", "0.0", "0.0", "0.0", "world", "base_link"]
+	gripper_arg = DeclareLaunchArgument(
+		name="gripper",
+		default_value="camera",
+		choices=["none", "camera"],
+		description="Gripper mount to attach to the last joint",
+	)
+
+	hardware_protocol_arg = DeclareLaunchArgument(
+		name="hardware_protocol",
+		default_value="simulation",
+		choices=["mock_hardware", "cri", "simulation"],
+		description="Which hardware protocol or mock hardware should be used",
 	)
 
 	# read camera frame from ros2_aruco config file
@@ -43,6 +51,30 @@ def generate_launch_description():
 		description="Camera frame of the aruco markers detected",
 	)
 
+	return LaunchDescription(
+		[gripper_arg, hardware_protocol_arg, camera_frame_arg,
+   OpaqueFunction(function=launch_setup)]
+	)
+
+
+def launch_setup(context, *args, **kwargs):
+	if LaunchConfiguration("gripper").perform(context) == "camera":
+		srdf_file = "igus_rebel_camera.srdf"
+	else:
+		srdf_file = "igus_rebel_base.srdf"
+
+	"""
+	# A node to publish world -> base_link transform
+	# this is only needed when testing without the real robot 
+	static_tf = Node(
+		package="tf2_ros",
+		executable="static_transform_publisher",
+		name="static_transform_publisher",
+		output="log",
+		arguments=["0.0", "0.0", "0.0", "0.0", "0.0", "0.0", "world", "base_link"],
+	)
+	"""
+
 	# create node for goal pose publisher
 	goal_pose_publisher_node = Node(
 		package="igus_rebel_servo",
@@ -52,8 +84,65 @@ def generate_launch_description():
 		parameters=[{"camera_frame": LaunchConfiguration("camera_frame")}],
 	)
 
+	robot_description_file = PathJoinSubstitution(
+		[
+			FindPackageShare("igus_rebel_description_ros2"),
+			"urdf",
+			"igus_rebel.urdf.xacro",
+		]
+	)
+
+	robot_description = Command(
+		[
+			FindExecutable(name="xacro"),
+			" ",
+			robot_description_file,
+			" hardware_protocol:=",
+			LaunchConfiguration("hardware_protocol"),
+			" gripper:=",
+			LaunchConfiguration("gripper"),
+		]
+	)
+
+	robot_description = {
+		"robot_description": ParameterValue(robot_description, value_type=str)
+	}
+
+	robot_description_semantic = Command(
+		[
+			FindExecutable(name="xacro"),
+			" ",
+			PathJoinSubstitution(
+				[
+					get_package_share_directory("igus_rebel_moveit_config"),
+					"config",
+					srdf_file,
+				]
+			),
+		]
+	)
+
+	robot_description_semantic = {
+		"robot_description_semantic": ParameterValue(
+			robot_description_semantic, value_type=str
+		)
+	}
+
+	# include launch file from igus_rebel_moveit_config
+	moveit_launch_file = PathJoinSubstitution(
+		[
+			get_package_share_directory("igus_rebel_moveit_config"),
+			"launch",
+			"moveit_controller.launch.py",
+		]
+	)
+	igus_rebel_moveit_config_launch = IncludeLaunchDescription(
+		PythonLaunchDescriptionSource(moveit_launch_file),
+	)
+
+	
 	rviz_file = PathJoinSubstitution(
-		[FindPackageShare("igus_rebel_servo"), "rviz", "servo_demo.rviz"]
+		[FindPackageShare("igus_rebel_servo"), "rviz", "goal_demo.rviz"]
 	)
 
 	rviz_node = Node(
@@ -62,8 +151,11 @@ def generate_launch_description():
 		name="rviz2",
 		output="log",
 		arguments=["-d", rviz_file],
+		parameters=[robot_description, robot_description_semantic],
 	)
 
-	return LaunchDescription(
-		[rviz_node, static_tf, camera_frame_arg, goal_pose_publisher_node]
-	)
+	return [
+		rviz_node,
+		# static_tf,
+		goal_pose_publisher_node,
+	]

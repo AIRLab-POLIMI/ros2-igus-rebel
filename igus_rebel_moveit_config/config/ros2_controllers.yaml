@@ -22,6 +22,13 @@ rebel_arm_controller:
             - joint4
             - joint5
             - joint6
+        command_joints:
+            - joint1
+            - joint2
+            - joint3
+            - joint4
+            - joint5
+            - joint6
         command_interfaces: # controller output
             #- position # simmply forwards joint angles position commands to the hardware
             - velocity # uses PID regulator internally unless open_loop_control is true
@@ -30,7 +37,28 @@ rebel_arm_controller:
             - position
             - velocity
         state_publish_rate: 50.0
-        open_loop_control: true # if true, the controller does not use PID regulator
+        open_loop_control: false # if true, the controller does not use PID regulator
         constraints:
-            stopped_velocity_tolerance: 0.05
+            stopped_velocity_tolerance: 0.001
         action_monitor_rate: 25.0
+        allow_nonzero_velocity_at_trajectory_end: false
+
+        # gains structure working in simulation
+        gains:
+            joint1: { p: 1.0, i: 5.0, d: 1.0, i_clamp: 100.0, ff_velocity_scale: 0.1}
+            joint2: { p: 1.0, i: 5.0, d: 1.0, i_clamp: 100.0, ff_velocity_scale: 0.1}
+            joint3: { p: 1.0, i: 5.0, d: 1.0, i_clamp: 100.0, ff_velocity_scale: 0.1}
+            joint4: { p: 1.0, i: 5.0, d: 1.0, i_clamp: 100.0, ff_velocity_scale: 0.1}
+            joint5: { p: 1.0, i: 5.0, d: 1.0, i_clamp: 100.0, ff_velocity_scale: 0.1}
+            joint6: { p: 1.0, i: 5.0, d: 1.0, i_clamp: 100.0, ff_velocity_scale: 0.1}
+
+
+        # gains structure alternative
+        #gains:
+            #joint1: { p: 30000.0, d: 100.0, i: 0.02, i_clamp: 10000.0, ff_velocity_scale: 0.01 }
+            #joint2: { p: 30000.0, d: 100.0, i: 0.02, i_clamp: 10000.0, ff_velocity_scale: 0.01 }
+            #joint3: { p: 30000.0, d: 100.0, i: 0.02, i_clamp: 10000.0, ff_velocity_scale: 0.01 }
+            #joint4: { p: 30000.0, d: 100.0, i: 0.02, i_clamp: 10000.0, ff_velocity_scale: 0.01 }
+            #joint5: { p: 30000.0, d: 100.0, i: 0.02, i_clamp: 10000.0, ff_velocity_scale: 0.01 }
+            #joint6: { p: 30000.0, d: 100.0, i: 0.02, i_clamp: 10000.0, ff_velocity_scale: 0.01 }
+        

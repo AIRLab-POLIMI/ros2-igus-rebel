@@ -35,5 +35,15 @@ private:
 	// aruco poses array subscriber
 	rclcpp::Subscription<geometry_msgs::msg::PoseArray>::SharedPtr aruco_pose_sub_;
 
+	std::shared_ptr<tf2_ros::TransformListener> tf2; // tf listener
+  	std::unique_ptr<tf2_ros::Buffer> tf_buffer_; // tf buffer
+
+	// The target frame (desired link's frame)
+    const std::string target_frame = "link_1";
+
+	std::string source_frame; // The source frame (aruco's base frame)
+
+	const float goal_radius = 1.5; //meters
+
 
 };
