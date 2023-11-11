@@ -44,7 +44,7 @@ RebelController::~RebelController() {
  * @brief This sends the keep alive heartbeat to the CRI controller. The message always
  * contains a jog, under normal position command operation it should be left at 0.
  */
-void RebelController::AliveThreadFunction() {
+void RebelController::alivejogThread() {
     RCLCPP_DEBUG(rclcpp::get_logger("hw_controller::rebel_controller"), "Starting to send ALIVEJOG");
 
     // continue alive must be set to true as long as the robot is not moving (sends 0 jog velocities)
@@ -84,7 +84,7 @@ void RebelController::AliveThreadFunction() {
 /**
  * @brief processes the messages by type from the socket queue
  */
-void RebelController::MessageThreadFunction() {
+void RebelController::socketMessagesThread() {
     RCLCPP_DEBUG(rclcpp::get_logger("hw_controller::rebel_controller"), "Starting to process robot messages");
 
     while (continueMessage) {
@@ -100,8 +100,12 @@ void RebelController::MessageThreadFunction() {
                     cri_messages::Status status = cri_messages::Status(msg);
                     // status.Print();
                     currentStatus = status;
-                    ProcessStatus(currentStatus);
+                    processStatus(currentStatus);
 
+					// get current time stamp
+					//rclcpp::Time current_time = rclcpp::Clock().now();
+					//savePositionFeedback(current_time);
+					status_count++;
                     break;
                 }
 
@@ -205,7 +209,7 @@ void RebelController::GetConfig(const std::string &config) {
  * @brief This is the main read method. It parses the information sent from the controller
  * and adjusts the internal state as such.
  */
-void RebelController::ProcessStatus(const cri_messages::Status &status) {
+void RebelController::processStatus(const cri_messages::Status &status) {
     cri_messages::Kinstate currentKinstate = status.kinstate;
     std::array<int, 16> currentErrorJoints = status.errorJoints;
 
@@ -303,6 +307,40 @@ void RebelController::GetReferenceInfo() {
 }
 
 /**
+ * @brief saves the current position feedback with its timestamp in a logging vector.
+ * The position feedbacks cumulated are used to compute precise velocity feedbacks.
+ */
+void RebelController::savePositionFeedback(const rclcpp::Time& current_time) {
+	std::vector<double> temp_pos;
+    temp_pos.reserve(n_joints);
+
+    // copy joint rotation angles [deg] values into temp_pos
+    std::copy(currentStatus.posJointCurrent.begin(), currentStatus.posJointCurrent.begin() + n_joints, temp_pos.begin());
+
+    for (size_t i = 0; i < n_joints; i++) {
+        // degrees to radians and apply offset
+        temp_pos[i] = temp_pos[i] * M_PI / 180.0 + pos_offset_[i];
+    }
+
+	// save temp pos with the current time stamp in a logging vector
+	//position_feedbacks_log[i].push_back(std::make_pair(current_time, temp_pos));
+
+}
+
+void RebelController::computeStatusFrequencyThread() {
+	RCLCPP_INFO(rclcpp::get_logger("hw_controller::rebel_controller"), "Starting to compute status frequency");
+	status_count = 0;
+
+	while (continueMessage) {
+		std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+		RCLCPP_INFO(rclcpp::get_logger("hw_controller::rebel_controller"), "Status frequency: %d Hz", status_count);
+		status_count = 0;
+	}
+
+	RCLCPP_INFO(rclcpp::get_logger("hw_controller::rebel_controller"), "Stopped to compute status frequency");
+}
+
+/**
  **********************************************
  * ROS2 Controller for the hardware interfaces
  ***********************************************
@@ -344,13 +382,19 @@ hardware_interface::CallbackReturn RebelController::on_init(const hardware_inter
         pos_offset_.push_back(cri_joint_offset);
     }
 
+	//std::vector<double> temp_pos_feedback;
+
     // initialize the vectors with NaN values
     for (unsigned int i = 0; i < n_joints; i++) {
         cmd_position_.push_back(std::numeric_limits<double>::quiet_NaN());
         cmd_last_position_.push_back(std::numeric_limits<double>::quiet_NaN());
         cmd_velocity_.push_back(std::numeric_limits<double>::quiet_NaN());
         cmd_last_velocity_.push_back(std::numeric_limits<double>::quiet_NaN());
+			
+		//temp_pos_feedback.push_back(std::numeric_limits<double>::quiet_NaN());
     }
+
+	//position_feedbacks_log.push_back(std::make_pair(rclcpp::Time(0), temp_pos_feedback));
 
     // print command interfaces names
     for (const hardware_interface::InterfaceInfo &cmd_interface : info.joints.at(0).command_interfaces) {
@@ -374,7 +418,10 @@ hardware_interface::CallbackReturn RebelController::on_init(const hardware_inter
  */
 hardware_interface::CallbackReturn RebelController::on_activate(const rclcpp_lifecycle::State & /*previous_state*/) {
     continueMessage = true;
-    messageThread = std::thread(&RebelController::MessageThreadFunction, this);
+
+	statusFrequencyThread = std::thread(&RebelController::computeStatusFrequencyThread, this);
+
+    messageThread = std::thread(&RebelController::socketMessagesThread, this);
 
     cri_socket.start();
 
@@ -386,7 +433,7 @@ hardware_interface::CallbackReturn RebelController::on_activate(const rclcpp_lif
     Command(cri_keywords::COMMAND_ENABLE);
 
     continueAlive = true;
-    aliveThread = std::thread(&RebelController::AliveThreadFunction, this);
+    aliveThread = std::thread(&RebelController::alivejogThread, this);
 
     GetConfig(cri_keywords::CONFIG_GETKINEMATICLIMITS);
 
@@ -436,6 +483,10 @@ hardware_interface::CallbackReturn RebelController::on_deactivate(const rclcpp_l
     if (messageThread.joinable()) {
         messageThread.join();
     }
+
+	if (statusFrequencyThread.joinable()) {
+		statusFrequencyThread.join();
+	}
 
     return hardware_interface::CallbackReturn::SUCCESS;
 }

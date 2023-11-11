@@ -30,6 +30,7 @@ def load_yaml(package_name, file_path):
 
 # remember to start the moveit_controllers.launch.py file from the igus_rebel_moveit_config package first
 # it will start the necessary controllers and the moveit dependencies
+# start it with the correct gripper and hardware protocol arguments, and leaving rviz_file:=none (default)
 
 
 # launches only the URDF version 2 robot description

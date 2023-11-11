@@ -209,7 +209,7 @@ int main(int argc, char** argv) {
 	moveit::planning_interface::MoveGroupInterface::Plan my_plan;
     moveit::core::MoveItErrorCode response = move_group.plan(my_plan);
 
-	moveit_msgs::msg::RobotTrajectory trajectory = my_plan.trajectory_;
+	moveit_msgs::msg::RobotTrajectory trajectory = my_plan.trajectory;
 
 	// show output of planned movement
     RCLCPP_INFO(LOGGER, "Visualizing plan 1 (pose goal): result = %s", moveit::core::error_code_to_string(response).c_str());
@@ -274,11 +274,11 @@ int main(int argc, char** argv) {
     RCLCPP_INFO(LOGGER, "Visualizing plan 2 (joint goal): result = %s", moveit::core::error_code_to_string(response).c_str());
     
     //display_trajectory.trajectory_start = response.trajectory_start;
-    display_trajectory.trajectory.push_back(my_plan_2.trajectory_);
+    display_trajectory.trajectory.push_back(my_plan_2.trajectory);
     // Now you should see two planned trajectories in series
     display_publisher->publish(display_trajectory);
 
-    visual_tools.publishTrajectoryLine(my_plan_2.trajectory_, joint_model_group);
+    visual_tools.publishTrajectoryLine(my_plan_2.trajectory, joint_model_group);
     visual_tools.trigger();
 
 	visual_tools.prompt("Press 'next' to move the robot");

@@ -5,8 +5,8 @@
 #ifndef REBEL_CONTROLLER_H
 #define REBEL_CONTROLLER_H
 
+// C++ imports
 #include <math.h>
-
 #include <array>
 #include <bitset>
 #include <cstdint>
@@ -18,13 +18,16 @@
 #include <vector>
 #include <map>
 
+// local imports
 #include "cri_keywords.h"
 #include "cri_messages.h"
 #include "cri_socket.h"
+
+// ROS2-Control imports
 #include <hardware_interface/system_interface.hpp>  // system type interface
 #include <hardware_interface/types/hardware_interface_type_values.hpp>
-#include "rclcpp/rclcpp.hpp"
-#include "rclcpp_lifecycle/state.hpp"
+#include <rclcpp/rclcpp.hpp>
+#include <rclcpp_lifecycle/state.hpp>
 
 // namespace for encapsulating the hardware controller package
 namespace igus_rebel_hw_controller {
@@ -38,6 +41,7 @@ class RebelController : public hardware_interface::SystemInterface {
 
     CriSocket cri_socket;
 
+	// status message
     cri_messages::Status currentStatus;
 
     bool continueAlive;
@@ -50,16 +54,21 @@ class RebelController : public hardware_interface::SystemInterface {
     std::mutex counterLock;
     std::mutex aliveLock;
 
+	// code for computing the rate at which the STATUS messages are received
+	int status_count = 0;
+	std::thread statusFrequencyThread;
+	void computeStatusFrequencyThread();
+
     // ROS2 controller input variables
 
     // Current jogs
     // 0-5 are used for internal axis
     // additional elements can be added for external axes control when more controllers are placed on the robot
-    std::vector<double> jogs_ = {0, 0, 0, 0, 0, 0 };  // percentage of the maximum speed
+    std::vector<double> jogs_ = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0 };  // percentage of the maximum speed
 
     // encoder feedback values fed to the hardware_interface
-    std::vector<double> position_feedback_ = {0, 0, 0, 0, 0, 0 }; // [rad]
-    std::vector<double> velocity_feedback_ = {0, 0, 0, 0, 0, 0 };  // [rad/s]
+    std::vector<double> position_feedback_ = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0 }; // [rad]
+    std::vector<double> velocity_feedback_ = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0 };  // [rad/s]
 
     // command values given from the controller to the hardware_interface
     std::vector<double> cmd_position_;  // [rad]
@@ -70,7 +79,7 @@ class RebelController : public hardware_interface::SystemInterface {
     // Used to counteract the offsets in EmbeddedCtrl, read from .ros2_control.xacro files
     std::vector<double> pos_offset_;  // [rad]
 
-
+	// kinematic state and error messages
     cri_messages::Kinstate lastKinstate;
     std::array<int, 16> lastErrorJoints;
     std::string kinstateMessage;
@@ -78,19 +87,24 @@ class RebelController : public hardware_interface::SystemInterface {
 	cri_messages::KinematicLimits kinematicLimits;
 
     // Thread functions
-    void AliveThreadFunction(void);
-    void MessageThreadFunction(void);
+    void alivejogThread(void);
+    void socketMessagesThread(void);
 
-    // Other functions
+    // CRI protocol service functions
     int get_cmd_counter();
     void Command(const std::string&);
     void GetConfig(const std::string&);
-
     void GetReferenceInfo();
 
+	// checks whether the input commands from the controller have changed since the last one received
+	bool detect_change(std::vector<double> &v1, std::vector<double> &v2);
 
     // Function to react to specific status values, to display warnings, error messages, etc.
-    void ProcessStatus(const cri_messages::Status&);
+    void processStatus(const cri_messages::Status&);
+
+	// Function to convert the jog values to the correct format for the robot controller
+	// std::vector< std::pair< rclcpp::Time&, std::vector<double> > > position_feedbacks_log;
+	void savePositionFeedback(const rclcpp::Time& time);
 
 	const double move_velocity = 20.0; // [20 % max velocity]
 	// NOTE: this constant is valid as long as the override value in the STATUS message = 80.0
@@ -114,8 +128,6 @@ class RebelController : public hardware_interface::SystemInterface {
     // ROS2 Control functions override for reading and writing control variables
     hardware_interface::return_type read(const rclcpp::Time& time, const rclcpp::Duration& duration) override;
     hardware_interface::return_type write(const rclcpp::Time& time, const rclcpp::Duration& duration) override;
-
-	bool detect_change(std::vector<double> &v1, std::vector<double> &v2);
 
 
 };

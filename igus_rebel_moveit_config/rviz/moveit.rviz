@@ -72,29 +72,6 @@ Visualization Manager:
             Show Axes: false
             Show Trail: false
             Value: true
-          camera_bottom_screw_frame:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-          camera_insert:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-          camera_link:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-            Value: true
-          camera_mount:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-            Value: true
-          camera_usb_plug_link:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-            Value: true
           flange:
             Alpha: 1
             Show Axes: false
@@ -129,10 +106,6 @@ Visualization Manager:
             Show Axes: false
             Show Trail: false
             Value: true
-          toucher:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
           world:
             Alpha: 1
             Show Axes: false
@@ -177,29 +150,6 @@ Visualization Manager:
             Show Axes: false
             Show Trail: false
             Value: true
-          camera_bottom_screw_frame:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-          camera_insert:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-          camera_link:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-            Value: true
-          camera_mount:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-            Value: true
-          camera_usb_plug_link:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-            Value: true
           flange:
             Alpha: 1
             Show Axes: false
@@ -234,10 +184,6 @@ Visualization Manager:
             Show Axes: false
             Show Trail: false
             Value: true
-          toucher:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
           world:
             Alpha: 1
             Show Axes: false
@@ -265,7 +211,7 @@ Visualization Manager:
         Goal State Color: 250; 128; 0
         Interactive Marker Size: 0
         Joint Violation Color: 255; 0; 255
-        Planning Group: chain_arm_manipulator
+        Planning Group: rebel_arm
         Query Goal State: true
         Query Start State: false
         Show Workspace: false
@@ -289,29 +235,6 @@ Visualization Manager:
           Expand Tree: false
           Link Tree Style: Links in Alphabetic Order
           base_link:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-            Value: true
-          camera_bottom_screw_frame:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-          camera_insert:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-          camera_link:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-            Value: true
-          camera_mount:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
-            Value: true
-          camera_usb_plug_link:
             Alpha: 1
             Show Axes: false
             Show Trail: false
@@ -350,10 +273,6 @@ Visualization Manager:
             Show Axes: false
             Show Trail: false
             Value: true
-          toucher:
-            Alpha: 1
-            Show Axes: false
-            Show Trail: false
           world:
             Alpha: 1
             Show Axes: false
@@ -374,29 +293,6 @@ Visualization Manager:
         Expand Tree: false
         Link Tree Style: Links in Alphabetic Order
         base_link:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        camera_bottom_screw_frame:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        camera_insert:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        camera_link:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        camera_mount:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        camera_usb_plug_link:
           Alpha: 1
           Show Axes: false
           Show Trail: false
@@ -435,10 +331,6 @@ Visualization Manager:
           Show Axes: false
           Show Trail: false
           Value: true
-        toucher:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
         world:
           Alpha: 1
           Show Axes: false
@@ -488,29 +380,6 @@ Visualization Manager:
           Show Axes: false
           Show Trail: false
           Value: true
-        camera_bottom_screw_frame:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        camera_insert:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        camera_link:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        camera_mount:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        camera_usb_plug_link:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
         flange:
           Alpha: 1
           Show Axes: false
@@ -545,10 +414,6 @@ Visualization Manager:
           Show Axes: false
           Show Trail: false
           Value: true
-        toucher:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
         world:
           Alpha: 1
           Show Axes: false

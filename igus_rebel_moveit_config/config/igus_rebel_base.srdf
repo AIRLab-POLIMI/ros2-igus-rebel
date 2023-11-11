@@ -27,7 +27,7 @@
 		<chain base_link="base_link" tip_link="link_8" />
 	</group>
 
-	<end_effector name="manipulator" parent_link="link_8" group="mount" parent_group="rebel_arm" />
+	<end_effector name="manipulator" parent_link="link_8" group="rebel_arm" parent_group="mount" />
 
 
 	<group_state name="zero" group="rebel_arm">

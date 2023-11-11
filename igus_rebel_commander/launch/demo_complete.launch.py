@@ -40,8 +40,8 @@ def load_yaml(package_name, file_path):
 def generate_launch_description():
 	gripper_arg = DeclareLaunchArgument(
 		name="gripper",
-		default_value="none",
-		choices=["none", "camera"],
+		default_value="camera",
+		choices=["camera"], # this node is meant to be used with the camera gripper
 		description="Gripper mount to attach to the last joint",
 	)
 
@@ -63,6 +63,10 @@ def launch_setup(context, *args, **kwargs):
 	else:
 		srdf_file = "igus_rebel_base.srdf"
 
+	rviz_file = PathJoinSubstitution(
+		[FindPackageShare("igus_rebel_commander"), "rviz", "cmd.rviz"]
+	)
+
 	# include launch file from igus_rebel_moveit_config
 	moveit_launch_file = PathJoinSubstitution(
 		[
@@ -73,6 +77,11 @@ def launch_setup(context, *args, **kwargs):
 	)
 	igus_rebel_moveit_config_launch = IncludeLaunchDescription(
 		PythonLaunchDescriptionSource(moveit_launch_file),
+		launch_arguments={
+			"rviz_file": rviz_file,
+			"gripper": LaunchConfiguration("gripper"),
+			"hardware_protocol": LaunchConfiguration("hardware_protocol"),
+		}.items(),
 	)
 
 	robot_description_file = PathJoinSubstitution(
@@ -136,27 +145,8 @@ def launch_setup(context, *args, **kwargs):
 		],
 	)
 
-	rviz_file = PathJoinSubstitution(
-		[FindPackageShare("igus_rebel_commander"), "rviz", "cmd.rviz"]
-	)
-
-	rviz2_node = Node(
-		package="rviz2",
-		executable="rviz2",
-		name="rviz2",
-		output="log",
-		arguments=["-d", rviz_file],
-		parameters=[
-			robot_description,
-			robot_description_semantic,
-			kinematics_yaml,
-			planning_yaml,
-			planning_plugin,
-		],
-	)
 
 	return [
 		igus_rebel_moveit_config_launch,
 		commander_node,
-		rviz2_node,
 	]
