@@ -33,11 +33,8 @@ class SimulationController : public hardware_interface::SystemInterface {
     const unsigned int n_joints = 6;
     int aliveWaitMs;
 
-    int cmd_counter;
-    std::mutex counterLock;
-    std::mutex aliveLock;
-
     // ROS2 controller input variables
+	const bool control_by_velocity = true;
 
     // Current jogs
     // 0-5 are used for internal axis

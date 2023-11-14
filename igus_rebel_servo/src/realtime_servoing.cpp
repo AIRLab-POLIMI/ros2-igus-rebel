@@ -104,7 +104,7 @@ int main(int argc, char* argv[]) {
     PoseCommand target_pose;
     target_pose.frame_id = servo_params.planning_frame;
     // generate random feasible pose
-	target_pose.pose = Eigen::Isometry3d(Eigen::Translation3d(0.5160676836967468, 0.044317007064819336, 0.1));
+	target_pose.pose = Eigen::Isometry3d(Eigen::Translation3d(0.4160676836967468, 0.044317007064819336, 0.6));
 	target_pose.pose.rotate(Eigen::Quaterniond(0.0, 0.0, -0.7443628133564246, 0.6677754129137345) );
 
 	// create posestamped message with the target pose to be published

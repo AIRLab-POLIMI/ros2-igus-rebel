@@ -12,6 +12,8 @@ controller_manager:
         #gripper_controller:
             #type: position_controllers/GripperActionController
 
+# joint trajectory controller configuration parameters documentation
+# https://control.ros.org/iron/doc/ros2_controllers/joint_trajectory_controller/doc/parameters.html
 
 rebel_arm_controller:
     ros__parameters:
@@ -22,13 +24,7 @@ rebel_arm_controller:
             - joint4
             - joint5
             - joint6
-        command_joints:
-            - joint1
-            - joint2
-            - joint3
-            - joint4
-            - joint5
-            - joint6
+        
         command_interfaces: # controller output
             #- position # simmply forwards joint angles position commands to the hardware
             - velocity # uses PID regulator internally unless open_loop_control is true
@@ -51,14 +47,3 @@ rebel_arm_controller:
             joint4: { p: 10.0, i: 0.01, d: 0.01, i_clamp: 100.0, ff_velocity_scale: 0.5}
             joint5: { p: 10.0, i: 0.01, d: 0.01, i_clamp: 100.0, ff_velocity_scale: 0.5}
             joint6: { p: 10.0, i: 0.01, d: 0.01, i_clamp: 100.0, ff_velocity_scale: 0.5}
-
-
-        # gains structure alternative
-        #gains:
-            #joint1: { p: 30000.0, d: 100.0, i: 0.02, i_clamp: 10000.0, ff_velocity_scale: 0.01 }
-            #joint2: { p: 30000.0, d: 100.0, i: 0.02, i_clamp: 10000.0, ff_velocity_scale: 0.01 }
-            #joint3: { p: 30000.0, d: 100.0, i: 0.02, i_clamp: 10000.0, ff_velocity_scale: 0.01 }
-            #joint4: { p: 30000.0, d: 100.0, i: 0.02, i_clamp: 10000.0, ff_velocity_scale: 0.01 }
-            #joint5: { p: 30000.0, d: 100.0, i: 0.02, i_clamp: 10000.0, ff_velocity_scale: 0.01 }
-            #joint6: { p: 30000.0, d: 100.0, i: 0.02, i_clamp: 10000.0, ff_velocity_scale: 0.01 }
-        

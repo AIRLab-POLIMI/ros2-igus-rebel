@@ -217,7 +217,7 @@ def launch_setup(context, *args, **kwargs):
 			kinematics,
 			joint_limits,
 		],
-		condition=IfCondition(PythonExpression([ "'", str(LaunchConfiguration("rviz_file")), "' != 'none' "])),
+		condition=IfCondition(PythonExpression([ "'", LaunchConfiguration("rviz_file"), "' != 'none' "])),
 	)
 	
 

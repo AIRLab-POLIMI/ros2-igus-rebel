@@ -6,8 +6,7 @@ namespace igus_rebel_hw_controller {
  * @brief Construct a new Rebel Controller object and initialize joints values
  * 	Uses the default ip address and port for the socket connection
  */
-SimulationController::SimulationController() : aliveWaitMs(50),
-                                               cmd_counter(1) {
+SimulationController::SimulationController() : aliveWaitMs(50) {
     rclcpp::on_shutdown(std::bind(&SimulationController::shutdown, this));
 }
 
@@ -138,12 +137,15 @@ std::vector<hardware_interface::CommandInterface> SimulationController::export_c
 
     // Add the position and velocity command signals for each joint defined
     for (unsigned int i = 0; i < info_.joints.size(); i++) {
-        // command_interfaces.emplace_back(hardware_interface::CommandInterface(
-        //     info_.joints[i].name, hardware_interface::HW_IF_POSITION, &cmd_position_[i]));
-
-        // command only with velocity
-        command_interfaces.emplace_back(hardware_interface::CommandInterface(
-            info_.joints[i].name, hardware_interface::HW_IF_VELOCITY, &cmd_velocity_[i]));
+        if (!control_by_velocity) {
+			// command only with position
+            command_interfaces.emplace_back(hardware_interface::CommandInterface(
+                info_.joints[i].name, hardware_interface::HW_IF_POSITION, &cmd_position_[i]));
+        } else {
+            // command only with velocity
+            command_interfaces.emplace_back(hardware_interface::CommandInterface(
+                info_.joints[i].name, hardware_interface::HW_IF_VELOCITY, &cmd_velocity_[i]));
+        }
     }
 
     // NOTE: include here specific state_interfaces for additional controllers such as digital IO
@@ -162,28 +164,32 @@ std::vector<hardware_interface::CommandInterface> SimulationController::export_c
  * @return hardware_interface::return_type::OK if the read was successful
  */
 hardware_interface::return_type SimulationController::read(const rclcpp::Time & /*time*/, const rclcpp::Duration &duration) {
-    /*
-    // feedback for controller by position
-for (unsigned int i = 0; i < n_joints; i++) {
+    if (!control_by_velocity) {
+        // feedback for controller by position
+        for (unsigned int i = 0; i < n_joints; i++) {
             // derivate position to get estimated velocity vector
-    velocity_feedback_[i] = (cmd_position_[i] - position_feedback_[i]) / duration.seconds();
-
-    // position directly from the command vector (measured input = command)
-    position_feedback_[i] = cmd_position_[i];
-}
-    */
-    std::vector<double> temp_pos;
-    temp_pos.reserve(n_joints);
-
-    // feedback fror controller by velocity
-    for (unsigned int i = 0; i < n_joints; i++) {
-        // position directly from the command vector (measured input = command)
-        temp_pos[i] = position_feedback_[i] + velocity_feedback_[i] * duration.seconds();
-        if (std::isfinite(cmd_velocity_[i])) {
-            velocity_feedback_[i] = cmd_velocity_[i];
+            if (std::isfinite(cmd_position_[i])) {
+                velocity_feedback_[i] = (cmd_position_[i] - position_feedback_[i]) / duration.seconds();
+                // position directly from the command vector (measured input = command)
+                position_feedback_[i] = cmd_position_[i];
+            }
         }
 
-        position_feedback_[i] = temp_pos[i];
+    } else {
+        // controlling by velocity
+        std::vector<double> temp_pos;
+        temp_pos.reserve(n_joints);
+
+        // feedback fror controller by velocity
+        for (unsigned int i = 0; i < n_joints; i++) {
+            // position directly from the command vector (measured input = command)
+            temp_pos[i] = position_feedback_[i] + velocity_feedback_[i] * duration.seconds();
+            if (std::isfinite(cmd_velocity_[i])) {
+                velocity_feedback_[i] = cmd_velocity_[i];
+            }
+
+            position_feedback_[i] = temp_pos[i];
+        }
     }
 
     return hardware_interface::return_type::OK;
@@ -241,6 +247,13 @@ hardware_interface::return_type SimulationController::write(const rclcpp::Time &
         // interpolation.
 
         if (detect_change(cmd_position_, cmd_last_position_)) {  // do not repeat command if it is the same as the last one
+
+            for (unsigned int i = 0; i < n_joints; i++) {
+                // conversion from [rad/s] to jogs [%max/s]
+                output += std::to_string(cmd_position_[i]) + " ";
+            }
+            RCLCPP_INFO(rclcpp::get_logger("hw_controller::simulation_controller"), "cmd_position_: %s", output.c_str());
+
             std::ostringstream msg;
             // command move function
             // Limit the precision to one digit behind the decimal point
@@ -252,8 +265,7 @@ hardware_interface::return_type SimulationController::write(const rclcpp::Time &
             }
 
             // send command here
-
-            RCLCPP_INFO(rclcpp::get_logger("hw_controller::simulation_controller"), "Move position msg: %s", msg.str().c_str());
+            // RCLCPP_INFO(rclcpp::get_logger("hw_controller::simulation_controller"), "Move position msg: %s", msg.str().c_str());
 
             cmd_last_position_ = cmd_position_;
         }
