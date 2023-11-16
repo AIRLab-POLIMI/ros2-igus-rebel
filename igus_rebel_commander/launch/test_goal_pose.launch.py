@@ -1,5 +1,6 @@
 # python imports
 import os
+from py import test
 import yaml
 
 # ros2 python imports
@@ -16,8 +17,8 @@ from launch.launch_description_sources import PythonLaunchDescriptionSource
 
 from ament_index_python.packages import get_package_share_directory
 
+# requires launching separately the moveit_controller.launch.py file in moveit config
 
-# launches only the URDF version 2 robot description
 def generate_launch_description():
 	gripper_arg = DeclareLaunchArgument(
 		name="gripper",
@@ -52,8 +53,12 @@ def generate_launch_description():
 	)
 
 	return LaunchDescription(
-		[gripper_arg, hardware_protocol_arg, camera_frame_arg,
-   OpaqueFunction(function=launch_setup)]
+		[
+			gripper_arg,
+			hardware_protocol_arg,
+			camera_frame_arg,
+			OpaqueFunction(function=launch_setup),
+		]
 	)
 
 
@@ -63,26 +68,6 @@ def launch_setup(context, *args, **kwargs):
 	else:
 		srdf_file = "igus_rebel_base.srdf"
 
-	"""
-	# A node to publish world -> base_link transform
-	# this is only needed when testing without the real robot 
-	static_tf = Node(
-		package="tf2_ros",
-		executable="static_transform_publisher",
-		name="static_transform_publisher",
-		output="log",
-		arguments=["0.0", "0.0", "0.0", "0.0", "0.0", "0.0", "world", "base_link"],
-	)
-	"""
-
-	# create node for goal pose publisher
-	goal_pose_publisher_node = Node(
-		package="igus_rebel_servo",
-		executable="goal_pose_publisher",
-		name="goal_pose_publisher_node",
-		output="screen",
-		parameters=[{"camera_frame": LaunchConfiguration("camera_frame")}],
-	)
 
 	robot_description_file = PathJoinSubstitution(
 		[
@@ -128,21 +113,8 @@ def launch_setup(context, *args, **kwargs):
 		)
 	}
 
-	# include launch file from igus_rebel_moveit_config
-	moveit_launch_file = PathJoinSubstitution(
-		[
-			get_package_share_directory("igus_rebel_moveit_config"),
-			"launch",
-			"moveit_controller.launch.py",
-		]
-	)
-	igus_rebel_moveit_config_launch = IncludeLaunchDescription(
-		PythonLaunchDescriptionSource(moveit_launch_file),
-	)
-
-	
 	rviz_file = PathJoinSubstitution(
-		[FindPackageShare("igus_rebel_servo"), "rviz", "goal_demo.rviz"]
+		[FindPackageShare("igus_rebel_commander"), "rviz", "goal_demo.rviz"]
 	)
 
 	rviz_node = Node(
@@ -153,9 +125,26 @@ def launch_setup(context, *args, **kwargs):
 		arguments=["-d", rviz_file],
 		parameters=[robot_description, robot_description_semantic],
 	)
+	
+	 # create node for goal pose publisher
+	goal_pose_publisher_node = Node(
+		package="igus_rebel_commander",
+		executable="goal_pose_publisher",
+		name="goal_pose_publisher_node",
+		output="screen",
+		parameters=[{"camera_frame": LaunchConfiguration("camera_frame")}],
+	)
+	
+	# test node for publishing a goal pose to check whether the goal pose is computed correctly
+	test_goal_pose_computation_node = Node(
+		package="igus_rebel_commander",
+		executable="test_goal_pose_computation",
+		name="test_goal_pose_computation_node",
+		output="screen",
+	)
 
 	return [
 		rviz_node,
-		# static_tf,
 		goal_pose_publisher_node,
+		test_goal_pose_computation_node,
 	]

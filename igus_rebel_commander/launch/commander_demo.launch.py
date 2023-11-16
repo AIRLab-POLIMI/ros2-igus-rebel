@@ -1,4 +1,6 @@
 import os
+from pyrsistent import v
+from regex import P
 import yaml
 
 from launch import LaunchDescription
@@ -13,8 +15,6 @@ from launch.substitutions import (
 from launch_ros.substitutions import FindPackageShare
 from launch.actions import DeclareLaunchArgument
 from launch_ros.descriptions import ParameterValue
-from launch.actions import IncludeLaunchDescription
-from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.actions import OpaqueFunction
 
 
@@ -30,10 +30,9 @@ def load_yaml(package_name, file_path):
 		return None
 
 
-# use this script for launching everything in a single terminal window
-# launches the moveit config and the commander node together with rviz2
-
-# use demo.launch.py instead to launch the moveit config and the commander node in separate terminal windows
+# remember to start the moveit_controllers.launch.py file from the igus_rebel_moveit_config package first
+# it will start the necessary controllers and the moveit dependencies
+# start it with the correct gripper and hardware protocol arguments, and leaving rviz_file:=none (default)
 
 
 # launches only the URDF version 2 robot description
@@ -41,7 +40,7 @@ def generate_launch_description():
 	gripper_arg = DeclareLaunchArgument(
 		name="gripper",
 		default_value="camera",
-		choices=["camera"], # this node is meant to be used with the camera gripper
+		choices=["none", "camera"],
 		description="Gripper mount to attach to the last joint",
 	)
 
@@ -63,27 +62,6 @@ def launch_setup(context, *args, **kwargs):
 	else:
 		srdf_file = "igus_rebel_base.srdf"
 
-	rviz_file = PathJoinSubstitution(
-		[FindPackageShare("igus_rebel_commander"), "rviz", "cmd.rviz"]
-	)
-
-	# include launch file from igus_rebel_moveit_config
-	moveit_launch_file = PathJoinSubstitution(
-		[
-			get_package_share_directory("igus_rebel_moveit_config"),
-			"launch",
-			"moveit_controller.launch.py",
-		]
-	)
-	igus_rebel_moveit_config_launch = IncludeLaunchDescription(
-		PythonLaunchDescriptionSource(moveit_launch_file),
-		launch_arguments={
-			"rviz_file": rviz_file,
-			"gripper": LaunchConfiguration("gripper"),
-			"hardware_protocol": LaunchConfiguration("hardware_protocol"),
-		}.items(),
-	)
-
 	robot_description_file = PathJoinSubstitution(
 		[
 			get_package_share_directory("igus_rebel_description_ros2"),
@@ -104,49 +82,73 @@ def launch_setup(context, *args, **kwargs):
 		]
 	)
 
-	robot_description_semantic = PathJoinSubstitution(
-		[get_package_share_directory("igus_rebel_moveit_config"), "config", srdf_file]
-	)
-	
-	robot_description_semantic = Command(
-		[
-			FindExecutable(name="xacro"),
-			" ",
-			robot_description_semantic,
-		]
-	)
-
 	robot_description = {
 		"robot_description": ParameterValue(robot_description, value_type=str)
 	}
 
-	robot_description_semantic = {
-		"robot_description_semantic": ParameterValue(
-			robot_description_semantic, value_type=str
-		)
-	}
+	robot_description_semantic = os.path.join(
+		get_package_share_directory("igus_rebel_moveit_config"), "config/" + srdf_file
+	)
+
+	# read the semantic file in order to load it
+	with open(robot_description_semantic, "r") as f:
+		semantic_content = f.read()
+
+	semantic_content = {"robot_description_semantic": ParameterValue(semantic_content, value_type=str)}
 
 	kinematics_yaml = load_yaml("igus_rebel_moveit_config", "config/kinematics.yaml")
+	kinematics = {"robot_description_kinematics": kinematics_yaml}
 
-	planning_yaml = load_yaml("igus_rebel_moveit_config", "config/ompl_planning.yaml")
+	ompl_planning_yaml = load_yaml(
+		"igus_rebel_moveit_config", "config/ompl_planning.yaml"
+	)
+	ompl_planning_pipeline_config = {"move_group": {}}
+	ompl_planning_pipeline_config["move_group"].update(ompl_planning_yaml)
 
 	planning_plugin = {"planning_plugin": "ompl_interface/OMPLPlanner"}
 
+	planning_scene_monitor_parameters = {
+		"publish_planning_scene": True,
+		"publish_geometry_updates": True,
+		"publish_state_updates": True,
+		"publish_transforms_updates": True,
+		"publish_robot_description": True,
+		"publish_robot_description_semantic": True,
+	}
+
 	commander_node = Node(
 		package="igus_rebel_commander",
-		executable="igus_rebel_commander",
-		name="igus_rebel_commander",
+		executable="commander_demo",
+		name="commander_demo_node",
 		parameters=[
 			robot_description,
-			robot_description_semantic,
-			kinematics_yaml,
-			planning_yaml,
-			planning_plugin,
+			semantic_content,
+			kinematics,
+			ompl_planning_pipeline_config,
+			planning_scene_monitor_parameters,
+			planning_plugin
 		],
 	)
 
+	rviz_file = PathJoinSubstitution(
+		[FindPackageShare("igus_rebel_commander"), "rviz", "cmd.rviz"]
+	)
+
+	rviz2_node = Node(
+		package="rviz2",
+		executable="rviz2",
+		name="rviz2",
+		output="log",
+		arguments=["-d", rviz_file],
+		parameters=[
+			robot_description,
+			semantic_content,
+			kinematics,
+			ompl_planning_pipeline_config,
+		],
+	)
 
 	return [
-		igus_rebel_moveit_config_launch,
 		commander_node,
+		rviz2_node,
 	]

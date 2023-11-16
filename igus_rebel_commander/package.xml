@@ -17,7 +17,6 @@
 
 	<exec_depend>moveit_planners</exec_depend>
 	<exec_depend>joint_state_publisher</exec_depend>
-	<exec_depend>joint_state_publisher_gui</exec_depend>
 	<exec_depend>xacro</exec_depend>
 	<exec_depend>joint_trajectory_controller</exec_depend>
 
@@ -25,8 +24,6 @@
 	<exec_depend>moveit_ros_move_group</exec_depend>
 	<exec_depend>moveit_ros_visualization</exec_depend>
 	<exec_depend>rviz2</exec_depend>
-	<exec_depend>rviz_common</exec_depend>
-	<exec_depend>rviz_default_plugins</exec_depend>
 
 
 	<depend>rclcpp</depend>

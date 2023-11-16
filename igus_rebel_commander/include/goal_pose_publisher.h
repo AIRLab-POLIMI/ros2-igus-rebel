@@ -39,11 +39,12 @@ private:
   	std::unique_ptr<tf2_ros::Buffer> tf_buffer_; // tf buffer
 
 	// The target frame (desired link's frame)
-    const std::string target_frame = "link_1";
+    const std::string target_frame = "base_link";
 
 	std::string source_frame; // The source frame (aruco's base frame)
 
-	const float goal_radius = 1.5; //meters
+	const float goal_radius = 1.0; //meters
+	const float reachable_radius = 0.85; //meters
 
 
 };

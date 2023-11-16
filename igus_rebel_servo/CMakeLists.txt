@@ -27,9 +27,6 @@ add_executable(realtime_servoing src/realtime_servoing.cpp)
 ament_target_dependencies(realtime_servoing
 	rclcpp moveit_core moveit_ros_planning moveit_ros_planning_interface moveit_servo)
 
-add_executable(goal_pose_publisher src/goal_pose_publisher.cpp)
-ament_target_dependencies(goal_pose_publisher
-	rclcpp std_msgs geometry_msgs tf2_ros tf2_geometry_msgs)
 
 if(BUILD_TESTING)
 	find_package(ament_lint_auto REQUIRED)
@@ -38,11 +35,6 @@ endif()
 
 install(
 	TARGETS realtime_servoing
-	DESTINATION lib/${PROJECT_NAME}
-)
-
-install(
-	TARGETS goal_pose_publisher
 	DESTINATION lib/${PROJECT_NAME}
 )
 

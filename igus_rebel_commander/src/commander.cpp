@@ -189,13 +189,17 @@ int main(int argc, char** argv) {
     planning_interface::MotionPlanResponse res;
     geometry_msgs::msg::PoseStamped pose;
     pose.header.frame_id = "base_link";
-    pose.pose.position.x = 0.2229;
-    pose.pose.position.y = 0.3659;
-    pose.pose.position.z = 0.4955;
-    pose.pose.orientation.x = 0.47927573323249817;
-    pose.pose.orientation.y = -0.021937279030680656;
-    pose.pose.orientation.z = 0.8773083090782166;
-    pose.pose.orientation.w = 0.011984390206634998;
+    pose.pose.position.x = 0.1;
+    pose.pose.position.y = -0.1;
+    pose.pose.position.z = 0.7;
+    //pose.pose.orientation.x = 0.47927573323249817;
+    //pose.pose.orientation.y = -0.021937279030680656;
+    //pose.pose.orientation.z = 0.8773083090782166;
+    //pose.pose.orientation.w = 0.011984390206634998;
+	pose.pose.orientation.x = -0.182926;
+	pose.pose.orientation.y = -0.565131;
+	pose.pose.orientation.z = -0.501989;
+	pose.pose.orientation.w = 0.628627;
 
 	// publish a coordinate axis corresponding to the pose with rviz visual tools
 	visual_tools.publishAxisLabeled(pose.pose, "target");
