@@ -1,0 +1,36 @@
+<?xml version="1.0"?>
+
+<robot name="scout_v2" xmlns:xacro="http://ros.org/wiki/xacro">
+
+	<joint name="tower" type="fixed">
+		<parent link="mobile_robot_base_link" />
+		<child link="tower_link" />
+		<origin rpy="0.0 0.0 0" xyz="0.15 0 0.1" />
+		<axis xyz="0 0 -1" />
+	</joint>
+
+
+	<link name="tower_link">
+		<inertial>
+			<mass value="1" />
+			<inertia ixx="1" ixy="1" ixz="1" iyy="0" iyz="0" izz="0" />
+		</inertial>
+		<visual>
+			<origin xyz="0.0 0 0.3" rpy="0 0 0" />
+			<geometry>
+				<box size="0.55 0.3 0.65" />
+			</geometry>
+			<material name="dark_blue">
+				<color rgba="0.0 ${51/255} ${25/255} 1.0" />
+			</material>
+		</visual>
+		<collision>
+			<origin xyz="0.0 0 0.3" rpy="0 0 0" />
+			<geometry>
+				<box size="0.55 0.3 0.65" />
+			</geometry>
+		</collision>
+	</link>
+
+
+</robot>

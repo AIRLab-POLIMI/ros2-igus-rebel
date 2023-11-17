@@ -7,13 +7,15 @@
 	<!-- Gripper selection -->
 	<xacro:arg name="gripper" default="none" />
 
+	<xacro:arg name="load_base" default="true" />
+
 	<!-- Include and call rebel macro -->
 	<xacro:include filename="$(find igus_rebel_description_ros2)/urdf/igus_rebel.description.xacro" />
-	<xacro:igus_rebel_description  />
+	<xacro:igus_rebel_description />
 
 	<!-- controller macro -->
 	<xacro:include filename="$(find igus_rebel_description_ros2)/urdf/igus_rebel.control.xacro" />
-	<xacro:igus_rebel_control hardware_protocol="$(arg hardware_protocol)"/>
+	<xacro:igus_rebel_control hardware_protocol="$(arg hardware_protocol)" />
 
 	<!-- Add world link -->
 	<link name="world" />
@@ -26,5 +28,31 @@
 	<!-- Grippers -->
 	<xacro:include filename="$(find igus_rebel_description_ros2)/urdf/grippers/grippers.xacro" />
 	<xacro:gripper gripper_type="$(arg gripper)" />
+
+	<!-- Load base -->
+	<xacro:if value="$(arg load_base)">
+
+		<!-- Mobile Robot base -->
+		<xacro:include filename="$(find igus_rebel_description_ros2)/urdf/mobile_robot/scout_v2.xacro" />
+
+		<joint name="base_link_to_rebel_support" type="fixed">
+			<parent link="base_link" />
+			<child link="rebel_support" />
+			<origin xyz="0.0 0.0 0.0" rpy="0 0 ${pi/3}" />
+		</joint>
+
+		<link name="rebel_support" />
+
+		<!-- virtual joint acting as a link between base_link and mobile_robot_base_link -->
+		<joint name="base_link_to_mobile_robot_base_link" type="fixed">
+			<parent link="rebel_support" />
+			<child link="mobile_robot_base_link" />
+			<origin xyz="-0.26 0.0 -0.1" rpy="0 0 ${pi}" />
+		</joint>
+
+		<!-- castle with tower mounting sensors, batteries, computer and everyhting else-->
+		<xacro:include filename="$(find igus_rebel_description_ros2)/urdf/mobile_robot/castle.xacro" />
+
+	</xacro:if>
 
 </robot>
