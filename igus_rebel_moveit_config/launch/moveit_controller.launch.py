@@ -60,11 +60,19 @@ def generate_launch_description():
 		description="Path to the RViz configuration file",
 	)
 
+	load_base_arg = DeclareLaunchArgument(
+		name="load_base",
+		default_value="false",
+		description="Load the mobile robot model and tower",
+		choices=["true", "false"],
+	)
+
 	return LaunchDescription(
 		[
 			gripper_arg,
 			hardware_protocol_arg,
 			rviz_file_arg,
+			load_base_arg,
 			OpaqueFunction(function=launch_setup),
 		]
 	)
@@ -93,6 +101,8 @@ def launch_setup(context, *args, **kwargs):
 			LaunchConfiguration("hardware_protocol"),
 			" gripper:=",
 			LaunchConfiguration("gripper"),
+			" load_base:=",
+			LaunchConfiguration("load_base"),
 		]
 	)
 
@@ -154,6 +164,14 @@ def launch_setup(context, *args, **kwargs):
 	)
 	joint_limits = {"robot_description_planning": joint_limits_yaml}
 
+	#TODO: wait for the developers to make Moveit2 compatible with octomap server 2
+	sensors_3d_yaml = load_yaml(
+		"igus_rebel_moveit_config", "config/sensors_3d.yaml"
+	)
+	octomap_config = {'octomap_frame': '/octomap_point_cloud_centers', 
+                      'octomap_resolution': 0.05,
+                      'max_range': 20.0}
+
 	move_group_node = Node(
 		package="moveit_ros_move_group",
 		executable="move_group",
@@ -166,6 +184,8 @@ def launch_setup(context, *args, **kwargs):
 			ompl_planning_pipeline_config,
 			moveit_controllers_yaml,
 			planning_scene_monitor_parameters,
+			octomap_config,
+			#sensors_3d_yaml, #TODO: not supported yet
 		],
 		arguments=["--ros-args", "--log-level", "info"],
 	)
