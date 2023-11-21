@@ -24,7 +24,7 @@ rebel_arm_controller:
             - joint4
             - joint5
             - joint6
-        
+            
         command_interfaces: # controller output
             #- position # simmply forwards joint angles position commands to the hardware
             - velocity # uses PID regulator internally unless open_loop_control is true

@@ -34,6 +34,13 @@ def generate_launch_description():
 		description="Which hardware protocol or mock hardware should be used",
 	)
 
+	load_base_arg = DeclareLaunchArgument(
+        name="load_base",
+        default_value="false",
+        description="Load the mobile robot model and tower",
+        choices=["true", "false"],
+    )
+
 	# read camera frame from ros2_aruco config file
 	config_file = os.path.join(
 		get_package_share_directory("ros2_aruco"), "config", "aruco_parameters.yaml"
@@ -57,6 +64,7 @@ def generate_launch_description():
 			gripper_arg,
 			hardware_protocol_arg,
 			camera_frame_arg,
+			load_base_arg,
 			OpaqueFunction(function=launch_setup),
 		]
 	)
@@ -86,6 +94,8 @@ def launch_setup(context, *args, **kwargs):
 			LaunchConfiguration("hardware_protocol"),
 			" gripper:=",
 			LaunchConfiguration("gripper"),
+			" load_base:=",
+            LaunchConfiguration("load_base"),
 		]
 	)
 

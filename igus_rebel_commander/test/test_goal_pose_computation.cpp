@@ -20,13 +20,13 @@ void test_pub_thread() {
     geometry_msgs::msg::PoseArray test_pose_array;
     geometry_msgs::msg::Pose test_pose;
     test_pose_array.header.frame_id = "base_link";
-    test_pose.position.x = 0.8f;
-    test_pose.position.y = -0.8f;
-    test_pose.position.z = 0.8f;
+    test_pose.position.x = 0.4f;
+    test_pose.position.y = -0.4f;
+    test_pose.position.z = 0.4f;
 
     tf2::Quaternion orientation;
 	orientation.setRPY(-2.132123, -0.143221, 0.443123);
-	//orientation.normalize();
+	orientation.normalize();
 
 	//tf2::Quaternion orientation(0.47927573323249817, -0.021937279030680656, 0.8773083090782166, 0.011984390206634998);
 

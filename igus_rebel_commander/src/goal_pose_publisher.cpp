@@ -16,7 +16,6 @@
 
 static const rclcpp::Logger LOGGER = rclcpp::get_logger("igus_rebel::goal_pose_pub");
 
-
 GoalPosePublisher::GoalPosePublisher() : Node("goal_pose_publisher") {
     // Create a publisher for the goal pose
     goal_pose_pub_ = this->create_publisher<geometry_msgs::msg::PoseStamped>("/goal_pose", 10);
@@ -25,29 +24,55 @@ GoalPosePublisher::GoalPosePublisher() : Node("goal_pose_publisher") {
         "/aruco_poses", 10, std::bind(&GoalPosePublisher::aruco_pose_callback, this, std::placeholders::_1));
 
     // Retrieve the camera frame parameter from the config YAML file of the aruco detector
-	this->declare_parameter("camera_frame", rclcpp::PARAMETER_STRING);
-	camera_frame_name = this->get_parameter("camera_frame").as_string();
-    if (camera_frame_name != std::string()) {
-        RCLCPP_INFO(LOGGER, "Value of camera frame: %s", camera_frame_name.c_str());
+
+    this->declare_parameter("testing", rclcpp::PARAMETER_BOOL);
+    bool testing = this->get_parameter("testing").as_bool();  // whether to load test unit or not
+    if (testing) {
+        camera_frame_name = "base_link";  // NOTE: only for testing without aruco detector
     } else {
-        RCLCPP_ERROR(LOGGER, "Failed to get my_string_parameter");
+        // loads the camera frame name from the aruco detector config file
+        this->declare_parameter("camera_frame", rclcpp::PARAMETER_STRING);
+        camera_frame_name = this->get_parameter("camera_frame").as_string();
+        if (camera_frame_name != std::string()) {
+            RCLCPP_INFO(LOGGER, "Value of camera frame: %s", camera_frame_name.c_str());
+        } else {
+            RCLCPP_ERROR(LOGGER, "Failed to get my_string_parameter");
+        }
     }
 
-    //camera_frame_name = "base_link";  // NOTE: only for testing without aruco detector
-
-	// Initialize the TF2 transform listener
+    // Initialize the TF2 transform listener
     tf_buffer_ = std::make_unique<tf2_ros::Buffer>(this->get_clock());
     tf2 = std::make_shared<tf2_ros::TransformListener>(*tf_buffer_);
 
     // The source frame (aruco's base frame)
     source_frame = camera_frame_name;
 
+    // wait until the tf buffer is filled with the transform from base_link to link_2
+	while (!tf_buffer_->canTransform("base_link", "link_2", tf2::TimePointZero)) {
+		//RCLCPP_INFO(LOGGER, "Waiting for transform from base_link to link_2");
+		std::this_thread::sleep_for(std::chrono::milliseconds(200));
+	}
+
+    // get the position of the link_2 frame with respect to base link
+    geometry_msgs::msg::TransformStamped link_2_transform;
+    try {
+        // consider starting point = (x, y, z) = (0, 0, link_2.z)
+        link_2_transform = tf_buffer_->lookupTransform("base_link", "link_2", tf2::TimePointZero);
+    } catch (tf2::TransformException& ex) {
+        RCLCPP_ERROR(LOGGER, "Failed to lookup transform: %s", ex.what());
+        return;
+    }
+
+    RCLCPP_INFO(LOGGER, "link_2_transform: %f, %f, %f", link_2_transform.transform.translation.x,
+                link_2_transform.transform.translation.y, link_2_transform.transform.translation.z);
+
+    link_2_z = link_2_transform.transform.translation.z;
 }
 
 void GoalPosePublisher::aruco_pose_callback(const geometry_msgs::msg::PoseArray aruco_pose_array) {
-	if (aruco_pose_array.poses.size() == 0) {
-		return; // do not process callback if pose array is empty
-	}
+    if (aruco_pose_array.poses.size() == 0) {
+        return;  // do not process callback if pose array is empty
+    }
     // Read the first pose in the array
     geometry_msgs::msg::Pose aruco_pose = aruco_pose_array.poses[0];
 
@@ -59,66 +84,52 @@ void GoalPosePublisher::aruco_pose_callback(const geometry_msgs::msg::PoseArray 
         return;
     }
 
-	// apply the TF transform to the aruco pose to get the position in the link_1 frame
-	tf2::doTransform(aruco_pose, aruco_pose, transform); // in, out, transform
-
-	// apply a 90 degree rotation so that the aruco pose x axis is aligned with the computed z axis
-	tf2::Quaternion alignment, current_alignment;
-	alignment.setRPY(0.0, M_PI/2.0, 0.0);
-	tf2::fromMsg(aruco_pose.orientation, current_alignment);
-	alignment = alignment * current_alignment;
-	//alignment.normalize();
-	aruco_pose.orientation = tf2::toMsg(alignment);
-
-	// get the position of the link_1 frame with respect to base link
-	/*
-	geometry_msgs::msg::TransformStamped link_1_transform; // unused
-	try {
-		link_1_transform = tf_buffer_->lookupTransform("base_link", "link_1", tf2::TimePointZero);
-	} catch (tf2::TransformException& ex) {
-		RCLCPP_ERROR(LOGGER, "Failed to lookup transform: %s", ex.what());
-		return;
-	}
-	*/
+    // apply the TF transform to the aruco pose to get the position in the link_1 frame
+    tf2::doTransform(aruco_pose, aruco_pose, transform);  // in, out, transform
 
     // Calculate the Cartesian distance
     float distance = std::sqrt(
         std::pow(aruco_pose.position.x, 2) +
         std::pow(aruco_pose.position.y, 2) +
-        std::pow(aruco_pose.position.z, 2));
+        std::pow(aruco_pose.position.z - link_2_z, 2));
 
     // log the distance
-    RCLCPP_INFO(LOGGER, "Distance from base_link to aruco: %f", distance);
+    RCLCPP_INFO(LOGGER, "Distance from (0, 0, %.3f) to aruco: %.4f", link_2_z, distance);
 
-    processPoseArray(aruco_pose, distance);
+    processPose(aruco_pose, distance);
 }
 
-void GoalPosePublisher::processPoseArray(const geometry_msgs::msg::Pose aruco_pose, float distance) {
+void GoalPosePublisher::processPose(const geometry_msgs::msg::Pose aruco_pose, float distance) {
     // compute the closest reachable pose of the end effector to the aruco pose
 
     geometry_msgs::msg::PoseStamped goal_pose;
-	// if the aruco pose is reachable, then the goal pose is the aruco pose
+    // if the aruco pose is reachable, then the goal pose is the aruco pose
     goal_pose.header.frame_id = "base_link";
 
     if (distance < goal_radius) {
-
-		// goal pose corresponds to the aruco pose
-		goal_pose.pose.position.x = aruco_pose.position.x;
+        // goal pose corresponds to the aruco pose
+        goal_pose.pose.position.x = aruco_pose.position.x;
         goal_pose.pose.position.y = aruco_pose.position.y;
         goal_pose.pose.position.z = aruco_pose.position.z;
 
         // compute new orientation such that the end effector is facing the aruco pose
 
-        // Extract the reference orientation as a quaternion
-        tf2::Quaternion reference_quaternion;
-        tf2::fromMsg(aruco_pose.orientation, reference_quaternion);
+		// convert aruco orientation to rotation quaternion
+		tf2::Quaternion q_aruco_rotation, q_aruco;
+		tf2::fromMsg(aruco_pose.orientation, q_aruco_rotation);
+		
+		// this quaternion describes a rotation of -pi/2 radians around the y axis.
+		// can also be described as the orientation of the y axis rotated by -pi/2 radians around itself
+		tf2::Quaternion q_y_orientation(std::cos(-M_PI_2 / 2.0), 0.0, std::sin(-M_PI_2 /2.0), 0.0);
 
-        // Invert the x-component of the quaternion to reverse the x-axis direction
-        tf2::Quaternion new_quaternion = reference_quaternion * tf2::Quaternion(tf2::Vector3(0.0f, 0.0f, 1.0f), M_PI);
-        
-		// Set the new orientation of the pose
-        goal_pose.pose.orientation = tf2::toMsg(new_quaternion);
+		// this formula applies the rotation quaternion described by the aruco pose orientation
+		// 		to the y axis rotated by -pi/2 radians. This results in the y axis of the original orientation
+		// 		being rotated by -pi/2 radians around the aruco pose orientation (used as rotation quaternion)
+		q_aruco = q_aruco_rotation * q_y_orientation;
 
+		// apply rotation and save it into the goal pose
+		goal_pose.pose.orientation = tf2::toMsg(q_aruco);
+		
     } else {
         // if the aruco pose is not reachable, then the goal pose is at a distance less than 1 meter from link_1
         // compute new x, y, z coordinates such that the new distance from link_1 to goal_pose is at a fixed distance of 0.7m
@@ -127,7 +138,7 @@ void GoalPosePublisher::processPoseArray(const geometry_msgs::msg::Pose aruco_po
         // compute the unit vector of the aruco pose
         float aruco_pose_unit_vector_x = aruco_pose.position.x / distance;
         float aruco_pose_unit_vector_y = aruco_pose.position.y / distance;
-        float aruco_pose_unit_vector_z = aruco_pose.position.z / distance;
+        float aruco_pose_unit_vector_z = (aruco_pose.position.z - link_2_z) / distance;
 
         // compute the new goal pose coordinates
         float goal_pose_x = aruco_pose_unit_vector_x * reachable_radius;
@@ -137,23 +148,15 @@ void GoalPosePublisher::processPoseArray(const geometry_msgs::msg::Pose aruco_po
         // set the new goal pose coordinates
         goal_pose.pose.position.x = goal_pose_x;
         goal_pose.pose.position.y = goal_pose_y;
-        goal_pose.pose.position.z = goal_pose_z;
+        goal_pose.pose.position.z = goal_pose_z + link_2_z;
 
-        // compute new orientation such that the end effector is facing the aruco pose
-		/*
-        tf2::Vector3 direction_vector(
-            aruco_pose.position.x, // should be link_1.position.x - aruco_pose.position.x
-            aruco_pose.position.y, // should be link_1.position.y - aruco_pose.position.y
-           	aruco_pose.position.z); // should be link_1.position.z - aruco_pose.position.z
-			*/
+        // compute the new orientation of the goal pose to be equal to the orientation of the direction vector
+        float roll = 0.0f;
+        float pitch = std::atan2(-goal_pose_z, std::sqrt(goal_pose_x * goal_pose_x + goal_pose_y * goal_pose_y));
+        float yaw = std::atan2(goal_pose_y, goal_pose_x);
+        tf2::Quaternion rotation;
+        rotation.setRPY(roll, pitch, yaw);
 
-		// compute the new orientation of the goal pose to be equal to the orientation of the direction vector
-		float roll = 0.0f;
-		float pitch = std::atan2(- goal_pose_z, std::sqrt(goal_pose_x * goal_pose_x + goal_pose_y * goal_pose_y));
-		float yaw = std::atan2(goal_pose_y, goal_pose_x);
-		tf2::Quaternion rotation;
-		rotation.setRPY(roll, pitch, yaw);
-	
         // apply rotation and save it into the goal pose
         goal_pose.pose.orientation = tf2::toMsg(rotation);
     }
@@ -163,8 +166,6 @@ void GoalPosePublisher::processPoseArray(const geometry_msgs::msg::Pose aruco_po
                 goal_pose.pose.position.z);
     tf2::Quaternion new_orientation(goal_pose.pose.orientation.x, goal_pose.pose.orientation.y,
                                     goal_pose.pose.orientation.z, goal_pose.pose.orientation.w);
-    RCLCPP_INFO(LOGGER, "New goal pose orientation in rpy: %f, %f, %f",
-                new_orientation.x(), new_orientation.y(), new_orientation.z());
 
     // Publish the computed PoseArray to the "/goal_pose" topic
     goal_pose.header.stamp = this->now();
@@ -183,4 +184,3 @@ int main(int argc, char* argv[]) {
     rclcpp::shutdown();
     return 0;
 }
-

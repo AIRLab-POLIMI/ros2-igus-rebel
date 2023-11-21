@@ -48,10 +48,10 @@
 // MoveIt
 #include <moveit/kinematic_constraints/utils.h>
 #include <moveit/move_group_interface/move_group_interface.h>
-#include <moveit/planning_scene_interface/planning_scene_interface.h>
 #include <moveit/planning_interface/planning_interface.h>
 #include <moveit/planning_pipeline/planning_pipeline.h>
 #include <moveit/planning_scene/planning_scene.h>
+#include <moveit/planning_scene_interface/planning_scene_interface.h>
 #include <moveit/planning_scene_monitor/planning_scene_monitor.h>
 #include <moveit/robot_model_loader/robot_model_loader.h>
 #include <moveit/robot_state/conversions.h>
@@ -84,10 +84,10 @@ int main(int argc, char** argv) {
     robot_model_loader::RobotModelLoaderPtr robot_model_loader(
         new robot_model_loader::RobotModelLoader(commander_node, "robot_description"));
 
-	// move_group interface, handling everything for us
+    // move_group interface, handling everything for us
     moveit::planning_interface::MoveGroupInterface move_group(commander_node, PLANNING_GROUP);
 
-	moveit::planning_interface::PlanningSceneInterface planning_scene_interface;
+    moveit::planning_interface::PlanningSceneInterface planning_scene_interface;
 
     // We can print the name of the reference frame for this robot.
     RCLCPP_INFO(LOGGER, "Planning frame: %s", move_group.getPlanningFrame().c_str());
@@ -197,16 +197,15 @@ int main(int argc, char** argv) {
     pose.pose.orientation.w = 0.628627;
 
     // publish a coordinate axis corresponding to the pose with rviz visual tools
-    visual_tools.publishAxisLabeled(pose.pose, "target");
+    visual_tools.publishAxisLabeled(pose.pose, "target_1");
     visual_tools.trigger();
 
     move_group.setStartState(*robot_state);
     move_group.setGoalPositionTolerance(0.001);
     move_group.setGoalOrientationTolerance(0.001);
     move_group.setPoseTarget(pose, end_effector_link);
-	move_group.setPlannerId("RRTConnectkConfigDefault");
-	move_group.setPlanningTime(1.0);
-
+    move_group.setPlannerId("RRTConnectkConfigDefault");
+    move_group.setPlanningTime(1.0);
 
     moveit::planning_interface::MoveGroupInterface::Plan my_plan;
     moveit::core::MoveItErrorCode response = move_group.plan(my_plan);
@@ -217,18 +216,18 @@ int main(int argc, char** argv) {
     RCLCPP_INFO(LOGGER, "Visualizing plan 1 (pose goal): result = %s", moveit::core::error_code_to_string(response).c_str());
 
     // Visualize the result
-	// NOTE: display trajectory not working at the moment
+    // NOTE: display trajectory not working at the moment
     rclcpp::Publisher<moveit_msgs::msg::DisplayTrajectory>::SharedPtr display_publisher =
         commander_node->create_publisher<moveit_msgs::msg::DisplayTrajectory>("/display_planned_path", 1);
     moveit_msgs::msg::DisplayTrajectory display_trajectory;
-    // display_trajectory.trajectory_start = response.trajectory_start;
+    display_trajectory.trajectory_start = my_plan.start_state;
     display_trajectory.trajectory.push_back(trajectory);
     display_publisher->publish(display_trajectory);
 
     /* Visualize the trajectory */
     RCLCPP_INFO(LOGGER, "Visualizing the trajectory");
 
-    visual_tools.publishTrajectoryLine(trajectory, joint_model_group);
+    visual_tools.publishTrajectoryPath(trajectory, robot_state);
     visual_tools.trigger();
     // Wait for user input
     visual_tools.prompt("Press 'next' to move the robot");
@@ -238,7 +237,7 @@ int main(int argc, char** argv) {
         move_group.execute(my_plan);
     } else {
         RCLCPP_ERROR(LOGGER, "Could not compute plan successfully");
-	}
+    }
 
     // Wait for user input
     visual_tools.prompt("Press 'next' in the RvizVisualToolsGui window to continue the demo");
@@ -248,7 +247,7 @@ int main(int argc, char** argv) {
     // Joint Space Goals
     // ^^^^^^^^^^^^^^^^^
     // First, set the state in the planning scene to the final state of the last plan
-	robot_state = move_group.getCurrentState();
+    robot_state = move_group.getCurrentState();
     move_group.setStartState(*robot_state);
 
     robot_state->setJointGroupPositions(joint_model_group, trajectory.joint_trajectory.points.back().positions);
@@ -265,7 +264,7 @@ int main(int argc, char** argv) {
     const Eigen::Isometry3d goal_pose = goal_state.getGlobalLinkTransform(end_effector_link);
 
     // use rviz visual tools to publish a coordinate axis corresponding to the goal pose defined
-    visual_tools.publishAxisLabeled(goal_pose, "goal");
+    visual_tools.publishAxisLabeled(goal_pose, "target_2");
     visual_tools.trigger();
 
     moveit::planning_interface::MoveGroupInterface::Plan my_plan_2;
@@ -277,13 +276,9 @@ int main(int argc, char** argv) {
     // visualizing the trajectory
     RCLCPP_INFO(LOGGER, "Visualizing plan 2 (joint goal): result = %s", moveit::core::error_code_to_string(response).c_str());
 
-    //display_trajectory.trajectory_start = response.trajectory_start;
-    display_trajectory.trajectory.push_back(my_plan_2.trajectory);
-    // Now you should see two planned trajectories in series
-    display_publisher->publish(display_trajectory);
 
-    visual_tools.publishTrajectoryLine(my_plan_2.trajectory, joint_model_group);
-    visual_tools.trigger();
+    visual_tools.publishTrajectoryPath(my_plan_2.trajectory, my_plan_2.start_state);
+	visual_tools.trigger();
 
     visual_tools.prompt("Press 'next' to move the robot");
 
@@ -312,7 +307,7 @@ int main(int argc, char** argv) {
     shape_msgs::msg::SolidPrimitive primitive;
     primitive.type = primitive.BOX;
     primitive.dimensions.resize(3);
-    primitive.dimensions[primitive.BOX_X] = 0.1;
+    primitive.dimensions[primitive.BOX_X] = 0.05;
     primitive.dimensions[primitive.BOX_Y] = 0.9;
     primitive.dimensions[primitive.BOX_Z] = 0.4;
 
@@ -338,21 +333,48 @@ int main(int argc, char** argv) {
     // Show text in RViz of status and wait for MoveGroup to receive and process the collision object message
     visual_tools.publishText(text_pose, "Add_object", rvt::WHITE, rvt::XLARGE);
     visual_tools.trigger();
-    visual_tools.prompt("Press 'next' in the RvizVisualToolsGui window to once the collision object appears in RViz");
 
-    // Now, when we plan a trajectory it will avoid the obstacle.
-	moveit::planning_interface::MoveGroupInterface::Plan my_plan_3;
-	response = move_group.plan(my_plan_3);
+    visual_tools.prompt("Press 'next' to plan the movement to the new goal position");
+
+    // generate new goal pose for the robot
+    pose.header.frame_id = "base_link";
+    pose.pose.position.x = 0.2;
+    pose.pose.position.y = -0.2;
+    pose.pose.position.z = 0.2;
+    pose.pose.orientation.x = 0.000000;
+    pose.pose.orientation.y = 0.000000;
+    pose.pose.orientation.z = 0.000000;
+    pose.pose.orientation.w = 1.000000;
+
+    // set robot state at the current position
+    robot_state = move_group.getCurrentState();
+    move_group.setStartState(*robot_state);
+
+	// same parameters as the first position goal
+    move_group.setGoalPositionTolerance(0.001);
+    move_group.setGoalOrientationTolerance(0.001);
+    move_group.setPoseTarget(pose, end_effector_link);
+    move_group.setPlannerId("RRTConnectkConfigDefault");
+    move_group.setPlanningTime(1.0);
+
+    // publish a coordinate axis corresponding to the pose with rviz visual tools
+    visual_tools.publishAxisLabeled(pose.pose, "target_3");
+    visual_tools.trigger();
+
+    // Now, when we plan a trajectory it will avoid the obstacle
+    // planning in cartesian space
+    moveit::planning_interface::MoveGroupInterface::Plan my_plan_3;
+    response = move_group.plan(my_plan_3);
     bool success = (response == moveit::core::MoveItErrorCode::SUCCESS);
 
-	RCLCPP_INFO(LOGGER, "Plan 3 result = %s", moveit::core::error_code_to_string(response).c_str());
+    RCLCPP_INFO(LOGGER, "Plan 3 result = %s", moveit::core::error_code_to_string(response).c_str());
     RCLCPP_INFO(LOGGER, "Visualizing plan 3 (pose goal move around cuboid) %s", success ? "" : "FAILED");
 
     visual_tools.publishText(text_pose, "Obstacle_Goal", rvt::WHITE, rvt::XLARGE);
-    visual_tools.publishTrajectoryLine(my_plan.trajectory, joint_model_group);
+    visual_tools.publishTrajectoryPath(my_plan_3.trajectory, *robot_state);
     visual_tools.trigger();
 
-	 // Wait for user input
+    // Wait for user input
     visual_tools.prompt("Press 'next' to move the robot");
 
     if (success) {
@@ -360,9 +382,9 @@ int main(int argc, char** argv) {
         move_group.execute(my_plan_3);
     } else {
         RCLCPP_ERROR(LOGGER, "Could not compute plan successfully");
-	}
+    }
 
-    visual_tools.prompt("Press 'next' in the RvizVisualToolsGui window once the plan is complete to complete the movement");
+    visual_tools.prompt("Press 'next' in the RvizVisualToolsGui window once the movement is completed to end the simulation");
 
     RCLCPP_INFO(LOGGER, "Demo completed!");
 

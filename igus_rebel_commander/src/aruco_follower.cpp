@@ -192,7 +192,7 @@ class ArucoFollower : public rclcpp::Node {
 
     void goalPoseCallback(const geometry_msgs::msg::PoseStamped::SharedPtr msg) {
         // Process the received PoseStamped message
-        RCLCPP_INFO(get_logger(), "Received PoseStamped message: (%f, %f, %f)",
+        RCLCPP_INFO(get_logger(), "Received PoseStamped message: (%.3f, %.3f, %.3f)",
                     msg->pose.position.x, msg->pose.position.y, msg->pose.position.z);
 
         {  // get mutex lock on the goal pose to change it when it is received
@@ -204,6 +204,7 @@ class ArucoFollower : public rclcpp::Node {
 
     void trackGoalPose() {
         // Pose goal from the last goal pose received
+		bool skip_pose = false;
 
         while (rclcpp::ok()) {
             {  // acquire lock on the goal pose to read the last pose available
@@ -211,19 +212,31 @@ class ArucoFollower : public rclcpp::Node {
                 // check if the current goal pose has been initialized
 
                 if (goal_pose.header.frame_id != "") {   // if the goal pose has been initialized
-                    current_goal_pose = goal_pose;  // copy the last goal pose received
+				// if the newly recorded goal pose is different from the last one
+					if (goal_pose.header.stamp != current_goal_pose.header.stamp) {
+							current_goal_pose = goal_pose;  // copy the last goal pose received
+							skip_pose = false;
+					} else {
+						skip_pose = true;
+					}
                 } else {
-                    continue;
+                    skip_pose = true;
                 }
             }
+
+			// skip this iteration if the pose is the same as the last one
+			if (skip_pose) continue;
+
+			RCLCPP_INFO(get_logger(), "new goal: (%.3f, %.3f, %.3f)",
+                    current_goal_pose.pose.position.x, current_goal_pose.pose.position.y, current_goal_pose.pose.position.z);
 
             // publish a coordinate axis corresponding to the pose with rviz visual tools
             visual_tools->publishAxisLabeled(current_goal_pose.pose, "target");
             visual_tools->trigger();
 
             move_group->setStartState(*move_group->getCurrentState());
-            move_group->setGoalPositionTolerance(0.001);    // 1 mm
-            move_group->setGoalOrientationTolerance(0.001);  // 0.01 rad
+            move_group->setGoalPositionTolerance(0.002);    // 1 mm
+            move_group->setGoalOrientationTolerance(0.01);  // 0.01 rad
             move_group->setPoseTarget(current_goal_pose, end_effector_link);
             move_group->setPlannerId("RRTConnectkConfigDefault");
             // move_group->setPlanningPipelineId("ompl");
@@ -243,7 +256,7 @@ class ArucoFollower : public rclcpp::Node {
                 follower_node->create_publisher<moveit_msgs::msg::DisplayTrajectory>("/display_planned_path", 1);
             moveit_msgs::msg::DisplayTrajectory display_trajectory;
 
-            // display_trajectory.trajectory_start = response.trajectory_start;
+            display_trajectory.trajectory_start = my_plan.start_state;
             display_trajectory.trajectory.push_back(trajectory);
             display_publisher->publish(display_trajectory);
 

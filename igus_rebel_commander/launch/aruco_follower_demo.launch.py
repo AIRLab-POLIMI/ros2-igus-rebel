@@ -15,6 +15,8 @@ from launch_ros.substitutions import FindPackageShare
 from launch.actions import DeclareLaunchArgument
 from launch_ros.descriptions import ParameterValue
 from launch.actions import OpaqueFunction
+from launch.conditions import IfCondition
+from launch.actions import TimerAction
 
 
 def load_yaml(package_name, file_path):
@@ -50,6 +52,20 @@ def generate_launch_description():
 		description="Which hardware protocol or mock hardware should be used",
 	)
 
+	load_base_arg = DeclareLaunchArgument(
+		name="load_base",
+		default_value="false",
+		description="Load the mobile robot model and tower",
+		choices=["true", "false"],
+	)
+
+	testing_arg = DeclareLaunchArgument(
+		name="testing",
+		default_value="false",
+		description="Test: whether to launch test goal pose publisher node",
+		choices=["true", "false"],
+	)
+
 	# read camera frame from ros2_aruco config file
 	config_file = os.path.join(
 		get_package_share_directory("ros2_aruco"), "config", "aruco_parameters.yaml"
@@ -73,14 +89,14 @@ def generate_launch_description():
 			gripper_arg,
 			hardware_protocol_arg,
 			camera_frame_arg,
+			load_base_arg,
+			testing_arg,
 			OpaqueFunction(function=launch_setup),
 		]
 	)
 
 
-
 def launch_setup(context, *args, **kwargs):
-
 	robot_description_file = PathJoinSubstitution(
 		[
 			get_package_share_directory("igus_rebel_description_ros2"),
@@ -98,22 +114,32 @@ def launch_setup(context, *args, **kwargs):
 			LaunchConfiguration("hardware_protocol"),
 			" gripper:=",
 			LaunchConfiguration("gripper"),
+			" load_base:=",
+			LaunchConfiguration("load_base"),
 		]
 	)
 
 	robot_description = {
 		"robot_description": ParameterValue(robot_description, value_type=str)
 	}
+	
+	if LaunchConfiguration("gripper").perform(context) == "camera":
+		srdf_file = "igus_rebel_camera.srdf"
+	else:
+		srdf_file = "igus_rebel_base.srdf"
 
 	robot_description_semantic = os.path.join(
-		get_package_share_directory("igus_rebel_moveit_config"), "config/" + "igus_rebel_camera.srdf"
+		get_package_share_directory("igus_rebel_moveit_config"),
+		"config/" + srdf_file,
 	)
 
 	# read the semantic file in order to load it
 	with open(robot_description_semantic, "r") as f:
 		semantic_content = f.read()
 
-	semantic_content = {"robot_description_semantic": ParameterValue(semantic_content, value_type=str)}
+	semantic_content = {
+		"robot_description_semantic": ParameterValue(semantic_content, value_type=str)
+	}
 
 	kinematics_yaml = load_yaml("igus_rebel_moveit_config", "config/kinematics.yaml")
 	kinematics = {"robot_description_kinematics": kinematics_yaml}
@@ -135,7 +161,6 @@ def launch_setup(context, *args, **kwargs):
 		"publish_robot_description_semantic": True,
 	}
 
-
 	aruco_follower_node = Node(
 		package="igus_rebel_commander",
 		executable="aruco_follower",
@@ -149,27 +174,37 @@ def launch_setup(context, *args, **kwargs):
 			planning_plugin,
 		],
 	)
-	
-	 # create node for goal pose publisher
+
+	# create node for goal pose publisher
 	goal_pose_publisher_node = Node(
 		package="igus_rebel_commander",
 		executable="goal_pose_publisher",
 		name="goal_pose_publisher_node",
 		output="screen",
-		parameters=[{"camera_frame": LaunchConfiguration("camera_frame")}],
+		parameters=[
+			{
+				"camera_frame": LaunchConfiguration("camera_frame"),
+				"testing": LaunchConfiguration("testing"),
+			}
+		],
 	)
 
 	# test node for publishing a goal pose to check whether the goal pose is computed correctly
-	#TODO: remove this node as this is only for testing purposes
 	test_goal_pose_computation_node = Node(
 		package="igus_rebel_commander",
 		executable="test_goal_pose_computation",
 		name="test_goal_pose_computation_node",
 		output="screen",
+		condition=IfCondition(LaunchConfiguration("testing")),
 	)
 
+	if (LaunchConfiguration("testing").perform(context) == "true"):
+		rviz_file_name = "aruco_pose_test.rviz"
+	else:
+		rviz_file_name = "aruco_demo.rviz"
+
 	rviz_file = PathJoinSubstitution(
-		[FindPackageShare("igus_rebel_commander"), "rviz", "aruco_follower.rviz"]
+		[FindPackageShare("igus_rebel_commander"), "rviz", rviz_file_name]
 	)
 
 	rviz2_node = Node(
@@ -189,6 +224,6 @@ def launch_setup(context, *args, **kwargs):
 	return [
 		aruco_follower_node,
 		goal_pose_publisher_node,
-		#test_goal_pose_computation_node,
+		TimerAction(period=1.0, actions=[test_goal_pose_computation_node]),
 		rviz2_node,
 	]

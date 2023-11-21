@@ -26,7 +26,7 @@ private:
 	// callback when aruco_pose_array is received
 	void aruco_pose_callback(const geometry_msgs::msg::PoseArray aruco_pose_array);
 	// processes one pose from the aruco_pose_array, requires cartesian distance to the aruco marker from base_link
-	void processPoseArray(const geometry_msgs::msg::Pose aruco_pose, float distance);
+	void processPose(const geometry_msgs::msg::Pose aruco_pose, float distance);
 
 	void test_pub_thread(void );
 
@@ -43,8 +43,10 @@ private:
 
 	std::string source_frame; // The source frame (aruco's base frame)
 
-	const float goal_radius = 1.0; //meters
-	const float reachable_radius = 0.85; //meters
+	float link_2_z;
+
+	const float goal_radius = 0.8; //radius in meters of a reachable goal
+	const float reachable_radius = 0.7; // radius in meters of the position that the robot will reach
 
 
 };
