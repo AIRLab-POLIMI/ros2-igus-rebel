@@ -18,8 +18,7 @@ run_ros2_launch_in_konsole "igus_rebel_moveit_config moveit_controller.launch.py
 
 sleep 10 &
 
-run_ros2_launch_in_konsole "igus_rebel_commander aruco_follower_demo.launch.py testing:=false hardware_protocol:=cri" 
-
+run_ros2_launch_in_konsole "igus_rebel_commander aruco_follower_demo.launch.py testing:=false load_base:=false gripper:=camera hardware_protocol:=cri" 
 
 
 # You can add more launch files as needed

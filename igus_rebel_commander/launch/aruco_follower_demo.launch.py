@@ -123,22 +123,26 @@ def launch_setup(context, *args, **kwargs):
 		"robot_description": ParameterValue(robot_description, value_type=str)
 	}
 	
-	if LaunchConfiguration("gripper").perform(context) == "camera":
-		srdf_file = "igus_rebel_camera.srdf"
-	else:
-		srdf_file = "igus_rebel_base.srdf"
-
-	robot_description_semantic = os.path.join(
-		get_package_share_directory("igus_rebel_moveit_config"),
-		"config/" + srdf_file,
+	robot_description_semantic_file = PathJoinSubstitution(
+		[FindPackageShare("igus_rebel_moveit_config"), "config", "igus_rebel.srdf.xacro"]
 	)
 
-	# read the semantic file in order to load it
-	with open(robot_description_semantic, "r") as f:
-		semantic_content = f.read()
+	robot_description_semantic_content = Command(
+		[
+			FindExecutable(name="xacro"),
+			" ",
+			robot_description_semantic_file,
+			" gripper:=",
+			LaunchConfiguration("gripper"),
+			" load_base:=",
+			LaunchConfiguration("load_base"),
+		]
+	)
 
-	semantic_content = {
-		"robot_description_semantic": ParameterValue(semantic_content, value_type=str)
+	robot_description_semantic = {
+		"robot_description_semantic": ParameterValue(
+			robot_description_semantic_content, value_type=str
+		)
 	}
 
 	kinematics_yaml = load_yaml("igus_rebel_moveit_config", "config/kinematics.yaml")
@@ -167,7 +171,7 @@ def launch_setup(context, *args, **kwargs):
 		name="aruco_follower_node",
 		parameters=[
 			robot_description,
-			semantic_content,
+			robot_description_semantic,
 			kinematics,
 			ompl_planning_pipeline_config,
 			planning_scene_monitor_parameters,
@@ -215,7 +219,7 @@ def launch_setup(context, *args, **kwargs):
 		arguments=["-d", rviz_file],
 		parameters=[
 			robot_description,
-			semantic_content,
+			robot_description_semantic,
 			kinematics,
 			ompl_planning_pipeline_config,
 		],

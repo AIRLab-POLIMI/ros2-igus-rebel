@@ -71,12 +71,6 @@ def generate_launch_description():
 
 
 def launch_setup(context, *args, **kwargs):
-	if LaunchConfiguration("gripper").perform(context) == "camera":
-		srdf_file = "igus_rebel_camera.srdf"
-	else:
-		srdf_file = "igus_rebel_base.srdf"
-
-
 	robot_description_file = PathJoinSubstitution(
 		[
 			FindPackageShare("igus_rebel_description_ros2"),
@@ -103,23 +97,25 @@ def launch_setup(context, *args, **kwargs):
 		"robot_description": ParameterValue(robot_description, value_type=str)
 	}
 
-	robot_description_semantic = Command(
+	robot_description_semantic_file = PathJoinSubstitution(
+		[FindPackageShare("igus_rebel_moveit_config"), "config", "igus_rebel.srdf.xacro"]
+	)
+
+	robot_description_semantic_content = Command(
 		[
 			FindExecutable(name="xacro"),
 			" ",
-			PathJoinSubstitution(
-				[
-					get_package_share_directory("igus_rebel_moveit_config"),
-					"config",
-					srdf_file,
-				]
-			),
+			robot_description_semantic_file,
+			" gripper:=",
+			LaunchConfiguration("gripper"),
+			" load_base:=",
+			LaunchConfiguration("load_base"),
 		]
 	)
 
 	robot_description_semantic = {
 		"robot_description_semantic": ParameterValue(
-			robot_description_semantic, value_type=str
+			robot_description_semantic_content, value_type=str
 		)
 	}
 

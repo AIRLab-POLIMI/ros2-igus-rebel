@@ -42,6 +42,13 @@ def generate_launch_description():
 		description="Which hardware protocol or mock hardware should be used",
 	)
 
+	load_base_arg = DeclareLaunchArgument(
+		name="load_base",
+		default_value="false",
+		description="Load the mobile robot model and tower",
+		choices=["true", "false"],
+	)
+
 	robot_description_file = PathJoinSubstitution(
 		[
 			FindPackageShare("igus_rebel_description_ros2"),
@@ -66,25 +73,25 @@ def generate_launch_description():
 		"robot_description": ParameterValue(robot_description_content, value_type=str)
 	}
 
-	robot_description_semantic = PathJoinSubstitution(
-		[
-			FindPackageShare("igus_rebel_moveit_config"),
-			"config",
-			"igus_rebel_base.srdf",
-		]
+	robot_description_semantic_file = PathJoinSubstitution(
+		[FindPackageShare("igus_rebel_moveit_config"), "config", "igus_rebel.srdf.xacro"]
 	)
 
-	robot_description_semantic = Command(
+	robot_description_semantic_content = Command(
 		[
 			FindExecutable(name="xacro"),
 			" ",
-			robot_description_semantic,
+			robot_description_semantic_file,
+			" gripper:=",
+			LaunchConfiguration("gripper"),
+			" load_base:=",
+			LaunchConfiguration("load_base"),
 		]
 	)
 
 	robot_description_semantic = {
 		"robot_description_semantic": ParameterValue(
-			robot_description_semantic, value_type=str
+			robot_description_semantic_content, value_type=str
 		)
 	}
 
@@ -151,6 +158,7 @@ def generate_launch_description():
 		[
 			hardware_protocol_arg,
 			gripper_arg,
+			load_base_arg,
 			rviz_node,
 			servo_node,
 		]
