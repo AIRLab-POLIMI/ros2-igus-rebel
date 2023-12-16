@@ -2,13 +2,23 @@
 
 <robot name="scout_v2" xmlns:xacro="http://ros.org/wiki/xacro">
 
+	<!-- tower link is attached to the mobile robot base -->
+	<!-- 
+	<joint name="base_link_to_mobile_robot" type="fixed">
+		<parent link="base_link" />
+		<child link="mobile_robot_base_link" />
+		<origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0" />
+	</joint>
+
+	<link name="mobile_robot_base_link" />
+	-->
+
 	<joint name="tower" type="fixed">
 		<parent link="mobile_robot_base_link" />
 		<child link="tower_link" />
 		<origin rpy="0.0 0.0 0" xyz="0.13 0.0 0.1" />
 		<axis xyz="0 0 -1" />
 	</joint>
-
 
 	<link name="tower_link">
 		<inertial>

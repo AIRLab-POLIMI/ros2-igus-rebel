@@ -1,0 +1,23 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="igus_rebel">
+
+	<!-- macro definition for the robot -->
+	<xacro:macro name="igus_rebel" params="hardware_protocol gripper load_base">
+	
+		<!-- Include and call rebel macro -->
+		<xacro:include
+			filename="$(find igus_rebel_description_ros2)/urdf/igus_rebel/igus_rebel.description.xacro" />
+		<xacro:igus_rebel_description />
+
+		<!-- controller macro -->
+		<xacro:include filename="$(find igus_rebel_description_ros2)/urdf/igus_rebel/igus_rebel.control.xacro" />
+		<xacro:igus_rebel_control hardware_protocol="${hardware_protocol}" />
+
+		<!-- Grippers -->
+		<xacro:include filename="$(find igus_rebel_description_ros2)/urdf/grippers/grippers.xacro" />
+		<xacro:gripper gripper_type="${gripper}" />
+
+
+	</xacro:macro>
+
+</robot>

@@ -2,6 +2,23 @@
 
 <robot xmlns:xacro="http://wiki.ros.org/xacro" name="igus_rebel">
 
+	<!--GROUPS:
+	Representation of a set of joints and links. This can be useful for specifying DOF to plan for,
+	defining arms, end effectors, etc-->
+	<!--LINKS:
+	When a link is specified, the parent joint of that link (if it exists) is automatically
+	included-->
+	<!--JOINTS:
+	When a joint is specified, the child link of that joint (which will always exist) is
+	automatically included-->
+	<!--CHAINS:
+	When a chain is specified, all the links along the chain (including endpoints) are included in
+	the group. Additionally, all the joints that are parents to included links are also included.
+	This means that joints along the chain and the parent joint of the base link are included in the
+	group-->
+	<!--SUBGROUPS:
+	Groups can also be formed by referencing to already defined group names-->
+
 	<!-- disable collisions between a link and the robot scout and tower -->
 	<xacro:macro name="no_collision_scout" params="link">
 		<disable_collisions link1="${link}" link2="mobile_robot_base_link" reason="Never" />
@@ -30,7 +47,7 @@
 
 		<!-- common definitions -->
 		<group name="rebel_arm">
-			<link name="base_link" />
+			<link name="igus_rebel_base_link" />
 			<link name="link_1" />
 			<link name="link_2" />
 			<link name="link_5" />
@@ -39,83 +56,83 @@
 			<link name="link_8" />
 		</group>
 
+		<group name="chain_arm">
+			<chain base_link="igus_rebel_base_link" tip_link="link_8" />
+		</group>
+
 		<!-- no grippers installed => end effector placed on link_8 -->
 		<xacro:if value="${gripper == 'none'}">
 
-			<group name="chain_arm">
-				<chain base_link="base_link" tip_link="link_8" />
-			</group>
+			<end_effector name="manipulator" parent_link="link_8" group="rebel_arm"
+				parent_group="chain_arm" />
 
-			<end_effector name="manipulator" parent_link="link_8" group="rebel_arm" parent_group="chain_arm" />
+			<!-- default positions common for every configuration -->
+			<group_state name="zero" group="chain_arm">
+				<joint name="joint1" value="0" />
+				<joint name="joint2" value="0" />
+				<joint name="joint3" value="0" />
+				<joint name="joint4" value="0" />
+				<joint name="joint5" value="0" />
+				<joint name="joint6" value="0" />
+			</group_state>
+
+			<group_state name="home" group="chain_arm">
+				<joint name="joint1" value="0" />
+				<joint name="joint2" value="${-pi/6.0}" />
+				<joint name="joint3" value="${-pi/6.0}" />
+				<joint name="joint4" value="0" />
+				<joint name="joint5" value="${pi/24.0}" />
+				<joint name="joint6" value="0" />
+			</group_state>
+
 		</xacro:if>
 
 		<!-- if camera is placed => end effector on toucher link -->
 		<xacro:if value="${gripper == 'camera'}">
+
 			<group name="camera">
-				<link name="flange" />
-				<joint name="flange_to_mount" />
+				<link name="camera_link" />
 				<link name="camera_mount" />
-				<joint name="mount_to_cam" />
-				<link name="camera_insert" />
-
+				<link name="camera_usb_plug_link" />
 				<link name="toucher" />
-				<joint name="flange_to_toucher" />
 			</group>
-
+			
 			<group name="chain_arm_manipulator">
-				<chain base_link="base_link" tip_link="toucher" />
+				<chain base_link="igus_rebel_base_link" tip_link="toucher" />
 			</group>
 
-			<end_effector name="manipulator" parent_link="toucher" group="chain_arm_manipulator"
-				parent_group="camera" />
+			<end_effector name="manipulator" parent_link="toucher" group="chain_arm_manipulator" parent_group="camera" />
+
+			<group_state name="zero" group="chain_arm_manipulator">
+				<joint name="joint1" value="0" />
+				<joint name="joint2" value="0" />
+				<joint name="joint3" value="0" />
+				<joint name="joint4" value="0" />
+				<joint name="joint5" value="0" />
+				<joint name="joint6" value="0" />
+			</group_state>
+
+			<group_state name="home" group="chain_arm_manipulator">
+				<joint name="joint1" value="0" />
+				<joint name="joint2" value="${-pi/6.0}" />
+				<joint name="joint3" value="${-pi/6.0}" />
+				<joint name="joint4" value="0" />
+				<joint name="joint5" value="${pi/24.0}" />
+				<joint name="joint6" value="0" />
+			</group_state>
 
 		</xacro:if>
-
-		<!-- default positions common for every configuration -->
-		<group_state name="zero" group="rebel_arm">
-			<joint name="joint1" value="0" />
-			<joint name="joint2" value="0" />
-			<joint name="joint3" value="0" />
-			<joint name="joint4" value="0" />
-			<joint name="joint5" value="0" />
-			<joint name="joint6" value="0" />
-		</group_state>
-
-		<group_state name="home" group="rebel_arm">
-			<joint name="joint1" value="0" />
-			<joint name="joint2" value="${-pi/6.0}" />
-			<joint name="joint3" value="${-pi/6.0}" />
-			<joint name="joint4" value="0" />
-			<joint name="joint5" value="${pi/24.0}" />
-			<joint name="joint6" value="0" />
-		</group_state>
-
-		<group_state name="zero" group="chain_arm_manipulator">
-			<joint name="joint1" value="0" />
-			<joint name="joint2" value="0" />
-			<joint name="joint3" value="0" />
-			<joint name="joint4" value="0" />
-			<joint name="joint5" value="0" />
-			<joint name="joint6" value="0" />
-		</group_state>
-
-		<group_state name="home" group="chain_arm_manipulator">
-			<joint name="joint1" value="0" />
-			<joint name="joint2" value="${-pi/6.0}" />
-			<joint name="joint3" value="${-pi/6.0}" />
-			<joint name="joint4" value="0" />
-			<joint name="joint5" value="${pi/24.0}" />
-			<joint name="joint6" value="0" />
-		</group_state>
 
 		<!--TODO:
 		add parking position -->
 
-		<virtual_joint name="world_to_base" type="fixed" parent_frame="world" child_link="base_link" />
+		<!--<virtual_joint
+		name="world_to_base" type="fixed" parent_frame="world" child_link="base_link" />-->
 
 		<!-- default collision checks for base robot -->
-		<disable_collisions link1="base_link" link2="link_1" reason="Adjacent" />
-		<disable_collisions link1="base_link" link2="link_2" reason="Never" />
+		<disable_collisions link1="base_link" link2="igus_rebel_base_link" reason="Adjacent" />
+		<disable_collisions link1="igus_rebel_base_link" link2="link_1" reason="Adjacent" />
+		<disable_collisions link1="igus_rebel_base_link" link2="link_2" reason="Never" />
 		<disable_collisions link1="link_1" link2="link_2" reason="Adjacent" />
 		<disable_collisions link1="link_2" link2="link_5" reason="Adjacent" />
 		<disable_collisions link1="link_2" link2="link_6" reason="Never" />
@@ -137,7 +154,7 @@
 			<disable_collisions link1="camera_link" link2="toucher" reason="Never" />
 			<disable_collisions link1="camera_mount" link2="toucher" reason="Never" />
 
-			<xacro:no_collision_camera link="base_link" />
+			<xacro:no_collision_camera link="igus_rebel_base_link" />
 			<xacro:no_collision_camera link="link_1" />
 			<xacro:no_collision_camera link="link_2" />
 			<xacro:no_collision_camera link="link_5" />
@@ -163,27 +180,39 @@
 				<link name="tower_link" />
 			</group>
 
-			<disable_collisions link1="base_link" link2="front_left_wheel_link" reason="Never" />
-			<disable_collisions link1="base_link" link2="front_right_wheel_link" reason="Never" />
-			<disable_collisions link1="base_link" link2="mobile_robot_base_link" reason="Adjacent" />
-			<disable_collisions link1="base_link" link2="rear_left_wheel_link" reason="Never" />
-			<disable_collisions link1="base_link" link2="rear_right_wheel_link" reason="Never" />
-			<disable_collisions link1="base_link" link2="tower_link" reason="Never" />
+			<disable_collisions link1="igus_rebel_base_link" link2="front_left_wheel_link"
+				reason="Never" />
+			<disable_collisions link1="igus_rebel_base_link" link2="front_right_wheel_link"
+				reason="Never" />
+			<disable_collisions link1="igus_rebel_base_link" link2="mobile_robot_base_link"
+				reason="Adjacent" />
+			<disable_collisions link1="igus_rebel_base_link" link2="rear_left_wheel_link"
+				reason="Never" />
+			<disable_collisions link1="igus_rebel_base_link" link2="rear_right_wheel_link"
+				reason="Never" />
+			<disable_collisions link1="igus_rebel_base_link" link2="tower_link" reason="Never" />
 
-			<disable_collisions link1="front_left_wheel_link" link2="front_right_wheel_link" reason="Never" />
+			<disable_collisions link1="front_left_wheel_link" link2="front_right_wheel_link"
+				reason="Never" />
 			<disable_collisions link1="front_left_wheel_link" link2="link_1" reason="Never" />
 			<disable_collisions link1="front_left_wheel_link" link2="link_2" reason="Never" />
 			<disable_collisions link1="front_left_wheel_link" link2="link_5" reason="Never" />
-			<disable_collisions link1="front_left_wheel_link" link2="mobile_robot_base_link" reason="Adjacent" />
-			<disable_collisions link1="front_left_wheel_link" link2="rear_left_wheel_link" reason="Never" />
-			<disable_collisions link1="front_left_wheel_link" link2="rear_right_wheel_link" reason="Never" />
+			<disable_collisions link1="front_left_wheel_link" link2="mobile_robot_base_link"
+				reason="Adjacent" />
+			<disable_collisions link1="front_left_wheel_link" link2="rear_left_wheel_link"
+				reason="Never" />
+			<disable_collisions link1="front_left_wheel_link" link2="rear_right_wheel_link"
+				reason="Never" />
 			<disable_collisions link1="front_left_wheel_link" link2="tower_link" reason="Never" />
 			<disable_collisions link1="front_right_wheel_link" link2="link_1" reason="Never" />
 			<disable_collisions link1="front_right_wheel_link" link2="link_2" reason="Never" />
 			<disable_collisions link1="front_right_wheel_link" link2="link_5" reason="Never" />
-			<disable_collisions link1="front_right_wheel_link" link2="mobile_robot_base_link" reason="Adjacent" />
-			<disable_collisions link1="front_right_wheel_link" link2="rear_left_wheel_link" reason="Never" />
-			<disable_collisions link1="front_right_wheel_link" link2="rear_right_wheel_link" reason="Never" />
+			<disable_collisions link1="front_right_wheel_link" link2="mobile_robot_base_link"
+				reason="Adjacent" />
+			<disable_collisions link1="front_right_wheel_link" link2="rear_left_wheel_link"
+				reason="Never" />
+			<disable_collisions link1="front_right_wheel_link" link2="rear_right_wheel_link"
+				reason="Never" />
 			<disable_collisions link1="front_right_wheel_link" link2="tower_link" reason="Never" />
 
 			<disable_collisions link1="link_1" link2="mobile_robot_base_link" reason="Never" />
@@ -195,10 +224,13 @@
 			<disable_collisions link1="link_2" link2="rear_left_wheel_link" reason="Never" />
 			<disable_collisions link1="link_2" link2="rear_right_wheel_link" reason="Never" />
 
-			<disable_collisions link1="mobile_robot_base_link" link2="rear_left_wheel_link" reason="Adjacent" />
-			<disable_collisions link1="mobile_robot_base_link" link2="rear_right_wheel_link" reason="Adjacent" />
+			<disable_collisions link1="mobile_robot_base_link" link2="rear_left_wheel_link"
+				reason="Adjacent" />
+			<disable_collisions link1="mobile_robot_base_link" link2="rear_right_wheel_link"
+				reason="Adjacent" />
 			<disable_collisions link1="mobile_robot_base_link" link2="tower_link" reason="Adjacent" />
-			<disable_collisions link1="rear_left_wheel_link" link2="rear_right_wheel_link" reason="Never" />
+			<disable_collisions link1="rear_left_wheel_link" link2="rear_right_wheel_link"
+				reason="Never" />
 			<disable_collisions link1="rear_left_wheel_link" link2="tower_link" reason="Never" />
 			<disable_collisions link1="rear_right_wheel_link" link2="tower_link" reason="Never" />
 

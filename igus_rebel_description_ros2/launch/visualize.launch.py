@@ -37,7 +37,7 @@ def generate_launch_description():
 		description="Robot Description file to use",
 		choices=["base", "mod"],
 	)
-	
+
 	load_base_arg = DeclareLaunchArgument(
 		name="load_base",
 		default_value="true",
@@ -57,19 +57,21 @@ def generate_launch_description():
 
 
 def launch_setup(context, *args, **kwargs):
+	
 	if LaunchConfiguration("urdf").perform(context) == "mod":
-		desc_file = "igus_rebel_mod.urdf.xacro"
+		robot_description_filename = "igus_rebel/igus_rebel_mod.urdf.xacro"
 	else:
-		desc_file = "igus_rebel.urdf.xacro"
+		robot_description_filename = "robot.urdf.xacro"
 
 	robot_description_file = PathJoinSubstitution(
 		[
 			FindPackageShare("igus_rebel_description_ros2"),
 			"urdf",
-			desc_file,
+			robot_description_filename,
 		]
 	)
 
+	# load robot description xacro
 	robot_description = Command(
 		[
 			FindExecutable(name="xacro"),
@@ -84,9 +86,11 @@ def launch_setup(context, *args, **kwargs):
 		]
 	)
 
-	rviz_file = PathJoinSubstitution(
-		[FindPackageShare("igus_rebel_description_ros2"), "rviz", "rebel.rviz"]
-	)
+	# remap input and ouytput topics for robot state publisher and joint state publisher
+	remappings = [
+		("/joint_states", "/rebel/joint_states"),
+		("/robot_description", "/rebel/robot_description"),
+	]
 
 	# Nodes
 	robot_state_publisher_node = Node(
@@ -96,12 +100,33 @@ def launch_setup(context, *args, **kwargs):
 		parameters=[
 			{"robot_description": ParameterValue(robot_description, value_type=str)}
 		],
+		# subscribes to /rebel/joint_states and publishes to /rebel/robot_description
+		remappings=remappings
 	)
 
 	joint_state_publisher_gui_node = Node(
 		package="joint_state_publisher_gui",
 		executable="joint_state_publisher_gui",
 		name="joint_state_publisher_gui",
+		# publishes to /rebel/joint_states
+		remappings=remappings
+	)
+
+	joint_state_publisher_node = Node(
+		package="joint_state_publisher",
+		executable="joint_state_publisher",
+		name="joint_state_publisher",
+		# publishes to /rebel/joint_states and receives URDF from /rebel/robot_description
+		remappings=remappings
+	)
+
+	if LaunchConfiguration("load_base").perform(context) == "true":
+		rviz_filename = "rebel_on_scout.rviz"
+	else:
+		rviz_filename = "rebel.rviz"
+
+	rviz_file = PathJoinSubstitution(
+		[FindPackageShare("igus_rebel_description_ros2"), "rviz", rviz_filename]
 	)
 
 	rviz_node = Node(
@@ -114,5 +139,6 @@ def launch_setup(context, *args, **kwargs):
 	return [
 		robot_state_publisher_node,
 		joint_state_publisher_gui_node,
+		joint_state_publisher_node,
 		rviz_node,
 	]

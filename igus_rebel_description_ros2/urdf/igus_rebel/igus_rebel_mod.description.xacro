@@ -3,7 +3,7 @@
 
 	<xacro:macro name="igus_rebel_mod_description" params="hardware_protocol">
 
-		<link name="base_link">
+		<link name="igus_rebel_base_link">
 			<visual>
 				<geometry>
 					<mesh filename="file://$(find igus_rebel_description_ros2)/meshes/robolink_rebel/Robolink_RebeL_000.dae" />
@@ -22,7 +22,7 @@
 
 
 		<joint name="joint1" type="revolute">
-			<parent link="base_link" />
+			<parent link="igus_rebel_base_link" />
 			<child link="link_1" />
 			<origin rpy="0.0 0.0 ${pi}" xyz="0.0 0.0 0.126" />
 			<axis xyz="0 0 1" />
