@@ -102,9 +102,6 @@ void RebelController::socketMessagesThread() {
                     currentStatus = status;
                     processStatus(currentStatus);
 
-					// get current time stamp
-					//rclcpp::Time current_time = rclcpp::Clock().now();
-					//savePositionFeedback(current_time);
 					status_count++;
                     break;
                 }
@@ -153,7 +150,7 @@ void RebelController::socketMessagesThread() {
                     if (type != cri_messages::MessageType::OPINFO && type != cri_messages::MessageType::GSIG &&
                         type != cri_messages::MessageType::GRIPPERSTATE && type != cri_messages::MessageType::RUNSTATE &&
                         type != cri_messages::MessageType::CMDACK) {
-                        RCLCPP_INFO(rclcpp::get_logger("hw_controller::rebel_controller"), "raw unknown data: %s", msg.c_str());
+                        RCLCPP_WARN(rclcpp::get_logger("hw_controller::rebel_controller"), "raw unknown data: %s", msg.c_str());
                     }
 
                     break;
@@ -306,38 +303,17 @@ void RebelController::GetReferenceInfo() {
     Command(std::string("GetReferencingInfo"));
 }
 
-/**
- * @brief saves the current position feedback with its timestamp in a logging vector.
- * The position feedbacks cumulated are used to compute precise velocity feedbacks.
- */
-void RebelController::savePositionFeedback(const rclcpp::Time& current_time) {
-	std::vector<double> temp_pos;
-    temp_pos.reserve(n_joints);
-
-    // copy joint rotation angles [deg] values into temp_pos
-    std::copy(currentStatus.posJointCurrent.begin(), currentStatus.posJointCurrent.begin() + n_joints, temp_pos.begin());
-
-    for (size_t i = 0; i < n_joints; i++) {
-        // degrees to radians and apply offset
-        temp_pos[i] = temp_pos[i] * M_PI / 180.0 + pos_offset_[i];
-    }
-
-	// save temp pos with the current time stamp in a logging vector
-	//position_feedbacks_log[i].push_back(std::make_pair(current_time, temp_pos));
-
-}
-
 void RebelController::computeStatusFrequencyThread() {
-	RCLCPP_INFO(rclcpp::get_logger("hw_controller::rebel_controller"), "Starting to compute status frequency");
+	RCLCPP_DEBUG(rclcpp::get_logger("hw_controller::rebel_controller"), "Starting to compute status frequency");
 	status_count = 0;
 
 	while (continueMessage) {
 		std::this_thread::sleep_for(std::chrono::milliseconds(1000));
-		RCLCPP_INFO(rclcpp::get_logger("hw_controller::rebel_controller"), "Status frequency: %d Hz", status_count);
+		RCLCPP_DEBUG(rclcpp::get_logger("hw_controller::rebel_controller"), "Status frequency: %d Hz", status_count);
 		status_count = 0;
 	}
 
-	RCLCPP_INFO(rclcpp::get_logger("hw_controller::rebel_controller"), "Stopped to compute status frequency");
+	RCLCPP_DEBUG(rclcpp::get_logger("hw_controller::rebel_controller"), "Stopped to compute status frequency");
 }
 
 /**
@@ -521,7 +497,7 @@ std::vector<hardware_interface::CommandInterface> RebelController::export_comman
 
     // Add the position and velocity command signals for each joint defined
     for (unsigned int i = 0; i < info_.joints.size(); i++) {
-        // commanding only with velocity
+        //NOTE: commanding only with velocity
         // command_interfaces.emplace_back(hardware_interface::CommandInterface(
         //     info_.joints[i].name, hardware_interface::HW_IF_POSITION, &cmd_position_[i]));
 

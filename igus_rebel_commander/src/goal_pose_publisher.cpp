@@ -36,7 +36,7 @@ GoalPosePublisher::GoalPosePublisher() : Node("goal_pose_publisher") {
         if (camera_frame_name != std::string()) {
             RCLCPP_INFO(LOGGER, "Value of camera frame: %s", camera_frame_name.c_str());
         } else {
-            RCLCPP_ERROR(LOGGER, "Failed to get my_string_parameter");
+            RCLCPP_ERROR(LOGGER, "Failed to get camera frame parameter from config file");
         }
     }
 

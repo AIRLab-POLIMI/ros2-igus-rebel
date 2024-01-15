@@ -5,7 +5,7 @@ run_ros2_launch_in_konsole() {
     konsole --hold -e bash -c "source ~/robotics/ros2_igus_rebel/install/setup.bash  && source ~/robotics/ros2_aruco/install/setup.bash && ros2 launch $1"
 }
 
-run_ros2_launch_in_konsole "realsense2_camera rs_launch.py enable_rgbd:=true enable_sync:=true align_depth.enable:=true enable_color:=true enable_depth:=true pointcloud.enable:=true publish_tf:=true tf_publish_rate:=1.0" &
+run_ros2_launch_in_konsole "realsense2_camera rs_launch.py enable_color:=true pointcloud.enable:=true" &
 
 sleep 2 &
 

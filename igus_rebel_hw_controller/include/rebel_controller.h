@@ -102,10 +102,6 @@ class RebelController : public hardware_interface::SystemInterface {
     // Function to react to specific status values, to display warnings, error messages, etc.
     void processStatus(const cri_messages::Status&);
 
-	// Function to convert the jog values to the correct format for the robot controller
-	// std::vector< std::pair< rclcpp::Time&, std::vector<double> > > position_feedbacks_log;
-	void savePositionFeedback(const rclcpp::Time& time);
-
 	const double move_velocity = 20.0; // [20 % max velocity]
 	// NOTE: this constant is valid as long as the override value in the STATUS message = 80.0
 	// otherwise if it's lower, then the robot will move slower than expected
