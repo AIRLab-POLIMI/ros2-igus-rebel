@@ -31,6 +31,7 @@
 	<depend>moveit_core</depend>
 	<depend>pluginlib</depend>
 	<depend>moveit_kinematics</depend>
+	<depend>ros2_aruco_interfaces</depend>
 
 	<test_depend>ament_lint_auto</test_depend>
 	<test_depend>ament_lint_common</test_depend>
