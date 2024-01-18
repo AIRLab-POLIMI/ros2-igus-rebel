@@ -34,8 +34,9 @@
 	<xacro:macro name="no_collision_camera" params="link">
 		<disable_collisions link1="${link}" link2="camera_link" reason="Never" />
 		<disable_collisions link1="${link}" link2="camera_mount" reason="Never" />
-		<disable_collisions link1="${link}" link2="toucher" reason="Never" />
+		<disable_collisions link1="${link}" link2="toucher_cylinder" reason="Never" />
 		<disable_collisions link1="${link}" link2="camera_usb_plug_link" reason="Never" />
+       
 	</xacro:macro>
 
 	<xacro:arg name="gripper" default="none" />
@@ -87,21 +88,22 @@
 
 		</xacro:if>
 
-		<!-- if camera is placed => end effector on toucher link -->
+		<!-- if camera is placed => end effector on tip_link link -->
 		<xacro:if value="${gripper == 'camera'}">
 
 			<group name="camera">
 				<link name="camera_link" />
 				<link name="camera_mount" />
 				<link name="camera_usb_plug_link" />
-				<link name="toucher" />
+				<link name="toucher_cylinder" />
+                <link name="tip_link" />
 			</group>
 			
 			<group name="chain_arm_manipulator">
-				<chain base_link="igus_rebel_base_link" tip_link="toucher" />
+				<chain base_link="igus_rebel_base_link" tip_link="tip_link" />
 			</group>
 
-			<end_effector name="manipulator" parent_link="toucher" group="chain_arm_manipulator" parent_group="camera" />
+			<end_effector name="manipulator" parent_link="tip_link" group="chain_arm_manipulator" parent_group="camera" />
 
 			<group_state name="zero" group="chain_arm_manipulator">
 				<joint name="joint1" value="0" />
@@ -151,8 +153,10 @@
 			<disable_collisions link1="camera_link" link2="camera_mount" reason="Adjacent" />
 			<disable_collisions link1="camera_link" link2="camera_usb_plug_link" reason="Adjacent" />
 			<disable_collisions link1="camera_mount" link2="camera_usb_plug_link" reason="Never" />
-			<disable_collisions link1="camera_link" link2="toucher" reason="Never" />
-			<disable_collisions link1="camera_mount" link2="toucher" reason="Never" />
+			<disable_collisions link1="camera_link" link2="toucher_cylinder" reason="Never" />
+			<disable_collisions link1="camera_mount" link2="toucher_cylinder" reason="Never" />
+            <disable_collisions link1="toucher_cylinder" link2="tip_link" reason="Adjacent" />
+            
 
 			<xacro:no_collision_camera link="igus_rebel_base_link" />
 			<xacro:no_collision_camera link="link_1" />
