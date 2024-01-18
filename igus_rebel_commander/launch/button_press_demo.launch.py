@@ -59,13 +59,6 @@ def generate_launch_description():
 		choices=["true", "false"],
 	)
 
-	testing_arg = DeclareLaunchArgument(
-		name="testing",
-		default_value="false",
-		description="Test: whether to launch test goal pose publisher node",
-		choices=["true", "false"],
-	)
-
 	# read camera frame from ros2_aruco config file
 	config_file = os.path.join(
 		get_package_share_directory("ros2_aruco"), "config", "aruco_parameters.yaml"
@@ -90,7 +83,6 @@ def generate_launch_description():
 			hardware_protocol_arg,
 			camera_frame_arg,
 			load_base_arg,
-			testing_arg,
 			OpaqueFunction(function=launch_setup),
 		]
 	)
@@ -176,6 +168,9 @@ def launch_setup(context, *args, **kwargs):
 			ompl_planning_pipeline_config,
 			planning_scene_monitor_parameters,
 			planning_plugin,
+			{
+				"camera_frame": LaunchConfiguration("camera_frame"),
+			}
 		],
 	)	
 

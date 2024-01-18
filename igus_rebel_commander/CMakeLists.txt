@@ -49,16 +49,25 @@ add_executable(test_goal_pose_computation test/test_goal_pose_computation.cpp)
 ament_target_dependencies(test_goal_pose_computation
 	rclcpp std_msgs geometry_msgs tf2_ros tf2_geometry_msgs)
 
+# test button pose computation --> publishes predefined aruco pose and computes button pose for debugging
+add_executable(test_button_pose_computation test/test_button_pose_computation.cpp)
+ament_target_dependencies(test_button_pose_computation
+	rclcpp std_msgs geometry_msgs tf2_ros tf2_geometry_msgs)
+
 # aruco follower --> given aruco pose, the robot "follows" it
 add_executable(aruco_follower
 	src/aruco_follower.cpp)
 ament_target_dependencies(aruco_follower
 	pluginlib moveit_core moveit_kinematics moveit_visual_tools moveit_ros_planning_interface)
 
-install(TARGETS commander_demo button_presser_demo goal_pose_publisher test_goal_pose_computation aruco_follower
+install(TARGETS commander_demo
+				button_presser_demo
+				goal_pose_publisher
+				test_goal_pose_computation
+				aruco_follower
+				test_button_pose_computation
 	DESTINATION lib/${PROJECT_NAME}
 )
-
 
 install(DIRECTORY launch rviz
 	DESTINATION share/${PROJECT_NAME}
