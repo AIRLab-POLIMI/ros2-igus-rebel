@@ -15,6 +15,7 @@ ButtonPresser::ButtonPresser(const rclcpp::NodeOptions &node_options) : Node("bu
 	ready = false;
 
 	aruco_markers = std::vector<geometry_msgs::msg::Pose::SharedPtr>(n_btns);
+	aruco_markers_saved = std::vector<geometry_msgs::msg::Pose::SharedPtr>(n_btns);
 
 	// loads the camera frame name from the aruco detector config file
 	// this->declare_parameter("camera_frame", rclcpp::PARAMETER_STRING);
@@ -24,6 +25,9 @@ ButtonPresser::ButtonPresser(const rclcpp::NodeOptions &node_options) : Node("bu
 	} else {
 		RCLCPP_ERROR(LOGGER, "Failed to get camera frame parameter from config file");
 	}
+
+    // load base = "true" | "false"
+    load_base_arg = this->get_parameter("load_base").as_bool();
 
 	tf_buffer_ = std::make_unique<tf2_ros::Buffer>(this->get_clock());
 	tf_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_buffer_);
@@ -124,7 +128,8 @@ void ButtonPresser::initRvizVisualTools() {
 	// and trajectories in RViz as well as debugging tools such as step-by-step introspection of a script.
 	namespace rvt = rviz_visual_tools;
 	// @param node - base frame - markers topic - robot model
-	visual_tools = new moveit_visual_tools::MoveItVisualTools(button_presser_node, "base_link", "/rviz_visual_tools", move_group->getRobotModel());
+    std::string markers_frame = !load_base_arg ? fixed_base_frame : "base_footprint";
+	visual_tools = new moveit_visual_tools::MoveItVisualTools(button_presser_node, markers_frame, "/rviz_visual_tools", move_group->getRobotModel());
 
 	// extra options
 	visual_tools->setPlanningSceneTopic("/move_group/monitored_planning_scene");
@@ -156,45 +161,78 @@ void ButtonPresser::moveToSearchingPose() {
 	// define pose as an array of target joints positions, then use moveit planning in joint space to move the robot
 
 	RCLCPP_INFO(LOGGER, "Moving the robot to searching pose");
+    // robot arm joint values for the looking pose
+    // should be valid for both scenarios where igus is mounted on the mobile robot base or on a table
+	const std::vector<double> search_joints_positions = {1.0, -0.5, 0.5, 0.0, 1.74, 0.0}; // radians
 
-	// Setup a joint space goal
-	moveit::core::RobotState goal_state(*move_group->getCurrentState());
-	goal_state.setJointGroupPositions(joint_model_group, search_joints_positions);
-
-	move_group->setStartState(*move_group->getCurrentState());
-	move_group->setGoalPositionTolerance(0.002);   // 1 mm
-	move_group->setGoalOrientationTolerance(0.01); // 0.01 rad
-
-	bool valid_motion = move_group->setJointValueTarget(goal_state);
+	bool valid_motion = this->robotPlanAndMove(search_joints_positions);
 	if (!valid_motion) {
-		RCLCPP_ERROR(LOGGER, "Target joints outside their phyisical limits");
-		return;
+		RCLCPP_ERROR(LOGGER, "Could not move to static search position");
+	}
+}
+
+/**
+ * @brief Predefined sequence of movements to look around for the aruco markers, by using joint space goals.
+ *       It will deploy a series of positions waypoints to follow until the aruco markers are found.
+ */
+void ButtonPresser::lookAroundForArucoMarkers() {
+
+    float range_min = -3.1, range_max = 3.1; // when the robotic arm is mounted on a table without space constraints
+
+    // limit robot movement range when the robotic arm is mounted on the mobile robot base
+    if (load_base_arg) {
+        range_min = -1.5;
+        range_max = 3.1;
+    }
+
+	// first move the robot arm to the static searching pose, looking in front of the robot arm with the camera facing downwards
+	std::vector<double> first_position = {range_min, -0.5, -0.35, 0.0, 1.74, 0.0};
+	bool valid_motion = this->robotPlanAndMove(first_position);
+
+	// then create array of waypoints to follow in joint space, in order to look around for the aruco markers
+	std::vector<std::vector<double>> waypoints;
+
+	// first layer of waypoints: camera facing forward --> suitable for searching distant aruco markers
+	for (float i = range_min; i <= range_max; i += 0.2) {
+		std::vector<double> pos = {i, -0.5, -0.35, 0.0, 1.74, 0.0};
+		waypoints.push_back(pos);
 	}
 
-	// Get the pose of a specific link (e.g., the end-effector link).
-	const Eigen::Isometry3d goal_pose = goal_state.getGlobalLinkTransform(end_effector_link);
+	// second layer of waypoints: camera facing slighly downwards --> suitable for searching close aruco markers
+	for (float i = range_max; i >= range_min; i -= 0.2) {
+		std::vector<double> pos = {i, -0.9, 0.25, 0.0, 1.74, 0.0};
+		waypoints.push_back(pos);
+	}
 
-	// use rviz visual tools to publish a coordinate axis corresponding to the goal pose defined
-	visual_tools->publishAxisLabeled(goal_pose, "search_pose");
-	visual_tools->trigger();
+	// second layer of waypoints: camera facing downwards --> suitable for searching interactible aruco markers
+	for (float i = range_min; i <= range_max; i += 0.2) {
+		std::vector<double> pos = {i, -1.1, 0.7, 0.0, 1.74, 0.0};
+		waypoints.push_back(pos);
+	}
 
-	moveit::planning_interface::MoveGroupInterface::Plan static_search_plan;
-	// optionally limit accelerations and velocity scaling
-	move_group->setMaxVelocityScalingFactor(0.2);
-	move_group->setMaxAccelerationScalingFactor(0.2);
-	moveit::core::MoveItErrorCode response = move_group->plan(static_search_plan);
+	// iterate over the waypoints and move the robot arm to each of them
+	for (unsigned short i = 0; i < waypoints.size(); i++) {
 
-	// visualizing the trajectory
-	RCLCPP_INFO(LOGGER, "Result of plannning to the searching position = %s", moveit::core::error_code_to_string(response).c_str());
+		RCLCPP_INFO(LOGGER, "Moving to waypoint %d", i);
 
-	visual_tools->publishTrajectoryPath(static_search_plan.trajectory, static_search_plan.start_state);
-	visual_tools->trigger();
+		// move the robot arm to the current waypoint
+		valid_motion = this->robotPlanAndMove(waypoints[i]);
+		if (!valid_motion) {
+			RCLCPP_ERROR(LOGGER, "Could not move to waypoint %d", i);
+			break;
+		}
 
-	if (bool(response)) {
-		RCLCPP_INFO(LOGGER, "moving the robot to searching pose with joint space goal");
-		move_group->execute(static_search_plan);
-	} else {
-		RCLCPP_ERROR(LOGGER, "Could not compute plan successfully");
+		// while the robot is moving, check whether the aruco markers have been detected between each waypoint
+		// if yes, stop the robot and start the demo
+
+		// wait for 50ms before checking if aruco have been detected
+		std::this_thread::sleep_for(std::chrono::milliseconds(50));
+
+		// check whether the aruco markers have been detected
+		if (ready) {
+			RCLCPP_INFO(LOGGER, "Aruco markers detected, ending search");
+			break;
+		}
 	}
 }
 
@@ -203,8 +241,11 @@ void ButtonPresser::moveToSearchingPose() {
  * @brief Callback function for the aruco markers subscriber
  */
 void ButtonPresser::arucoMarkersCallback(const ros2_aruco_interfaces::msg::ArucoMarkers::SharedPtr aruco_markers_array) {
-	// to be run until the aruco markers are detected and sorted -> demo ready
-	if (!ready) {
+
+	// first acquire aruco markers array mutex
+	{ // scope for the lock
+		std::lock_guard<std::mutex> lock(aruco_markers_mutex);
+
 		// first check if the markers have all been detected
 		if (aruco_markers_array->poses.size() != n_btns) {
 			return; // skip and wait until all markers are detected
@@ -240,11 +281,10 @@ void ButtonPresser::arucoMarkersCallback(const ros2_aruco_interfaces::msg::Aruco
 				}
 			}
 		}
-
-		// set the ready flag after successful button setup detection
-		ready = true;
-		RCLCPP_INFO(LOGGER, "Button setup detected, demo can start");
 	}
+
+	// set the ready flag after successful button setup detection
+	ready = true;
 }
 
 /**
@@ -254,6 +294,18 @@ void ButtonPresser::buttonPresserDemoThread() {
 	RCLCPP_INFO(LOGGER, "Starting button presser demo thread");
 	while (rclcpp::ok()) {
 		if (ready) { // starts the demo
+            RCLCPP_INFO(LOGGER, "Button setup detected, demo can start");
+
+			// acquire aruco markers array mutex
+			{ // scope for the lock
+				std::lock_guard<std::mutex> lock(aruco_markers_mutex);
+
+				// copy aruco markers into the saved array
+				for (int j = 0; j < n_btns; j++) {
+					aruco_markers_saved[j] = std::make_shared<geometry_msgs::msg::Pose>(*aruco_markers[j]);
+				}
+			}
+
 			RCLCPP_INFO(LOGGER, "Moving to looking position");
 			// first move to the predefined looking pose
 			geometry_msgs::msg::PoseStamped::SharedPtr looking_pose = this->computeLookingPose();
@@ -273,10 +325,6 @@ void ButtonPresser::buttonPresserDemoThread() {
 			// ascent to release the button
 			this->robotPlanAndMove(pose_above_button_1, true);
 
-			// move back to the looking pose
-			//RCLCPP_INFO(LOGGER, "Returning to looking pose");
-			//this->robotPlanAndMove(looking_pose, false);
-
 			// button 2
 			RCLCPP_INFO(LOGGER, "Pressing button 2 ...");
 			geometry_msgs::msg::PoseStamped::SharedPtr pose_above_button_2 = this->getPoseAboveButton(2);
@@ -289,10 +337,6 @@ void ButtonPresser::buttonPresserDemoThread() {
 
 			// ascent to release the button
 			this->robotPlanAndMove(pose_above_button_2, true);
-
-			// move back to the looking pose
-			//RCLCPP_INFO(LOGGER, "Returning to looking pose");
-			//this->robotPlanAndMove(looking_pose, false);
 
 			// button 3
 			RCLCPP_INFO(LOGGER, "Pressing button 3 ...");
@@ -330,7 +374,7 @@ void ButtonPresser::buttonPresserDemoThread() {
 geometry_msgs::msg::PoseStamped::SharedPtr ButtonPresser::computeLookingPose() {
 	// apply transform on the aruco marker in the middle, with a flip rotation to point towards it
 	geometry_msgs::msg::PoseStamped::SharedPtr looking_pose = std::make_shared<geometry_msgs::msg::PoseStamped>();
-	looking_pose->pose = *this->apply_transform(aruco_markers[1], delta_x[0], delta_y[0], delta_z[0], true);
+	looking_pose->pose = *this->apply_transform(aruco_markers_saved[1], delta_x[0], delta_y[0], delta_z[0], true);
 	looking_pose->header.frame_id = fixed_base_frame;
 	looking_pose->header.stamp = this->now();
 	return looking_pose;
@@ -345,7 +389,7 @@ geometry_msgs::msg::PoseStamped::SharedPtr ButtonPresser::getPoseAboveButton(con
 	// apply transform from the aruco marker to the button, with a flip rotation to point towards it
 	geometry_msgs::msg::PoseStamped::SharedPtr pose_above_button = std::make_shared<geometry_msgs::msg::PoseStamped>();
 	pose_above_button->pose = *this->apply_transform(
-		aruco_markers[button_id - 1], delta_x[button_id], delta_y[button_id], delta_z[button_id], true);
+		aruco_markers_saved[button_id - 1], delta_x[button_id], delta_y[button_id], delta_z[button_id], true);
 	pose_above_button->header.frame_id = fixed_base_frame;
 	pose_above_button->header.stamp = this->now();
 	return pose_above_button;
@@ -356,7 +400,7 @@ geometry_msgs::msg::PoseStamped::SharedPtr ButtonPresser::getPoseAboveButton(con
  * @param pose_above_button the pose just above the button before pressing it
  * @param button_id the number of the button to press - 1, 2, 3
  * @return the pose to reach when pressing the button (button pressed)
-*/
+ */
 geometry_msgs::msg::PoseStamped::SharedPtr ButtonPresser::getPosePressingButton(
 	const geometry_msgs::msg::Pose::SharedPtr pose_above_button, const int button_id) {
 	// apply transform from the pose above the button to the pose pressing the button
@@ -445,8 +489,8 @@ bool ButtonPresser::robotPlanAndMove(geometry_msgs::msg::PoseStamped::SharedPtr 
 	move_group->setMaxAccelerationScalingFactor(0.2);
 	// move_group->setPlanningPipelineId("ompl");
 
-    // set orientation constraint during movement to make fixed end effector orientation
-	if (planar_movement) { 
+	// set orientation constraint during movement to make fixed end effector orientation
+	if (planar_movement) {
 		moveit_msgs::msg::OrientationConstraint constrained_orientation;
 		constrained_orientation.link_name = end_effector_link;
 		constrained_orientation.header.frame_id = fixed_base_frame;
@@ -460,8 +504,8 @@ bool ButtonPresser::robotPlanAndMove(geometry_msgs::msg::PoseStamped::SharedPtr 
 		constrained_endeffector.orientation_constraints.push_back(constrained_orientation);
 		move_group->setPathConstraints(constrained_endeffector);
 	} else {
-        move_group->clearPathConstraints();
-    }
+		move_group->clearPathConstraints();
+	}
 
 	// create plan for reaching the goal pose
 	moveit::planning_interface::MoveGroupInterface::Plan plan_motion;
@@ -483,6 +527,55 @@ bool ButtonPresser::robotPlanAndMove(geometry_msgs::msg::PoseStamped::SharedPtr 
 	} else {
 		RCLCPP_ERROR(LOGGER, "Could not compute plan successfully");
 	}
+	return bool(response);
+}
+
+/**
+ * @brief Plan and move the robot to the joint space goal
+ * @param joint_space_goal the joint space goal, sequence of 6 joint values expressed in radians
+ * @return true if plan and movement were successful, false otherwise
+ */
+bool ButtonPresser::robotPlanAndMove(std::vector<double> joint_space_goal) {
+	// Setup a joint space goal
+	moveit::core::RobotState goal_state(*move_group->getCurrentState());
+	goal_state.setJointGroupPositions(joint_model_group, joint_space_goal);
+
+	move_group->setStartState(*move_group->getCurrentState());
+	move_group->setGoalPositionTolerance(0.002);   // 1 mm
+	move_group->setGoalOrientationTolerance(0.01); // 0.01 rad
+
+	bool valid_motion = move_group->setJointValueTarget(goal_state);
+	if (!valid_motion) {
+		RCLCPP_ERROR(LOGGER, "Target joints outside their phyisical limits");
+		return false;
+	}
+
+	// Get the pose of a specific link (e.g., the end-effector link).
+	const Eigen::Isometry3d goal_pose = goal_state.getGlobalLinkTransform(end_effector_link);
+
+	// use rviz visual tools to publish a coordinate axis corresponding to the goal pose defined
+	visual_tools->publishAxisLabeled(goal_pose, "search_pose");
+	visual_tools->trigger();
+
+	moveit::planning_interface::MoveGroupInterface::Plan static_search_plan;
+	// optionally limit accelerations and velocity scaling
+	move_group->setMaxVelocityScalingFactor(0.5);
+	move_group->setMaxAccelerationScalingFactor(0.2);
+	moveit::core::MoveItErrorCode response = move_group->plan(static_search_plan);
+
+	// visualizing the trajectory
+	RCLCPP_INFO(LOGGER, "Plannning to the searching position = %s", moveit::core::error_code_to_string(response).c_str());
+
+	visual_tools->publishTrajectoryPath(static_search_plan.trajectory, static_search_plan.start_state);
+	visual_tools->trigger();
+
+	if (bool(response)) {
+		RCLCPP_INFO(LOGGER, "moving the robot to searching pose with joint space goal");
+		move_group->execute(static_search_plan);
+	} else {
+		RCLCPP_ERROR(LOGGER, "Could not compute plan successfully");
+	}
+
 	return bool(response);
 }
 
@@ -513,8 +606,10 @@ int main(int argc, char *argv[]) {
 	// std::this_thread::sleep_for(std::chrono::milliseconds(5000));
 
 	// move to the predefined static searching pose
-	// alternatively start waving the robot arm to find the buttons setup
 	node->moveToSearchingPose();
+
+	// alternatively start waving the robot arm to find the buttons setup
+	node->lookAroundForArucoMarkers();
 
 	// start the demo thread once the robot is in the searching pose
 	std::thread button_presser_demo_thread = std::thread(&ButtonPresser::buttonPresserDemoThread, node);

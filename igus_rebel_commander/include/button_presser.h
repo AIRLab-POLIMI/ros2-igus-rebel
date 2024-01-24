@@ -43,6 +43,10 @@ private:
 	std::string camera_frame_name;
 	std::string fixed_base_frame;
 
+    // load base arg
+    bool load_base_arg;
+
+    // tf2 listener and buffer for frame transformations
 	std::shared_ptr<tf2_ros::TransformListener> tf_listener_{nullptr};
 	std::unique_ptr<tf2_ros::Buffer> tf_buffer_;
 
@@ -51,12 +55,13 @@ private:
 	// aruco markers ids, from left to right
 	const int btn_1 = 4, btn_2 = 5, btn_3 = 6;
 
-	// robot arm joint values for the looking pose
-	const std::vector<double> search_joints_positions = {1.0, -1.0, 1.0, 0.0, 1.74, 0.0}; // radians
-
 	// aruco markers array (sorted)
 	std::vector<geometry_msgs::msg::Pose::SharedPtr> aruco_markers; // one for each button
+    std::vector<geometry_msgs::msg::Pose::SharedPtr> aruco_markers_saved; // one for each button
 	const int btn_ids[n_btns] = {btn_1, btn_2, btn_3};
+
+    // mutex lock for aruco markers array
+    std::mutex aruco_markers_mutex;
 
 	// position deltas in meters between the aruco marker and the button (assuming sorted markers)
 	//  in order: looking pose, button 1, button 2, button 3
@@ -122,6 +127,12 @@ public:
 	void moveToSearchingPose(void);
 
 	/**
+	 * @brief Predefined sequence of movements to look around for the aruco markers, by using joint space goals.
+	 *        It will deploy a series of positions waypoints to follow until the aruco markers are found.
+	 */
+	void lookAroundForArucoMarkers(void);
+
+	/**
 	 * @brief the looking pose: positioning along the x-axis such that the robot faces the buttons setup from a distance
 	 * @return the looking pose
 	 */
@@ -162,4 +173,11 @@ public:
 	 * @return true if the movement and planning was successful, false otherwise
 	 */
 	bool robotPlanAndMove(geometry_msgs::msg::PoseStamped::SharedPtr target_pose, bool planar_movement = false);
+
+	/**
+	 * @brief Plan and move the robot to the joint space goal
+	 * @param joint_space_goal the joint space goal, sequence of 6 joint values expressed in radians
+	 * @return true if plan and movement were successful, false otherwise
+	 */
+	bool robotPlanAndMove(std::vector<double> joint_space_goal);
 };

@@ -28,7 +28,7 @@
 		<joint name="base_link_to_rebel_support" type="fixed">
 			<parent link="base_link" />
 			<child link="rebel_support" />
-			<origin xyz="-0.26 0.0 0.1" rpy="0 0 ${pi}" />
+			<origin xyz="-0.27 0.0 0.135" rpy="0 0 ${pi}" />
 		</joint>
 
 		<link name="rebel_support" />

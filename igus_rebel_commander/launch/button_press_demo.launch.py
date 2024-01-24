@@ -170,6 +170,7 @@ def launch_setup(context, *args, **kwargs):
 			planning_plugin,
 			{
 				"camera_frame": LaunchConfiguration("camera_frame"),
+				"load_base": LaunchConfiguration("load_base"),
 			}
 		],
 	)	
