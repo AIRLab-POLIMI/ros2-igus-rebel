@@ -45,7 +45,7 @@
 
 		<!-- load scout robot -->
 		<xacro:include
-			filename="$(find agilex_scout)/urdf/mobile_robot/scout_v2.xacro" />
+			filename="$(find agilex_scout)/urdf/mobile_robot/scout_v2.urdf.xacro" />
 		<xacro:scout_v2
 			load_gazebo="$(arg load_gazebo)" odometry_source="$(arg odometry_source)" />
 
