@@ -41,12 +41,14 @@ private:
 
 	// the source frame of the aruco markers is the camera frame
 	std::string camera_frame_name;
-	std::string fixed_base_frame;
+	// planning and frame transformations are done in the fixed base frame
+	const std::string fixed_base_frame = "igus_rebel_base_link";
+	std::string root_base_frame;
 
-    // load base arg
-    bool load_base_arg;
+	// load base arg
+	bool load_base_arg;
 
-    // tf2 listener and buffer for frame transformations
+	// tf2 listener and buffer for frame transformations
 	std::shared_ptr<tf2_ros::TransformListener> tf_listener_{nullptr};
 	std::unique_ptr<tf2_ros::Buffer> tf_buffer_;
 
@@ -56,26 +58,35 @@ private:
 	const int btn_1 = 4, btn_2 = 5, btn_3 = 6;
 
 	// aruco markers array (sorted)
-	std::vector<geometry_msgs::msg::Pose::SharedPtr> aruco_markers; // one for each button
-    std::vector<geometry_msgs::msg::Pose::SharedPtr> aruco_markers_saved; // one for each button
+	std::vector<geometry_msgs::msg::Pose::SharedPtr> aruco_markers;		  // one for each button
+	std::vector<geometry_msgs::msg::Pose::SharedPtr> aruco_markers_saved; // one for each button
 	const int btn_ids[n_btns] = {btn_1, btn_2, btn_3};
 
-    // mutex lock for aruco markers array
-    std::mutex aruco_markers_mutex;
+	// mutex lock for aruco markers array
+	std::mutex aruco_markers_mutex;
 
 	// position deltas in meters between the aruco marker and the button (assuming sorted markers)
 	//  in order: looking pose, button 1, button 2, button 3
-	const float delta_x[n_btns + 1] = {0.0, 0.01, 0.01, 0.01};
-	const float delta_y[n_btns + 1] = {0.1, -0.10, -0.09, -0.09};
-	const float delta_z[n_btns + 1] = {0.15, 0.08, 0.08, 0.08};
+	const float delta_x[n_btns + 1] = {0.0, 0.0, 0.0, -0.01};
+	const float delta_y[n_btns + 1] = {0.0, 0.08, 0.08, 0.08};
+	const float delta_z[n_btns + 1] = {0.15, 0.1, 0.08, 0.1};
 
 	// position vertical axis delta required to go down and press the button (or release it)
 	// in order: button 1, button 2, button 3
-	const float delta_pressing[n_btns] = {0.07, 0.09, 0.07};
+	const double delta_pressing[n_btns] = {0.08, 0.08, 0.08};
 
-	// this quaternion describes a rotation of -pi/2 radians around the y axis.
-	const tf2::Quaternion flip_rotation = tf2::Quaternion(std::cos(-M_PI_2 / 2.0), 0.0, std::sin(-M_PI_2 / 2.0), 0.0);
+    // tolerance values for end effector poses
+	const float orientation_tolerance = 0.1; // radians
+	const float position_tolerance = 0.005;	 // meters
+
+	// these quaternions describe the rotations required to get from the aruco poses to
+	// the end effector pose in such a way that the end effector (last joint) doesn't rotate if not necessary
+	const tf2::Quaternion flip_rotation = tf2::Quaternion(tf2::Vector3(0.0, 1.0, 0.0), M_PI_2);
 	const tf2::Quaternion extra_rotation = tf2::Quaternion(tf2::Vector3(1.0, 0.0, 0.0), -M_PI_2);
+
+	// parameters for linear planning movement in cartesian path
+	const double jump_threshold = 0.0; // 0.0 disables jump threshold
+	const double eef_step = 0.01;	   // interpolation resolution for linear path planning
 
 	// goal pose subscriber
 	rclcpp::Subscription<ros2_aruco_interfaces::msg::ArucoMarkers>::SharedPtr aruco_markers_sub;
@@ -167,12 +178,29 @@ public:
 														bool flip = false);
 
 	/**
+	 * @brief compute the linear waypoints for the end effector to follow along the given axes
+	 * @param starting_pose the starting pose of the robot arm
+	 * @param x_length the length of the movement along the x axis
+	 * @param y_length the length of the movement along the y axis
+	 * @param z_length the length of the movement along the z axis
+	 * @return the linear waypoints to follow to move the robot arm along the given lengths
+	 */
+	std::vector<geometry_msgs::msg::Pose> computeLinearWaypoints(geometry_msgs::msg::Pose::SharedPtr starting_pose,
+																 double x_length, double y_length, double z_length);
+
+	/**
 	 * @param target_pose the target pose for the robotic arm to reach
-	 * @param planar_movement whether to fix end effector orientation during movement (with constrained planning)
 	 * @brief Plan and move the robotic arm to the target pose
 	 * @return true if the movement and planning was successful, false otherwise
 	 */
-	bool robotPlanAndMove(geometry_msgs::msg::PoseStamped::SharedPtr target_pose, bool planar_movement = false);
+	bool robotPlanAndMove(geometry_msgs::msg::PoseStamped::SharedPtr target_pose);
+
+	/**
+	 * @param pose_waypoints the sequence of waypoints to follow for the end effector
+	 * @brief Plan and move the robot to the sequence of poses, in cartesian space
+	 * @return true if plan was successful and if the movement was at least partially completed, false otherwise
+	 */
+	bool robotPlanAndMove(std::vector<geometry_msgs::msg::Pose> pose_waypoints);
 
 	/**
 	 * @brief Plan and move the robot to the joint space goal
