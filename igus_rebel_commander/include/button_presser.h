@@ -69,13 +69,19 @@ private:
 	//  in order: looking pose, button 1, button 2, button 3
 	const float delta_x[n_btns + 1] = {0.0, 0.0, 0.0, -0.01};
 	const float delta_y[n_btns + 1] = {0.0, 0.08, 0.08, 0.08};
-	const float delta_z[n_btns + 1] = {0.15, 0.1, 0.08, 0.1};
+	const float delta_z[n_btns + 1] = {0.15, 0.09, 0.07, 0.09};
 
 	// position vertical axis delta required to go down and press the button (or release it)
 	// in order: button 1, button 2, button 3
 	const double delta_pressing[n_btns] = {0.08, 0.08, 0.08};
 
-    // tolerance values for end effector poses
+	// robot arm joint values for the looking pose
+	// should be valid for both scenarios where igus is mounted on the mobile robot base or on a table
+	//TODO: set static search joints positions depeding on whether the base has been loaded or not
+	// first joint was 1.0
+	const std::vector<double> search_joints_positions = {-0.5, -1.2, 1.0, 0.0, 1.5, 0.0}; // radians
+
+	// tolerance values for end effector poses
 	const float orientation_tolerance = 0.1; // radians
 	const float position_tolerance = 0.005;	 // meters
 

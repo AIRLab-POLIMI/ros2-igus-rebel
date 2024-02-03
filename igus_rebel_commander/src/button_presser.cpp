@@ -10,7 +10,7 @@ ButtonPresser::ButtonPresser(const rclcpp::NodeOptions &node_options) : Node("bu
 
 	// aruco goal pose subscriber with callback thread
 	aruco_markers_sub = this->create_subscription<ros2_aruco_interfaces::msg::ArucoMarkers>(
-		"/aruco_markers", 10, std::bind(&ButtonPresser::arucoMarkersCallback, this, std::placeholders::_1));
+		"/aruco/markers", 10, std::bind(&ButtonPresser::arucoMarkersCallback, this, std::placeholders::_1));
 
 	ready = false;
 
@@ -171,10 +171,8 @@ void ButtonPresser::moveToSearchingPose() {
 	// define pose as an array of target joints positions, then use moveit planning in joint space to move the robot
 
 	RCLCPP_INFO(LOGGER, "Moving the robot to searching pose");
-	// robot arm joint values for the looking pose
-	// should be valid for both scenarios where igus is mounted on the mobile robot base or on a table
-	const std::vector<double> search_joints_positions = {1.0, -1.2, 1.0, 0.0, 1.5, 0.0}; // radians
 
+	// using predefined joint space goal position
 	bool valid_motion = this->robotPlanAndMove(search_joints_positions);
 	if (!valid_motion) {
 		RCLCPP_ERROR(LOGGER, "Could not move to static search position");
@@ -495,6 +493,21 @@ geometry_msgs::msg::Pose::UniquePtr ButtonPresser::apply_transform(geometry_msgs
 		computed_tf2 = pose_tf2 * delta_tf2;
 	}
 
+	// align the end effector so that it always points upwards
+	tf2::Quaternion computed_quaternion = computed_tf2.getRotation();
+	computed_quaternion.normalize();
+
+	// get rpy angles from the computed quaternion
+	double roll, pitch, yaw;
+	tf2::Matrix3x3(computed_quaternion).getRPY(roll, pitch, yaw);
+
+	// align the end effector so that the roll angle becomes 0
+	tf2::Quaternion alignment_quaternion = tf2::Quaternion(tf2::Vector3(1.0, 0.0, 0.0), -roll);
+
+	// apply the alignment quaternion to the computed quaternion
+	computed_quaternion = alignment_quaternion * computed_quaternion;
+	computed_tf2.setRotation(computed_quaternion);
+
 	// convert geometry_msgs::msg::Transform to geometry_msgs::msg::Pose
 	geometry_msgs::msg::Pose::UniquePtr transformed_pose = std::make_unique<geometry_msgs::msg::Pose>();
 	transformed_pose->position.x = computed_tf2.getOrigin().getX();
@@ -548,8 +561,11 @@ bool ButtonPresser::robotPlanAndMove(geometry_msgs::msg::PoseStamped::SharedPtr 
 	RCLCPP_INFO(LOGGER, "Planning and moving to target pose");
 
 	// print out the target coordinates and orientation
-	RCLCPP_INFO(LOGGER, "Target pose coordinates: x = %f, y = %f, z = %f", target_pose->pose.position.x, target_pose->pose.position.y, target_pose->pose.position.z);
-	RCLCPP_INFO(LOGGER, "Target pose orientation: x = %f, y = %f, z = %f, w = %f", target_pose->pose.orientation.x, target_pose->pose.orientation.y, target_pose->pose.orientation.z, target_pose->pose.orientation.w);
+	RCLCPP_INFO(LOGGER, "Target pose coordinates: x = %f, y = %f, z = %f", target_pose->pose.position.x,
+				target_pose->pose.position.y, target_pose->pose.position.z);
+	RCLCPP_INFO(LOGGER, "Target pose orientation: x = %f, y = %f, z = %f, w = %f",
+				target_pose->pose.orientation.x, target_pose->pose.orientation.y, target_pose->pose.orientation.z,
+				target_pose->pose.orientation.w);
 
 	// publish a coordinate axis corresponding to the pose with rviz visual tools
 	visual_tools->publishAxisLabeled(target_pose->pose, "target");
@@ -647,6 +663,11 @@ bool ButtonPresser::robotPlanAndMove(geometry_msgs::msg::PoseStamped::SharedPtr 
 	return bool(response);
 }
 
+/**
+ * @param pose_waypoints the sequence of waypoints to follow for the end effector
+ * @brief Plan and move the robot to the sequence of poses, in cartesian space
+ * @return true if plan was successful and if the movement was at least partially completed, false otherwise
+ */
 bool ButtonPresser::robotPlanAndMove(std::vector<geometry_msgs::msg::Pose> pose_waypoints) {
 
 	RCLCPP_INFO(LOGGER, "Planning and moving to target pose with linear path");
@@ -719,7 +740,7 @@ bool ButtonPresser::robotPlanAndMove(std::vector<double> joint_space_goal) {
 	// gets end effector link with respect to global frame of reference (root frame)
 	const Eigen::Isometry3d goal_pose = goal_state.getGlobalLinkTransform(end_effector_link);
 
-	// lookup transform from base footpring to fixed base frame
+	// lookup transform from global frame of reference (root frame) to fixed base frame
 	geometry_msgs::msg::TransformStamped tf_base_footprint_msg;
 	try {
 		// lookup transform from root base frame (base_footprint when load_base = true) to fixed base frame (igus rebel base link)
@@ -786,13 +807,13 @@ int main(int argc, char *argv[]) {
 	// wait 5 seconds so that the robot does not move instantly
 	// std::this_thread::sleep_for(std::chrono::milliseconds(5000));
 
-	//NOTE: change the following function to switch between static search and dynamic search
+	// NOTE: change the following function to switch between static search and dynamic search
 
 	// move to the predefined static searching pose
 	node->moveToSearchingPose();
 
 	// alternatively start waving the robot arm to find the buttons setup
-	//node->lookAroundForArucoMarkers();
+	// node->lookAroundForArucoMarkers();
 
 	// start the demo thread once the robot is in the searching pose
 	std::thread button_presser_demo_thread = std::thread(&ButtonPresser::buttonPresserDemoThread, node);

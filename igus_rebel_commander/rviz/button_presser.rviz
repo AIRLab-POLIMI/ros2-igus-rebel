@@ -23,7 +23,7 @@ Panels:
   - Class: rviz_common/Time
     Experimental: false
     Name: Time
-    SyncMode: 0
+    SyncMode: 0computed_quaternion
     SyncSource: PointCloud2
 Visualization Manager:
   Class: ""
@@ -282,7 +282,7 @@ Visualization Manager:
         Filter size: 10
         History Policy: Keep Last
         Reliability Policy: Reliable
-        Value: /aruco_poses
+        Value: /aruco/poses
       Value: true
     - Alpha: 1
       Autocompute Intensity Bounds: true
@@ -330,7 +330,7 @@ Visualization Manager:
         Durability Policy: Volatile
         History Policy: Keep Last
         Reliability Policy: Reliable
-        Value: /aruco_image
+        Value: /aruco/image
       Value: true
   Enabled: true
   Global Options:
