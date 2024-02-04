@@ -1,11 +1,8 @@
 # joint_limits.yaml allows the dynamics properties specified in the URDF to be overwritten or augmented as needed
 
-# For beginners, we downscale velocity and acceleration limits.
-# You can always specify higher scaling factors (<= 2.0) in your motion requests.  # Increase the values below to 2.0 to always move at maximum speed.
 default_velocity_scaling_factor: 0.1
 default_acceleration_scaling_factor: 0.1
 
-# Check the irc_ros_description readme before you change these settings
 joint_limits:
     joint1:
         has_velocity_limits: true

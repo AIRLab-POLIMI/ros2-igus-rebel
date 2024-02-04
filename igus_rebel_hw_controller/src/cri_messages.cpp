@@ -282,7 +282,7 @@ void Status::Print() {
  * TODO: Throw warning if its not the correct mode and switch it?
  */
 Mode Status::GetMode(const std::string& modeString) {
-    RCLCPP_DEBUG(rclcpp::get_logger("iRC_ROS::CRI"), "Converting Mode %s", modeString.c_str());
+    RCLCPP_DEBUG(rclcpp::get_logger("hw_controller::cri_messages"), "Converting Mode %s", modeString.c_str());
 
     if (modeString == "joint") {
         return Mode::JOINT;
@@ -413,7 +413,7 @@ KinematicLimits::KinematicLimits(const std::string& messageString)
 
     if (minMax.size() % 2 != 0) {
         RCLCPP_ERROR(
-            rclcpp::get_logger("iRC_ROS::CRI"), "Error parsing config message of type %d",
+            rclcpp::get_logger("hw_controller::cri_messages"), "Error parsing config message of type %d",
             (int)configType);
         return;
     }
@@ -437,7 +437,7 @@ std::string KinematicLimits::ToString() {
 }
 
 void KinematicLimits::Print() {
-    RCLCPP_INFO(rclcpp::get_logger("iRC_ROS"), "Kinematic limits: %s", ToString().c_str());
+    RCLCPP_INFO(rclcpp::get_logger("hw_controller::cri_messages"), "Kinematic limits: %s", ToString().c_str());
 }
 
 void KinematicLimits::print_once(const std::string& messageString) {
