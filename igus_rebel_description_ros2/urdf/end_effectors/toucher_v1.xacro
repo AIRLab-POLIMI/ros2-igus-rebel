@@ -1,0 +1,51 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="toucher_v1">
+
+	<xacro:macro name="toucher_v1" params="parent">
+
+		<material name="dark_green">
+			<color rgba="${5/255.0} ${100/255.0} ${5/255.0} 1.000" />
+		</material>
+
+		<joint name="${parent}_to_toucher_v1" type="fixed">
+			<parent link="${parent}" />
+			<child link="toucher_v1" />
+			<origin rpy="0.0 0.0 0.0" xyz="0.0 0.0 0.0" />
+			<axis xyz="0 0 0" />
+		</joint>
+
+		<!-- toucher is a cylindrical approximation of the pointer for touching objects -->
+		<!-- 11 cm = length of cylinder -->
+		<link name="toucher_v1">
+			<inertial>
+				<origin xyz="0.055 0.0 0.0" rpy="0.0 ${pi/2.0} 0.0" />
+				<mass value="0.1" />
+				<inertia ixx="0.0001" iyy="0.0001" izz="0.0001" ixy="0" iyz="0" ixz="0" />
+			</inertial>
+			<visual>
+				<origin xyz="0.055 0.0 0.0" rpy="0.0 ${pi/2.0} 0.0" />
+				<geometry>
+					<cylinder length="0.11" radius="0.015" />
+				</geometry>
+				<material name="dark_green" />
+			</visual>
+			<collision>
+				<origin xyz="0.055 0.0 0.0" rpy="0.0 ${pi/2.0} 0.0" />
+				<geometry>
+					<cylinder length="0.11" radius="0.015" />
+				</geometry>
+			</collision>
+		</link>
+
+		<!-- add endpoint link such that the end effector position is at the extremity of toucher-->
+		<joint name="${parent}_to_endpoint" type="fixed">
+			<parent link="${parent}" />
+			<child link="endpoint" />
+			<origin xyz="0.11 0.0 0.0" rpy="0.0 0.0 0.0" /> 
+			<axis xyz="0.0 0.0 0.0" />
+		</joint>
+		
+		<link name="endpoint" />
+
+	</xacro:macro>
+</robot>

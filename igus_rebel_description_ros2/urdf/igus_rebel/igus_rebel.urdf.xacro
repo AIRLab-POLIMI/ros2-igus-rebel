@@ -2,20 +2,60 @@
 <robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="igus_rebel">
 
 	<!-- macro definition for the robot -->
-	<xacro:macro name="igus_rebel" params="hardware_protocol gripper load_base">
-	
+	<xacro:macro name="igus_rebel"
+		params="load_base mount camera end_effector hardware_protocol load_gazebo moveit">
+
 		<!-- Include and call rebel macro -->
 		<xacro:include
 			filename="$(find igus_rebel_description_ros2)/urdf/igus_rebel/igus_rebel.description.xacro" />
 		<xacro:igus_rebel_description />
 
 		<!-- controller macro -->
-		<xacro:include filename="$(find igus_rebel_description_ros2)/urdf/igus_rebel/igus_rebel.control.xacro" />
+		<xacro:include
+			filename="$(find igus_rebel_description_ros2)/urdf/igus_rebel/igus_rebel.control.xacro" />
 		<xacro:igus_rebel_control hardware_protocol="${hardware_protocol}" />
 
-		<!-- Grippers -->
-		<xacro:include filename="$(find igus_rebel_description_ros2)/urdf/grippers/grippers.xacro" />
-		<xacro:gripper gripper_type="${gripper}" />
+		<!-- Mount macro -->
+		<xacro:if value="${mount == 'mount_v1'}">
+
+			<xacro:include filename="$(find igus_rebel_description_ros2)/urdf/mounts/mount_v1.xacro" />
+			<xacro:mount_v1 camera="$(arg camera)" end_effector="$(arg end_effector)"
+				load_gazebo="$(arg load_gazebo)" />
+
+		</xacro:if>
+
+		<!-- Gazebo macro -->
+		<xacro:if value="${load_gazebo}">
+
+			<xacro:include
+				filename="$(find igus_rebel_description_ros2)/urdf/igus_rebel/igus_rebel.gazebo.xacro" />
+
+			<!-- The plugin that control the robot in Ignition is loaded if Moveit2 will be used. 
+			The Moveit2 controller configuration file is directly passed as a parameter to this plugin -->
+			<xacro:if value="${moveit}">
+				<xacro:ign_ros2_control
+					controller_parameters="$(find igus_rebel_moveit_config)/config/ros2_controllers.yaml" />
+			</xacro:if>
+
+			<!-- The joint state publisher and the joint position controller are loaded if Moveit2
+			is not used	because the robot is controllable directly from Ignition if some movement are needed -->
+			<xacro:unless value="${moveit}">
+				<xacro:ign_joint_state_publisher />
+				<xacro:ign_joint_position_controller />
+			</xacro:unless>
+
+			<!-- The sensors used in Ignition are loaded only if a camera is attached -->
+			<xacro:unless value="${camera == 'none' or mount == 'none'}">
+				<xacro:virtual_sensors />
+				<!-- Since there is already a a sensor plugin in the scout, if the scout is loaded
+				the sensor plugin of the igus rebel is not loaded (temporary solution) -->
+				<xacro:unless value="${load_base}">
+					<xacro:ign_sensor_plugin />
+				</xacro:unless>
+
+			</xacro:unless>
+
+		</xacro:if>
 
 
 	</xacro:macro>

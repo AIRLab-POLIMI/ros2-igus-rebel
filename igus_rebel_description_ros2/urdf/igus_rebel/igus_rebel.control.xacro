@@ -4,6 +4,7 @@
 
 		<ros2_control name="igus_rebel" type="system">
 			<hardware>
+
 				<xacro:if value="${hardware_protocol == 'mock_hardware'}">
 					<plugin>mock_components/GenericSystem</plugin>
 					<param name="mock_sensor_commands">true</param>
@@ -12,26 +13,30 @@
 
 				<xacro:if value="${hardware_protocol == 'simulation'}">
 					<plugin>igus_rebel_hw_controller/SimulationController</plugin>
-
 				</xacro:if>
+
 				<xacro:if value="${hardware_protocol == 'cri'}">
 					<plugin>igus_rebel_hw_controller/RebelController</plugin>
-					<!--<param
-					name="ip">192.168.3.11</param>-->
-					<!--<param
-					name="port">3920</param>-->
+					<!--<param name="ip">192.168.1.102</param>-->
+					<!--<param name="port">3920</param>-->
 				</xacro:if>
+
+				<xacro:if value="${hardware_protocol == 'ignition'}">
+					<plugin>ign_ros2_control/IgnitionSystem</plugin>
+				</xacro:if>
+
 			</hardware>
 
-			<xacro:macro name="rebel_joint" params="name position_min=0 position_max=0 cri_joint_offset=0">
+			<xacro:macro name="rebel_joint"
+				params="name position_min=0 position_max=0 cri_joint_offset=0">
 				<joint name="${name}">
 
+					<!-- Position control can be optionally deployed -->
 					<!--<command_interface name="position">
 						<param name="min">${position_min}</param>
 						<param name="max">${position_max}</param>
 					</command_interface>-->
 
-					<!-- If you want to increase the velocity and/or speed limit please consult the readme of this package first -->
 					<command_interface name="velocity">
 						<param name="min">${-pi/4}</param>
 						<param name="max">${pi/4}</param>
@@ -40,45 +45,30 @@
 					<state_interface name="position">
 						<param name="initial_value">0.0</param>
 					</state_interface>
-					<!-- Velocity is required for moveit+mock_components -->
+					
 					<state_interface name="velocity">
 						<param name="initial_value">0.0</param>
 					</state_interface>
-					
+
 					<!-- CRI specific parameters -->
 					<param name="cri_joint_offset">${cri_joint_offset}</param>
 				</joint>
 			</xacro:macro>
 
-			<!-- Position limit difference with iRC files due to 30 degree offset in joint 2 and 3 -->
+			<!-- CRI joints offset for virtual zero definition -->
 
-			<xacro:rebel_joint name="joint1" position_min="${-pi*179/180}" position_max="${pi*179/180}" />
-			<xacro:rebel_joint name="joint2" position_min="${-pi*2/3}" position_max="${pi*2/3}" cri_joint_offset="${-pi/6.0}" />
-			<xacro:rebel_joint name="joint3" position_min="${-pi*2/3}" position_max="${pi*2/3}" cri_joint_offset="${-pi/6.0}" />
-			<xacro:rebel_joint name="joint4" position_min="${-pi*179/180}" position_max="${pi*179/180}" />
-			<xacro:rebel_joint name="joint5" position_min="${-pi*19/36}" position_max="${pi*19/36}" cri_joint_offset="${pi/24.0}" />
-			<xacro:rebel_joint name="joint6" position_min="${-pi*179/180}" position_max="${pi*179/180}" />
-
-			<!-- 
-			<xacro:macro name="arm_control" params="transmission joint motor">
-				<transmission name="${transmission}">
-					<plugin>transmission_interface/SimpleTransmission</plugin>
-					<joint name="${joint}">
-						<hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
-					</joint>
-					<actuator name="${motor}" role="actuator_${motor}">
-						<hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
-						<mechanicalReduction>1</mechanicalReduction>
-					</actuator>
-				</transmission>
-			</xacro:macro>
-			<xacro:arm_control transmission="rebel_tran_1" joint="joint1" motor="rebel_motor_1" />
-			<xacro:arm_control transmission="rebel_tran_2" joint="joint2" motor="rebel_motor_2" />
-			<xacro:arm_control transmission="rebel_tran_3" joint="joint3" motor="rebel_motor_3" />
-			<xacro:arm_control transmission="rebel_tran_4" joint="joint4" motor="rebel_motor_4" />
-			<xacro:arm_control transmission="rebel_tran_5" joint="joint5" motor="rebel_motor_5" />
-			<xacro:arm_control transmission="rebel_tran_6" joint="joint6" motor="rebel_motor_6" />
-		-->
+			<xacro:rebel_joint name="joint1" position_min="${-pi*179/180}"
+				position_max="${pi*179/180}" />
+			<xacro:rebel_joint name="joint2" position_min="${-pi*2/3}" position_max="${pi*2/3}"
+				cri_joint_offset="${-pi/6.0}" />
+			<xacro:rebel_joint name="joint3" position_min="${-pi*2/3}" position_max="${pi*2/3}"
+				cri_joint_offset="${-pi/6.0}" />
+			<xacro:rebel_joint name="joint4" position_min="${-pi*179/180}"
+				position_max="${pi*179/180}" />
+			<xacro:rebel_joint name="joint5" position_min="${-pi*19/36}" position_max="${pi*19/36}"
+				cri_joint_offset="${pi/24.0}" />
+			<xacro:rebel_joint name="joint6" position_min="${-pi*179/180}"
+				position_max="${pi*179/180}" />
 
 		</ros2_control>
 

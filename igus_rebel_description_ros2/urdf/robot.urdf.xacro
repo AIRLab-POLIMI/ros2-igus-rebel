@@ -1,20 +1,45 @@
 <?xml version="1.0"?>
 <robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="igus_rebel">
 
+	<!-- Scout base selection -->
+	<xacro:arg name="load_base" default="true" />
+
+	<!-- Mount selection -->
+	<xacro:arg name="mount" default="none" />
+
+	<!-- Camera type selection -->
+	<xacro:arg name="camera" default="none" />
+
+	<!-- End effector type selection -->
+	<xacro:arg name="end_effector" default="none" />
+
+	<!-- Gazebo version -->
+	<xacro:arg name="load_gazebo" default="false" />
+
 	<!-- Controller settings, only enable a single one in the launch file -->
 	<xacro:arg name="hardware_protocol" default="simulation" />
 
-	<!-- Gripper selection -->
-	<xacro:arg name="gripper" default="camera" />
-
-	<!-- Load base -->
-	<xacro:arg name="load_base" default="false" />
-
-	<!-- load gazebo xacro -->
-	<xacro:arg name="load_gazebo" default="false" />
+	<!-- Argument that tells if Moveit2 is used or not -->
+	<xacro:arg name="moveit" default="false" />
 
 	<!-- odometry source: world ground truth or wheels encoders -->
 	<xacro:arg name="odometry_source" default="ground_truth" />
+
+
+	<!-- Set both at 0.0 if collapsing is not interesting in gazebo -->
+	<xacro:property name="damping" value="0.0" />
+	<xacro:property name="friction" value="0.0" />
+
+	<!-- Add world link, necessary only when igus rebel is loaded on gazebo without the scout -->
+	<xacro:if value="$(arg load_gazebo)">
+		<xacro:unless value="$(arg load_base)">
+			<link name="world" />
+			<joint name="world_joint" type="fixed">
+				<parent link="world" />
+				<child link="base_link" />
+			</joint>
+		</xacro:unless>
+	</xacro:if>
 
 	<!-- Load mobile robot base, load_base must be true -->
 	<xacro:if value="$(arg load_base)">
@@ -67,7 +92,8 @@
 	<xacro:include
 		filename="$(find igus_rebel_description_ros2)/urdf/igus_rebel/igus_rebel.urdf.xacro" />
 	<xacro:igus_rebel
-		gripper="$(arg gripper)" hardware_protocol="$(arg hardware_protocol)"
-		load_base="$(arg load_base)" />
+		load_base="$(arg load_base)" mount="$(arg mount)" camera="$(arg camera)"
+		end_effector="$(arg end_effector)" hardware_protocol="$(arg hardware_protocol)"
+		load_gazebo="$(arg load_gazebo)" moveit="$(arg moveit)" />
 
 </robot>

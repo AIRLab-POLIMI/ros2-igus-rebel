@@ -1,0 +1,61 @@
+<?xml version="1.0"?>
+<robot name="virtual_camera_frames" xmlns:xacro="http://ros.org/wiki/xacro">
+
+	<!-- Dummy inertia for virtual camera frames -->
+	<xacro:macro name="inertial_dummy" params="mass=0.1 x=0.1 y=0.1 z=0.1">
+		<inertial>
+			<mass value="${mass}" />
+			<origin xyz="0 0 0" />
+			<inertia ixx="${(1/12) * mass * (y*y + z*z)}" ixy="0.0" ixz="0.0"
+				iyy="${(1/12) * mass * (x*x + z*z)}" iyz="0.0"
+				izz="${(1/12) * mass * (x*x + y*y)}" />
+		</inertial>
+	</xacro:macro>
+
+
+	<!-- Main macro definition -->
+	<xacro:macro name="virtual_camera_frames" params="parent:=camera">
+
+		<link name="virtual_depth_camera_frame">
+			<xacro:inertial_dummy />
+		</link>
+
+		<joint name="virtual_depth_camera_joint" type="fixed">
+			<parent link="${parent}_link" />
+			<child link="virtual_depth_camera_frame" />
+			<origin xyz="0 0 0" rpy="0 0 0" />
+		</joint>
+
+		<link name="virtual_depth_camera_optical_frame">
+			<xacro:inertial_dummy />
+		</link>
+
+		<joint name="virtual_depth_camera_optical_joint" type="fixed">
+			<origin xyz="0 0 0" rpy="${-pi/2} 0 ${-pi/2}" />
+			<parent link="virtual_depth_camera_frame" />
+			<child link="virtual_depth_camera_optical_frame" />
+		</joint>
+
+		<link name="virtual_rgb_camera_frame">
+			<xacro:inertial_dummy />
+		</link>
+
+		<joint name="virtual_rgb_camera_joint" type="fixed">
+			<parent link="${parent}_link" />
+			<child link="virtual_rgb_camera_frame" />
+			<origin xyz="0 0 0" rpy="0 0 0" />
+		</joint>
+
+		<link name="virtual_rgb_camera_optical_frame">
+			<xacro:inertial_dummy />
+		</link>
+
+		<joint name="virtual_rgb_camera_optical_joint" type="fixed">
+			<origin xyz="0 0 0" rpy="${-pi/2} 0 ${-pi/2}" />
+			<parent link="virtual_rgb_camera_frame" />
+			<child link="virtual_rgb_camera_optical_frame" />
+		</joint>
+
+	</xacro:macro>
+
+</robot>

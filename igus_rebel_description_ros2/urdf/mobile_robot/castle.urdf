@@ -1,17 +1,5 @@
 <?xml version="1.0"?>
-
 <robot name="scout_v2" xmlns:xacro="http://ros.org/wiki/xacro">
-
-	<!-- tower link is attached to the mobile robot base -->
-	<!-- 
-	<joint name="base_link_to_mobile_robot" type="fixed">
-		<parent link="base_link" />
-		<child link="mobile_robot_base_link" />
-		<origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0" />
-	</joint>
-
-	<link name="mobile_robot_base_link" />
-	-->
 
 	<joint name="tower" type="fixed">
 		<parent link="mobile_robot_base_link" />
@@ -20,9 +8,9 @@
 		<axis xyz="0 0 -1" />
 	</joint>
 
-    <material name="dark_blue">
-        <color rgba="0.0 ${25/255} ${51/255} 0.7" />
-    </material>
+	<material name="dark_blue">
+		<color rgba="0.0 ${25/255} ${51/255} 0.7" />
+	</material>
 
 	<link name="tower_link">
 		<inertial>
@@ -34,14 +22,14 @@
 			<geometry>
 				<box size="0.38 0.28 0.69" />
 			</geometry>
-			<material name="dark_blue"/>
+			<material name="dark_blue" />
 		</visual>
-        <visual>
+		<visual>
 			<origin xyz="-0.085 0.0 0.1" rpy="0.0 0.0 0.0" />
 			<geometry>
-                <box size="0.17 0.28 0.20" />
+				<box size="0.17 0.28 0.20" />
 			</geometry>
-			<material name="dark_blue"/>
+			<material name="dark_blue" />
 		</visual>
 		<collision>
 			<origin xyz="0.19 0.0 0.345" rpy="0.0 0.0 0.0" />
@@ -49,10 +37,10 @@
 				<box size="0.38 0.28 0.69" />
 			</geometry>
 		</collision>
-        <collision>
+		<collision>
 			<origin xyz="-0.085 0.0 0.1" rpy="0.0 0.0 0.0" />
 			<geometry>
-                <box size="0.17 0.28 0.2" />
+				<box size="0.17 0.28 0.2" />
 			</geometry>
 		</collision>
 	</link>
