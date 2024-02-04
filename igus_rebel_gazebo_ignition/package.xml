@@ -1,0 +1,21 @@
+<?xml version="1.0"?>
+<?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
+<package format="3">
+	<name>igus_rebel_gazebo_ignition</name>
+	<version>0.1.0</version>
+	<description>
+		Configurations and the launch file to run the Igus ReBeL 6 DOF robot arm in Gazebo
+		Ignition Fortress. 
+	</description>
+	<maintainer email="michelelagreca.work@gmail.com">Michele Carlo La Greca</maintainer>
+	<license>AIRLAB</license>
+
+	<buildtool_depend>ament_cmake</buildtool_depend>
+
+	<test_depend>ament_lint_auto</test_depend>
+	<test_depend>ament_lint_common</test_depend>
+
+	<export>
+		<build_type>ament_cmake</build_type>
+	</export>
+</package>

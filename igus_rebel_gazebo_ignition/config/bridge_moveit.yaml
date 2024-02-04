@@ -1,0 +1,37 @@
+---
+# No joint state bridge is used since the joint state in Ros are calculated by Moveit2, and they are sent to Gazebo using the control plugin
+- ros_topic_name: "/clock"
+  gz_topic_name: "/clock"
+  ros_type_name: "rosgraph_msgs/msg/Clock"
+  gz_type_name: "ignition.msgs.Clock"
+  direction: GZ_TO_ROS
+- ros_topic_name: "/virtual_camera_link/rgbd_camera/camera_info"
+  gz_topic_name: "/world/default/model/igus_rebel/link/link_8/sensor/depth_camera/camera_info"
+  ros_type_name: "sensor_msgs/msg/CameraInfo"
+  gz_type_name: "ignition.msgs.CameraInfo"
+  direction: GZ_TO_ROS  
+- ros_topic_name: "/virtual_camera_link/rgbd_camera/depth_image"
+  gz_topic_name: "/world/default/model/igus_rebel/link/link_8/sensor/depth_camera/depth_image"
+  ros_type_name: "sensor_msgs/msg/Image"
+  gz_type_name: "ignition.msgs.Image"
+  direction: GZ_TO_ROS
+- ros_topic_name: "/virtual_camera_link/rgbd_camera/image_raw"
+  gz_topic_name: "/world/default/model/igus_rebel/link/link_8/sensor/depth_camera/image"
+  ros_type_name: "sensor_msgs/msg/Image"
+  gz_type_name: "ignition.msgs.Image"
+  direction: GZ_TO_ROS
+- ros_topic_name: "/virtual_camera_link/rgb_camera/camera_info"
+  gz_topic_name: "/world/default/model/igus_rebel/link/link_8/sensor/rgb_camera/camera_info"
+  ros_type_name: "sensor_msgs/msg/CameraInfo"
+  gz_type_name: "ignition.msgs.CameraInfo"
+  direction: GZ_TO_ROS  
+- ros_topic_name: "/virtual_camera_link/rgb_camera/image"
+  gz_topic_name: "/world/default/model/igus_rebel/link/link_8/sensor/rgb_camera/image"
+  ros_type_name: "sensor_msgs/msg/Image"
+  gz_type_name: "ignition.msgs.Image"
+  direction: GZ_TO_ROS
+- ros_topic_name: "/virtual_camera_link/pointcloud/points"
+  gz_topic_name: "/world/default/model/igus_rebel/link/link_8/sensor/pointcloud/points"
+  ros_type_name: "sensor_msgs/msg/PointCloud2"
+  gz_type_name: "ignition.msgs.PointCloudPacked"
+  direction: GZ_TO_ROS
