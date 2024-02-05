@@ -22,9 +22,9 @@ class ArucoFollower : public rclcpp::Node {
    private:
     const rclcpp::Logger LOGGER = rclcpp::get_logger("igus_rebel::aruco_follower");
 
-    const std::string PLANNING_GROUP = "chain_arm_manipulator";
+    const std::string PLANNING_GROUP = "rebel_arm";
 
-    std::string end_effector_link;
+    std::string end_effector_link; // toucher_endpoint
 
     // goal pose stamped
     geometry_msgs::msg::PoseStamped goal_pose;

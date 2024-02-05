@@ -147,8 +147,7 @@ def launch_setup(context, *args, **kwargs):
             LaunchConfiguration("hardware_protocol"),
             " load_gazebo:=",
             LaunchConfiguration("load_gazebo"),
-            " moveit:=",
-            "true",
+            " moveit:=true",
         ]
     )
 
@@ -177,8 +176,6 @@ def launch_setup(context, *args, **kwargs):
             LaunchConfiguration("camera"),
             " end_effector:=",
             LaunchConfiguration("end_effector"),
-            " load_gazebo:=",
-            LaunchConfiguration("load_gazebo"),
         ]
     )
 

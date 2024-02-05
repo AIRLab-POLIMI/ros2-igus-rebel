@@ -12,7 +12,7 @@ from launch_ros.actions import Node
 from launch_ros.parameter_descriptions import ParameterValue
 from launch.actions import OpaqueFunction
 from launch.actions import IncludeLaunchDescription
-from launch.conditions import IfCondition
+from launch.conditions import IfCondition, UnlessCondition
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 
 
@@ -145,7 +145,7 @@ def launch_setup(context, *args, **kwargs):
         executable="joint_state_publisher_gui",
         name="joint_state_publisher_gui",
         parameters=[{'use_sim_time': use_sim_time}],
-        condition=IfCondition(LaunchConfiguration("jsp_gui")),
+        condition=UnlessCondition(LaunchConfiguration("load_gazebo")),
         # publishes to /rebel/joint_states
         # remappings=remappings
     )
@@ -172,15 +172,9 @@ def launch_setup(context, *args, **kwargs):
         condition=IfCondition(LaunchConfiguration("load_gazebo"))
     )
 
-    # RViz config files differ based on whether the base is loaded or not
-    if LaunchConfiguration("load_base").perform(context) == "true":
-        rviz_filename = "rebel_on_scout.rviz"
-    else:
-        rviz_filename = "rebel.rviz"
-
     rviz_file = PathJoinSubstitution([
         FindPackageShare("igus_rebel_description_ros2"),
-        "rviz", rviz_filename
+        "rviz", "rebel.rviz"
     ])
 
     rviz_node = Node(

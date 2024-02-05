@@ -35,12 +35,12 @@ def generate_launch_description():
     spawn_yaw_arg = DeclareLaunchArgument(
         name="spawn_yaw",
         default_value="-1.0",
-        description="Y position for the robot spawned in Gazebo Ignition",
+        description="Yaw orientation for the robot spawned in Gazebo Ignition",
     )
 
     env_gazebo_package_arg = DeclareLaunchArgument(
         name="env_gazebo_package",
-        default_value="default",
+        default_value="igus_rebel_gazebo_ignition",
         description="Package where the gazebo world and configuration are located. Requires full name of the package, otherwise it will default to this package.",
     )
 
@@ -76,11 +76,10 @@ def launch_setup(context, *args, **kwargs):
     }
 
     # Ignition world package
-    env_gazebo_package = LaunchConfiguration(
-        "env_gazebo_package").perform(context)
+    env_gazebo_package = LaunchConfiguration("env_gazebo_package").perform(context)
     full_world_name = LaunchConfiguration("full_world_name").perform(context)
 
-    if env_gazebo_package != 'default':
+    if env_gazebo_package != 'igus_rebel_gazebo_ignition':
         ignition_models_path = os.path.join(
             get_package_share_directory(env_gazebo_package), "models",
         )
@@ -95,28 +94,23 @@ def launch_setup(context, *args, **kwargs):
         bridge_config_filename = "bridge_moveit.yaml"
         gazebo_config_gui_filename = "gazebo_gui_moveit.config"
 
-    if env_gazebo_package == 'default':
-        package_name = "igus_rebel_gazebo_ignition"
-    else:
-        package_name = env_gazebo_package
-
     # World SDF path
     world_path = os.path.join(
-        get_package_share_directory(package_name),
+        get_package_share_directory(env_gazebo_package),
         "worlds",
         full_world_name,
     )
 
     # Bridge config
     bridge_config_path = os.path.join(
-        get_package_share_directory(package_name),
+        get_package_share_directory(env_gazebo_package),
         "config",
         bridge_config_filename,
     )
 
     # Gazebo gui config
     gazebo_config_gui_path = os.path.join(
-        get_package_share_directory(package_name),
+        get_package_share_directory(env_gazebo_package),
         "config",
         gazebo_config_gui_filename,
     )

@@ -10,7 +10,7 @@ run_ros2_launch_in_konsole "multi_aruco_plane_detection multi_aruco_plane_detect
 sleep 5 &
 
 # Spawn Konsole terminals for each ROS 2 launch file
-run_ros2_launch_in_konsole "igus_rebel_moveit_config moveit_controller.launch.py hardware_protocol:=cri gripper:=camera load_base:=false" &
+run_ros2_launch_in_konsole "igus_rebel_moveit_config moveit_controller.launch.py hardware_protocol:=cri load_base:=false" &
 
 sleep 10 &
 
