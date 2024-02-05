@@ -1,7 +1,5 @@
 <?xml version="1.0"?>
-
 <robot xmlns:xacro="http://wiki.ros.org/xacro" name="igus_rebel">
-
 
 	<!-- Arguments -->
 	<xacro:arg name="load_base" default="false" />
@@ -12,13 +10,12 @@
 
 	<xacro:arg name="end_effector" default="none" />
 
-
 	<!-- macro xacro definition to load mount and mobile robot base -->
 	<xacro:macro name="srdf" params="mount camera end_effector load_base">
 
-
-		<!-- Groups -->
-
+		<!--############################################################################### -->
+		<!-- 				Planning Groups Definitions and End Effectors					-->
+		<!--############################################################################### -->
 
 		<!-- If mount is not placed -->
 		<xacro:if value="${mount == 'none'}">
@@ -38,129 +35,42 @@
 
 
 		<!-- If mount is placed -->
-		<xacro:if value="${mount == 'mount_v1'}">
+		<xacro:if value="${mount != 'none'}">
 
-
-			<!-- If camera is none and no end effector -->
-			<xacro:if value="${camera == 'none' and end_effector == 'none'}">
+			<!-- If camera is oakd and no end effector-->
+			<xacro:if value="${end_effector == 'none'}">
 
 				<group name="rebel_arm">
 					<chain base_link="igus_rebel_base_link" tip_link="flange" />
 				</group>
 
-				<group name="camera_mount_group">
-					<link name="camera_mount" />
-				</group>
-
-				<end_effector name="camera_mount_EEF" parent_link="flange"
-					group="camera_mount_group" parent_group="rebel_arm" />
+				<end_effector name="flange_EEF" parent_link="flange"
+					group="rebel_arm" />
 
 			</xacro:if>
-
-
-			<!-- If camera is realsense and no end effector-->
-			<xacro:if value="${camera == 'realsense' and end_effector == 'none'}">
-
-				<group name="rebel_arm">
-					<chain base_link="igus_rebel_base_link" tip_link="camera_mount" />
-				</group>
-
-				<group name="camera_link_group">
-					<link name="camera_insert" />
-					<link name="camera_bottom_screw_frame" />
-					<link name="camera_link" />
-					<link name="camera_usb_plug_link" />
-				</group>
-
-				<end_effector name="camera_link_EEF" parent_link="camera_mount"
-					group="camera_link_group" parent_group="rebel_arm" />
-
-			</xacro:if>
-
-
-			<!-- If camera is oakd and no end effector-->
-			<xacro:if value="${camera == 'oakd' and end_effector == 'none'}">
-
-				<group name="rebel_arm">
-					<chain base_link="igus_rebel_base_link" tip_link="camera_mount" />
-				</group>
-
-				<group name="camera_link_group">
-					<link name="camera_insert" />
-					<link name="camera_link" />
-				</group>
-
-				<end_effector name="camera_link_EEF" parent_link="camera_mount"
-					group="camera_link_group" parent_group="rebel_arm" />
-
-			</xacro:if>
-
-
-			<!-- If camera is none and toucher v1 is placed -->
-			<xacro:if value="${camera == 'none' and end_effector == 'toucher_v1'}">
-
-				<group name="rebel_arm">
-					<chain base_link="igus_rebel_base_link" tip_link="camera_mount" />
-				</group>
-
-				<group name="toucher_v1_group">
-					<link name="toucher_v1" />
-				</group>
-
-				<end_effector name="toucher_v1_EEF" parent_link="camera_mount"
-					group="toucher_v1_group" parent_group="rebel_arm" />
-
-			</xacro:if>
-
 
 			<!-- If camera is realsense and toucher v1 is placed -->
-			<xacro:if value="${camera == 'realsense' and end_effector == 'toucher_v1'}">
+			<xacro:if value="${end_effector == 'toucher_v1'}">
 
 				<group name="rebel_arm">
-					<chain base_link="igus_rebel_base_link" tip_link="camera_mount" />
-				</group>
-
-				<group name="camera_link_group">
-					<link name="camera_insert" />
-					<link name="camera_bottom_screw_frame" />
-					<link name="camera_link" />
-					<link name="camera_usb_plug_link" />
+					<chain base_link="igus_rebel_base_link" tip_link="toucher_endpoint" />
 				</group>
 
 				<group name="toucher_v1_group">
 					<link name="toucher_v1" />
+					<link name="toucher_endpoint" />
 				</group>
 
-				<end_effector name="toucher_v1_EEF" parent_link="camera_mount"
-					group="toucher_v1_group" parent_group="rebel_arm" />
+				<end_effector name="toucher_v1_EEF" parent_link="toucher_endpoint"
+					group="rebel_arm" parent_group="toucher_v1_group" />
 
 			</xacro:if>
-
-
-			<!-- If camera is oakd and toucher v1 is placed -->
-			<xacro:if value="${camera == 'oakd' and end_effector == 'toucher_v1'}">
-
-				<group name="rebel_arm">
-					<chain base_link="igus_rebel_base_link" tip_link="camera_mount" />
-				</group>
-
-				<group name="camera_link_group">
-					<link name="camera_insert" />
-					<link name="camera_link" />
-				</group>
-
-				<group name="toucher_v1_group">
-					<link name="toucher_v1" />
-				</group>
-
-				<end_effector name="toucher_v1_EEF" parent_link="camera_mount"
-					group="toucher_v1_group" parent_group="rebel_arm" />
-
-			</xacro:if>
-
 
 		</xacro:if>
 
+		<!--############################################################################### -->
+		<!-- 				Planning Groups states 											-->
+		<!--############################################################################### -->
 
 		<!-- Positions common for every configuration -->
 		<group_state name="zero" group="rebel_arm">
@@ -181,11 +91,19 @@
 			<joint name="joint6" value="0" />
 		</group_state>
 
-		<!--TODO:
-		add parking position -->
+		<group_state name="parked" group="rebel_arm">
+			<joint name="joint1" value="0" />
+			<joint name="joint2" value="${36.0 * pi / 180.0}" />
+			<joint name="joint3" value="${76.0 * pi / 180.0}" />
+			<joint name="joint4" value="${124.0 * pi / 180.0}" />
+			<joint name="joint5" value="${-81.0 * pi / 180.0}" />
+			<joint name="joint6" value="0" />
+		</group_state>
 
 
-		<!-- Collisions -->
+		<!--############################################################################### -->
+		<!-- 							Collisions 											-->
+		<!--############################################################################### -->
 
 		<!-- Default collision checks for base robot. This is the simplest configuration, that is
 		always present. -->
@@ -206,20 +124,6 @@
 
 		<!-- Collisions checks due to the presence of the scout base -->
 		<xacro:if value="${load_base}">
-
-			<group name="mobile_robot">
-				<link name="mobile_robot_base_link" />
-				<link name="front_right_wheel_link" />
-				<link name="front_left_wheel_link" />
-				<link name="rear_right_wheel_link" />
-				<link name="rear_left_wheel_link" />
-				<link name="inertial_link" />
-				<link name="front_mount" />
-				<link name="rear_mount" />
-				<link name="rebel_support" />
-				<link name="tower_link" />
-			</group>
-
 
 			<!-- Default collision checks for base robot and scout. The collision between the scout
 			and the mount are all enabled-->
@@ -279,18 +183,10 @@
 		<!-- Collision checks due to the presence of the mount -->
 		<xacro:if value="${mount == 'mount_v1'}">
 
-
 			<disable_collisions link1="link_5" link2="camera_mount" reason="Never" />
 			<disable_collisions link1="link_6" link2="camera_mount" reason="Never" />
 			<disable_collisions link1="link_7" link2="camera_mount" reason="Never" />
 			<disable_collisions link1="link_8" link2="camera_mount" reason="Adjacent" />
-
-
-			<!-- <xacro:if value="${camera == 'none' and end_effector == 'none}">
-
-				nothing
-
-			</xacro:if> -->
 
 			<xacro:if value="${camera == 'oakd' and end_effector == 'none'}">
 
@@ -316,7 +212,6 @@
 				<disable_collisions link1="link_7" link2="camera_usb_plug_link" reason="Never" />
 				<disable_collisions link1="link_8" link2="camera_link" reason="Never" />
 				<disable_collisions link1="link_8" link2="camera_usb_plug_link" reason="Never" />
-
 
 			</xacro:if>
 

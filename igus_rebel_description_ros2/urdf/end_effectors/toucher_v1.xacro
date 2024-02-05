@@ -40,12 +40,12 @@
 		<!-- add endpoint link such that the end effector position is at the extremity of toucher-->
 		<joint name="${parent}_to_endpoint" type="fixed">
 			<parent link="${parent}" />
-			<child link="endpoint" />
+			<child link="toucher_endpoint" />
 			<origin xyz="0.11 0.0 0.0" rpy="0.0 0.0 0.0" /> 
 			<axis xyz="0.0 0.0 0.0" />
 		</joint>
 		
-		<link name="endpoint" />
+		<link name="toucher_endpoint" />
 
 	</xacro:macro>
 </robot>
