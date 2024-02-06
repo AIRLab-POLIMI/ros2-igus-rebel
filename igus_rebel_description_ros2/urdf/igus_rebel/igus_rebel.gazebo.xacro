@@ -147,8 +147,8 @@
 				<camera>
 					<horizontal_fov>1.05</horizontal_fov>
 					<image>
-						<width>1280</width>
-						<height>720</height>
+						<width>640</width>
+						<height>480</height>
 					</image>
 					<clip>
 						<near>0.3</near>
@@ -165,20 +165,26 @@
 		<gazebo reference="virtual_depth_camera_frame">
 			<sensor type="rgbd_camera" name="depth_camera">
 				<update_rate>10</update_rate>
-				<depth_camera>
+				<camera>
 					<horizontal_fov>1.05</horizontal_fov>
 					<image>
-						<width>320</width>
-						<height>240</height>
-						<!-- <width>1280</width>
-						<height>720</height> -->
-						<format>R8G8B8</format>
+						<width>640</width>
+						<height>480</height>
 					</image>
 					<clip>
 						<near>0.1</near>
 						<far>10.0</far>
 					</clip>
-				</depth_camera>
+					<lens>
+						<projection>
+							<p_fx>554</p_fx>
+							<p_fy>554</p_fy>
+							<p_cx>320</p_cx>
+							<p_cy>240</p_cy>
+						</projection>
+					</lens>
+				</camera>
+				
 			</sensor>
 		</gazebo>
 
@@ -188,8 +194,8 @@
 				<camera>
 					<horizontal_fov>1.05</horizontal_fov>
 					<image>
-						<width>320</width>
-						<height>240</height>
+						<width>640</width>
+						<height>480</height>
 						<format>R8G8B8</format>
 					</image>
 					<clip>

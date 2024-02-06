@@ -59,11 +59,11 @@ def generate_launch_description():
         description="Whether or not Gazebo Ignition is used",
     )
 
-    jsp_gui_arg = DeclareLaunchArgument(
-        name="jsp_gui",
+    load_rviz_arg = DeclareLaunchArgument(
+        name="load_rviz",
         default_value="true",
         choices=["true", "false"],
-        description="load joint state publisher gui to send joint states in ROS",
+        description="Whether or not Rviz is used",
     )
 
     return LaunchDescription(
@@ -74,7 +74,7 @@ def generate_launch_description():
             end_effector_arg,
             hardware_protocol_arg,
             load_gazebo_arg,
-            jsp_gui_arg,
+            load_rviz_arg,
             OpaqueFunction(function=launch_setup),
         ]
     )
@@ -150,14 +150,6 @@ def launch_setup(context, *args, **kwargs):
         # remappings=remappings
     )
 
-    joint_state_publisher_node = Node(
-        package="joint_state_publisher",
-        executable="joint_state_publisher",
-        name="joint_state_publisher",
-        parameters=[{'use_sim_time': use_sim_time}],
-        # publishes to /rebel/joint_states and receives URDF from /rebel/robot_description
-        # remappings=remappings
-    )
 
     # Ignition node
     ignition_launch = IncludeLaunchDescription(
@@ -182,12 +174,12 @@ def launch_setup(context, *args, **kwargs):
         executable="rviz2",
         name="rviz2",
         arguments=["-d", rviz_file],
+        condition=IfCondition(LaunchConfiguration("load_rviz")),
     )
 
     return [
         robot_state_publisher_node,
         joint_state_publisher_gui_node,
-        joint_state_publisher_node,
         ignition_launch,
         rviz_node,
     ]

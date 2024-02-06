@@ -62,7 +62,7 @@
 				</group>
 
 				<end_effector name="toucher_v1_EEF" parent_link="toucher_endpoint"
-					group="rebel_arm" parent_group="toucher_v1_group" />
+					group="toucher_v1_group" parent_group="rebel_arm" />
 
 			</xacro:if>
 

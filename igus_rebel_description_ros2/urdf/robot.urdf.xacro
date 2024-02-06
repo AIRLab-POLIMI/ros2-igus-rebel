@@ -31,7 +31,7 @@
 	<xacro:property name="friction" value="0.0" />
 
 	<!-- Add world link, necessary only when igus rebel is loaded on gazebo without the scout -->
-	<xacro:if value="$(arg load_gazebo)">
+	<!-- <xacro:if value="$(arg load_gazebo)">
 		<xacro:unless value="$(arg load_base)">
 			<link name="world" />
 			<joint name="world_joint" type="fixed">
@@ -39,11 +39,19 @@
 				<child link="base_link" />
 			</joint>
 		</xacro:unless>
-	</xacro:if>
+	</xacro:if> -->
 
 	<!-- Load mobile robot base, load_base must be true -->
 	<xacro:if value="$(arg load_base)">
 
+
+		<!-- <xacro:if value="$(arg load_gazebo)">
+			<link name="world" />
+			<joint name="world_joint" type="fixed">
+				<parent link="world" />
+				<child link="base_footprint" />
+			</joint>
+		</xacro:if> -->
 		<!-- add virtual joints and links to create a complete TF tree supporting both igus rebel
 		and mobile robot -->
 		<!-- base_footprint -> base_link -> { mobile_robot_base_link, rebel_support ->
