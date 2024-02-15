@@ -67,9 +67,9 @@ private:
 
 	// position deltas in meters between the aruco marker and the button (assuming sorted markers)
 	//  in order: looking pose, button 1, button 2, button 3
-	const float delta_x[n_btns + 1] = {0.0, 0.0, 0.0, -0.01};
-	const float delta_y[n_btns + 1] = {0.0, 0.08, 0.08, 0.08};
-	const float delta_z[n_btns + 1] = {0.15, 0.09, 0.07, 0.09};
+	const float delta_x[n_btns + 1] = {0.0, 0.0, -0.01, -0.01};
+	const float delta_y[n_btns + 1] = {0.0, 0.08, 0.07, 0.07};
+	const float delta_z[n_btns + 1] = {0.15, 0.08, 0.07, 0.08};
 
 	// position vertical axis delta required to go down and press the button (or release it)
 	// in order: button 1, button 2, button 3
@@ -93,6 +93,7 @@ private:
 	// parameters for linear planning movement in cartesian path
 	const double jump_threshold = 0.0; // 0.0 disables jump threshold
 	const double eef_step = 0.01;	   // interpolation resolution for linear path planning
+	const double max_step = 0.05;	   // maximum distance between consecutive waypoints
 
 	// goal pose subscriber
 	rclcpp::Subscription<ros2_aruco_interfaces::msg::ArucoMarkers>::SharedPtr aruco_markers_sub;

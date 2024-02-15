@@ -81,7 +81,7 @@ def generate_launch_description():
 
     # read camera frame from ros2_aruco config file
     config_file = os.path.join(
-        get_package_share_directory("ros2_aruco"), "config", "aruco_parameters.yaml"
+        get_package_share_directory("ros2_aruco_pose_estimation"), "config", "aruco_parameters.yaml"
     )
 
     # load yaml file

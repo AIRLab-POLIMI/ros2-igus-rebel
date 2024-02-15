@@ -145,7 +145,7 @@ void ButtonPresser::initRvizVisualTools() {
 	visual_tools->setPlanningSceneTopic("/move_group/monitored_planning_scene");
 	visual_tools->loadPlanningSceneMonitor();
 	visual_tools->enableBatchPublishing();
-
+	visual_tools->setBaseFrame(fixed_base_frame);
 	visual_tools->deleteAllMarkers();
 
 	// Remote control is an introspection tool that allows users to step through a high level script
@@ -210,7 +210,7 @@ void ButtonPresser::lookAroundForArucoMarkers() {
 
 	// second layer of waypoints: camera facing slighly downwards --> suitable for searching close aruco markers
 	for (float i = range_max; i >= range_min; i -= 0.2) {
-		std::vector<double> pos = {i, -0.9, 0.25, 0.0, 1.74, 0.0};
+		std::vector<double> pos = {i, -1.0, 0.4, 0.0, 1.74, 0.0};
 		waypoints.push_back(pos);
 	}
 
@@ -227,9 +227,9 @@ void ButtonPresser::lookAroundForArucoMarkers() {
 		}
 	}
 
-	// second layer of waypoints: camera facing downwards --> suitable for searching interactible aruco markers
+	// third layer of waypoints: camera facing downwards --> suitable for searching interactible aruco markers
 	for (float i = range_min; i <= range_max; i += 0.2) {
-		std::vector<double> pos = {i, -1.1, 0.7, 0.0, 1.74, 0.0};
+		std::vector<double> pos = {i, -1.2, 0.8, 0.0, 1.74, 0.0};
 		waypoints.push_back(pos);
 	}
 
@@ -651,6 +651,7 @@ bool ButtonPresser::robotPlanAndMove(geometry_msgs::msg::PoseStamped::SharedPtr 
 
 	// visualizing the trajectory
 	joint_model_group = move_group->getCurrentState()->getJointModelGroup(PLANNING_GROUP);
+	visual_tools->setBaseFrame(fixed_base_frame);
 	visual_tools->publishTrajectoryLine(plan_motion.trajectory, joint_model_group);
 	visual_tools->trigger();
 
@@ -677,7 +678,7 @@ bool ButtonPresser::robotPlanAndMove(std::vector<geometry_msgs::msg::Pose> pose_
 	move_group->setGoalPositionTolerance(position_tolerance);		// meters ~ 5 mm
 	move_group->setGoalOrientationTolerance(orientation_tolerance); // radians ~ 5 degrees
 	move_group->setPlannerId("RRTConnectkConfigDefault");
-	move_group->setPlanningTime(5.0);
+	move_group->setPlanningTime(20.0);
 
 	// optionally limit accelerations and velocity scaling
 	move_group->setMaxVelocityScalingFactor(0.2);
@@ -691,7 +692,7 @@ bool ButtonPresser::robotPlanAndMove(std::vector<geometry_msgs::msg::Pose> pose_
 	// this function returns the proportion of the trajectory that was successfully planned
 	// computes cartesian path while taking into account the collisions and not constraining the robot state space
 	// the resulting trajectory is a sequence of waypoints for the end effector to follow
-	double completed_proportion = move_group->computeCartesianPath(pose_waypoints, this->eef_step, this->jump_threshold,
+	double completed_proportion = move_group->computeCartesianPath(pose_waypoints, this->max_step, this->jump_threshold,
 																   cartesian_trajectory, true, error_codes);
 
 	RCLCPP_INFO(LOGGER, "Cartesian linear path: %.2f%% achieved", completed_proportion * 100.0);
@@ -699,6 +700,7 @@ bool ButtonPresser::robotPlanAndMove(std::vector<geometry_msgs::msg::Pose> pose_
 	// RCLCPP_INFO(LOGGER, "Error codes: %s", moveit::core::error_code_to_string(*error_codes).c_str());
 
 	// show linear trajectory points
+	visual_tools->setBaseFrame(fixed_base_frame);
 	visual_tools->publishPath(pose_waypoints, rviz_visual_tools::LIME_GREEN, rviz_visual_tools::SMALL);
 	for (unsigned int i = 0; i < pose_waypoints.size(); ++i) {
 		visual_tools->publishAxisLabeled(pose_waypoints[i], "pt" + std::to_string(i), rviz_visual_tools::XSMALL);
@@ -756,6 +758,7 @@ bool ButtonPresser::robotPlanAndMove(std::vector<double> joint_space_goal) {
 
 	// use rviz visual tools to publish a coordinate axis corresponding to the goal pose defined
 	joint_model_group = move_group->getCurrentState()->getJointModelGroup(PLANNING_GROUP);
+	visual_tools->setBaseFrame(fixed_base_frame);
 	visual_tools->publishAxisLabeled(goal_pose_tf2, "search_pose");
 	visual_tools->trigger();
 
@@ -768,7 +771,9 @@ bool ButtonPresser::robotPlanAndMove(std::vector<double> joint_space_goal) {
 	// visualizing the trajectory
 	RCLCPP_INFO(LOGGER, "Plannning to the searching position = %s", moveit::core::error_code_to_string(response).c_str());
 
-	visual_tools->publishTrajectoryLine(static_search_plan.trajectory, joint_model_group);
+	visual_tools->setBaseFrame(root_base_frame);
+	visual_tools->publishTrajectoryLine(static_search_plan.trajectory,
+										goal_state.getLinkModel(end_effector_link), joint_model_group);
 	visual_tools->trigger();
 
 	if (bool(response)) {
@@ -810,10 +815,10 @@ int main(int argc, char *argv[]) {
 	// NOTE: change the following function to switch between static search and dynamic search
 
 	// move to the predefined static searching pose
-	node->moveToSearchingPose();
+	// node->moveToSearchingPose();
 
 	// alternatively start waving the robot arm to find the buttons setup
-	// node->lookAroundForArucoMarkers();
+	node->lookAroundForArucoMarkers();
 
 	// start the demo thread once the robot is in the searching pose
 	std::thread button_presser_demo_thread = std::thread(&ButtonPresser::buttonPresserDemoThread, node);
