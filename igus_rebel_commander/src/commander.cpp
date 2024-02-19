@@ -80,7 +80,7 @@ int main(int argc, char** argv) {
     //
     // We will start by instantiating a RobotModelLoader object, which will look up the robot description on the ROS
     // parameter server and construct a RobotModel for us to use.
-    const std::string PLANNING_GROUP = "chain_arm_manipulator";  // "rebel_arm" for simple robot movement
+    const std::string PLANNING_GROUP = "rebel_arm";  // "rebel_arm" for simple robot movement
     robot_model_loader::RobotModelLoaderPtr robot_model_loader(
         new robot_model_loader::RobotModelLoader(commander_node, "robot_description"));
 
@@ -183,7 +183,7 @@ int main(int argc, char** argv) {
     // specifying the desired pose of the end-effector as input.
     planning_interface::MotionPlanResponse res;
     geometry_msgs::msg::PoseStamped pose;
-    pose.header.frame_id = "base_link";
+    pose.header.frame_id = "igus_rebel_base_link";
     pose.pose.position.x = 0.1;
     pose.pose.position.y = -0.1;
     pose.pose.position.z = 0.7;
