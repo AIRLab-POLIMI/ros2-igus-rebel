@@ -1,15 +1,19 @@
-# MoveIt2 package
+# MoveIt2 control package
 
-MoveIt2 configuration files for controlling the robot graphically with Rviz2. It contains the definitions for everything that is needed to control the robot.
+MoveIt2 configuration files for controlling the robot visually with Rviz2. 
+It contains the definitions for everything needed to control the robot.
 
+The **config** folder contains several configuration files for:
+- `moveit_controllers.yaml`: MoveIt2 control manager with follow joint trajectory controller
+- `ompl_planning.yaml`: OMPL planner configuration
+- `moveit_py.yaml`: moveit planners configurations
+- `kinematics.yaml`: Inverse Kinematic solvers
+- `joint_limits.yaml`: Velocity and acceleration constraints
+- `ros2_controllers.yaml`: ROS2 control for the robot arm with joint trajectory controller and ROS2 control for grippers
+- `igus_rebel.srdf.xacro`: SRDF collisions mapping with XACRO macros for all possible robot configurations
+- `initial_positions.yaml`: Joint positions for standard positions
 
-It contains definitions for:
-- OMPL planner and MoveitSimpleController Manager connections
-- Kinematic constraints
-- Velocity and acceleration constraints
-- ROS2 control with joint trajectory controller
-- SRDF configurations and XACRO macros for controls and collisions
-- Joint positions for standard positions
+This package contains also the file `.setup_assistant` that is used to configure the robot for MoveIt2.
 
 ## Usage
 

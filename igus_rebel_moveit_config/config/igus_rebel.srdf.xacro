@@ -92,12 +92,12 @@
 		</group_state>
 
 		<group_state name="parked" group="rebel_arm">
-			<joint name="joint1" value="0" />
-			<joint name="joint2" value="${36.0 * pi / 180.0}" />
-			<joint name="joint3" value="${76.0 * pi / 180.0}" />
-			<joint name="joint4" value="${124.0 * pi / 180.0}" />
-			<joint name="joint5" value="${-81.0 * pi / 180.0}" />
-			<joint name="joint6" value="0" />
+			<joint name="joint1" value="${-42.0 * pi / 180.0}" />
+			<joint name="joint2" value="${40.0 * pi / 180.0}" />
+			<joint name="joint3" value="${73.0 * pi / 180.0}" />
+			<joint name="joint4" value="${82.0 * pi / 180.0}" />
+			<joint name="joint5" value="${-78.0 * pi / 180.0}" />
+			<joint name="joint6" value="${-95.0 * pi / 180.0}" />
 		</group_state>
 
 
