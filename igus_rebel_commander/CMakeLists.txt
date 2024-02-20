@@ -13,13 +13,16 @@ endif()
 include_directories(include)
 
 find_package(ament_cmake REQUIRED)
-find_package(moveit_visual_tools REQUIRED)
+find_package(rclcpp REQUIRED)
 find_package(pluginlib REQUIRED)
 find_package(moveit_core REQUIRED)
 find_package(moveit_kinematics REQUIRED)
 find_package(moveit_ros_planning_interface REQUIRED)
+find_package(moveit_visual_tools REQUIRED)
 find_package(tf2_kdl REQUIRED)
 find_package(ros2_aruco_interfaces REQUIRED)
+find_package(mobile_manipulation_interfaces REQUIRED)
+find_package(rclcpp_action REQUIRED)
 
 # commander demo --> move group interface tutorial with predefined goals: cartesian space and joint space goals
 add_executable(commander_demo
@@ -31,12 +34,23 @@ ament_target_dependencies(commander_demo
 
 # button presser demo --> move the robot to press 3 buttons in a row for a demo
 add_executable(button_presser_demo
+	src/button_presser_main_demo.cpp
 	src/button_presser.cpp
 )
 
 ament_target_dependencies(button_presser_demo
 	pluginlib moveit_core moveit_kinematics moveit_visual_tools tf2_kdl moveit_ros_planning_interface
 	std_msgs geometry_msgs tf2_ros tf2_geometry_msgs ros2_aruco_interfaces)
+
+# button presser action server --> action server for find and pressing buttons
+add_executable(button_presser_action_servers
+	src/button_presser_action_servers.cpp
+	src/button_presser.cpp
+)
+ament_target_dependencies(button_presser_action_servers
+	pluginlib moveit_core moveit_kinematics moveit_visual_tools tf2_kdl moveit_ros_planning_interface
+	std_msgs geometry_msgs tf2_ros tf2_geometry_msgs ros2_aruco_interfaces
+	rclcpp_action mobile_manipulation_interfaces)
 
 # goal pose publisher --> given aruco pose, publishes feasible goal pose for robot
 add_executable(goal_pose_publisher src/goal_pose_publisher.cpp)
@@ -61,11 +75,12 @@ ament_target_dependencies(aruco_follower
 	pluginlib moveit_core moveit_kinematics moveit_visual_tools moveit_ros_planning_interface)
 
 install(TARGETS commander_demo
-				button_presser_demo
-				goal_pose_publisher
-				test_goal_pose_computation
-				aruco_follower
-				test_button_pose_computation
+	button_presser_demo
+	button_presser_action_servers
+	aruco_follower
+	goal_pose_publisher
+	test_goal_pose_computation
+	test_button_pose_computation
 	DESTINATION lib/${PROJECT_NAME}
 )
 

@@ -48,6 +48,9 @@ private:
 	// load base arg
 	bool load_base_arg;
 
+	// vector of double values for the joint position of the parked group state value
+	std::vector<double> parked_joint_positions;
+
 	// tf2 listener and buffer for frame transformations
 	std::shared_ptr<tf2_ros::TransformListener> tf_listener_{nullptr};
 	std::unique_ptr<tf2_ros::Buffer> tf_buffer_;
@@ -61,6 +64,10 @@ private:
 	std::vector<geometry_msgs::msg::Pose::SharedPtr> aruco_markers;		  // one for each button
 	std::vector<geometry_msgs::msg::Pose::SharedPtr> aruco_markers_saved; // one for each button
 	const int btn_ids[n_btns] = {btn_1, btn_2, btn_3};
+
+	// the big aruco marker used as pose reference for the buttons setup
+	const int reference_marker_id = 0;
+	geometry_msgs::msg::PoseStamped::SharedPtr reference_marker_pose;
 
 	// mutex lock for aruco markers array
 	std::mutex aruco_markers_mutex;
@@ -77,7 +84,7 @@ private:
 
 	// robot arm joint values for the looking pose
 	// should be valid for both scenarios where igus is mounted on the mobile robot base or on a table
-	//TODO: set static search joints positions depeding on whether the base has been loaded or not
+	// TODO: set static search joints positions depeding on whether the base has been loaded or not
 	// first joint was 1.0
 	const std::vector<double> search_joints_positions = {-0.5, -1.2, 1.0, 0.0, 1.5, 0.0}; // radians
 
@@ -95,8 +102,10 @@ private:
 	const double eef_step = 0.01;	   // interpolation resolution for linear path planning
 	const double max_step = 0.05;	   // maximum distance between consecutive waypoints
 
-	// goal pose subscriber
+	// multi aruco markers setup subscriber
 	rclcpp::Subscription<ros2_aruco_interfaces::msg::ArucoMarkers>::SharedPtr aruco_markers_sub;
+	// single aruco marker subscriber
+	rclcpp::Subscription<ros2_aruco_interfaces::msg::ArucoMarkers>::SharedPtr aruco_single_marker_sub;
 
 	// thread for tracking the goal pose
 	std::thread button_presser_demo_thread;
@@ -117,27 +126,51 @@ private:
 	moveit_visual_tools::MoveItVisualTools *visual_tools;
 
 public:
+	/**
+	 * @brief constructor for the button presser class
+	 * @param node_options the node options to use for the button presser node
+	 */
 	ButtonPresser(const rclcpp::NodeOptions &node_options);
 
-	// initialize moveit planner and other utilities
+	/**
+	 * @brief initializes move_group and planning_scene interfaces, using the MoveIt2 library APIs
+	 */
 	void initPlanner(void);
-	// load moveit planner given the robot model loaded
+
+	/**
+	 * @brief Load the planner plugin and initialize the planner instance
+	 * @param robot_model the robot model object to use for the planner instance
+	 */
 	void loadPlanner(const moveit::core::RobotModelPtr &robot_model);
-	// initialize rviz visual tools for text and markers visualization
+
+	/**
+	 * @brief Initialize rviz visual tools for text and markers visualization
+	 */
 	void initRvizVisualTools(void);
 
 	/**
-	 * @param aruco_markers_array the array of aruco markers detected by the camera published on /aruco_markers
-	 * @brief callback for the goal pose subscriber from the aruco marker pose tracker publisher
-	 *        saves the markers array and sorts them left to right
+	 * @brief callback for the multi aruco plane detection node, subscribed to /aruco/markers/corrected
+	 *   It also saves the markers array and sorts them left to right
+	 * @param aruco_markers_array the array of aruco markers detected in the camera frame
 	 */
-	void arucoMarkersCallback(const ros2_aruco_interfaces::msg::ArucoMarkers::SharedPtr aruco_markers_array);
+	void arucoMarkersCorrectedCallback(const ros2_aruco_interfaces::msg::ArucoMarkers::SharedPtr aruco_markers_array);
 
-	// main thread to press the buttons demonstration
+	/**
+	 * @brief callback for aruco pose estimation node, receiving a single marker pose
+	 *        Accepts a single marker pose and returns it
+	 * @param aruco_markers_array the array of aruco markers detected by the camera published on /aruco_markers
+	 */
+	void arucoMarkerCallback(const ros2_aruco_interfaces::msg::ArucoMarkers::SharedPtr aruco_markers_array);
+
+	/**
+	 * @brief waits until the aruco markers have been detected, then saves their positions
+	 */
+	void saveMarkersPositions();
+
+	/**
+	 * @brief main thread to press the buttons demonstration
+	 */
 	void buttonPresserDemoThread(void);
-
-	// this function may be substitured by one making a series of movements in order to find the buttons
-	// void searchForButtonSetup(void);
 
 	/**
 	 * @brief Move the robot to the static predefined searching pose
@@ -145,10 +178,24 @@ public:
 	void moveToSearchingPose(void);
 
 	/**
+	 * @brief Move the robot to the static predefined parked position
+	 * @return true if the robot has moved to the parked position, false otherwise
+	 */
+	bool moveToParkedPosition(void);
+
+	/**
 	 * @brief Predefined sequence of movements to look around for the aruco markers, by using joint space goals.
 	 *        It will deploy a series of positions waypoints to follow until the aruco markers are found.
+	 * @param look_nearby true if the aruco markers are nearby, false otherwise, changes the motion type
 	 */
-	void lookAroundForArucoMarkers(void);
+	void lookAroundForArucoMarkers(bool look_nearby);
+
+	/**
+	 * @brief Compute the waypoints to follow in joint space, in order to look around for the aruco markers
+	 * @param look_nearby true if the aruco markers are nearby, false otherwise, changes the motion type
+	 * @return the array of waypoints to follow in joint space
+	 */
+	std::vector<std::vector<double>> computeSearchingWaypoints(bool look_nearby);
 
 	/**
 	 * @brief the looking pose: positioning along the x-axis such that the robot faces the buttons setup from a distance
@@ -205,9 +252,9 @@ public:
 	/**
 	 * @param pose_waypoints the sequence of waypoints to follow for the end effector
 	 * @brief Plan and move the robot to the sequence of poses, in cartesian space
-	 * @return true if plan was successful and if the movement was at least partially completed, false otherwise
+	 * @return percentage of completion of the linear sequence of waypoints
 	 */
-	bool robotPlanAndMove(std::vector<geometry_msgs::msg::Pose> pose_waypoints);
+	double robotPlanAndMove(std::vector<geometry_msgs::msg::Pose> pose_waypoints);
 
 	/**
 	 * @brief Plan and move the robot to the joint space goal
@@ -215,4 +262,14 @@ public:
 	 * @return true if plan and movement were successful, false otherwise
 	 */
 	bool robotPlanAndMove(std::vector<double> joint_space_goal);
+
+	// getter and setter for the ready flag
+	bool isReady(void);
+	void setReady(bool ready);
+
+	// getter for reference_marker_pose
+	geometry_msgs::msg::PoseStamped::SharedPtr getReferenceMarkerPose(void);
+
+	// getter for delta_pressing array
+	std::array<double, 3> getDeltaPressing() const;
 };

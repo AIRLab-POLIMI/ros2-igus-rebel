@@ -3,17 +3,26 @@
 // Master Degree: Computer Science Engineering
 // Laboratory: Artificial Intelligence and Robotics Laboratory (AIRLab)
 
-#include "button_presser.h"
+#include "button_presser.hpp"
 
+/**
+ * @brief constructor for the button presser class
+ * @param node_options the node options to use for the button presser node
+ */
 ButtonPresser::ButtonPresser(const rclcpp::NodeOptions &node_options) : Node("button_presser_node", node_options) {
 	RCLCPP_INFO(LOGGER, "Starting button presser demo");
 
-	// aruco goal pose subscriber with callback thread
+	// aruco markers subscriber to multi_aruco_plane_detection node
 	aruco_markers_sub = this->create_subscription<ros2_aruco_interfaces::msg::ArucoMarkers>(
-		"/aruco/markers", 10, std::bind(&ButtonPresser::arucoMarkersCallback, this, std::placeholders::_1));
+		"/aruco/markers/corrected", 10, std::bind(&ButtonPresser::arucoMarkersCorrectedCallback, this, std::placeholders::_1));
+
+	// aruco markers subscriber to aruco_recognition node
+	aruco_single_marker_sub = this->create_subscription<ros2_aruco_interfaces::msg::ArucoMarkers>(
+		"/aruco/markers", 10, std::bind(&ButtonPresser::arucoMarkerCallback, this, std::placeholders::_1));
 
 	ready = false;
 
+	// temporary and final aruco markers array
 	aruco_markers = std::vector<geometry_msgs::msg::Pose::SharedPtr>(n_btns);
 	aruco_markers_saved = std::vector<geometry_msgs::msg::Pose::SharedPtr>(n_btns);
 
@@ -33,6 +42,9 @@ ButtonPresser::ButtonPresser(const rclcpp::NodeOptions &node_options) : Node("bu
 	tf_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_buffer_);
 }
 
+/**
+ * @brief initializes move_group and planning_scene interfaces, using the MoveIt2 library APIs
+ */
 void ButtonPresser::initPlanner() {
 	button_presser_node = shared_from_this();
 
@@ -88,6 +100,15 @@ void ButtonPresser::initPlanner() {
 		RCLCPP_ERROR(LOGGER, "Could not get end effector tips");
 	}
 
+	// get the default parked group state joints values
+	std::map<std::string, double> group_state_map = std::map<std::string, double>();
+	joint_model_group->getVariableDefaultPositions("parked", group_state_map);
+	parked_joint_positions = std::vector<double>(group_state_map.size());
+	for (const auto &pair : group_state_map) {
+		// assumes that the joints are ordered in the same way as the move_group interface does
+		parked_joint_positions[joint_model_group->getVariableGroupIndex(pair.first)] = pair.second;
+	}
+
 	// Using the RobotModel we can construct a PlanningScene that maintains the state of the world (including the robot).
 	planning_scene = new planning_scene::PlanningScene(robot_model);
 
@@ -96,6 +117,10 @@ void ButtonPresser::initPlanner() {
 	loadPlanner(robot_model);
 }
 
+/**
+ * @brief Load the planner plugin and initialize the planner instance
+ * @param robot_model the robot model object to use for the planner instance
+ */
 void ButtonPresser::loadPlanner(const moveit::core::RobotModelPtr &robot_model) {
 	// We will now construct a loader to load a planner, by name.
 	// Note that we are using the ROS pluginlib library here.
@@ -132,6 +157,9 @@ void ButtonPresser::loadPlanner(const moveit::core::RobotModelPtr &robot_model) 
 	RCLCPP_INFO(LOGGER, "Loaded planner and planning plugin");
 }
 
+/**
+ * @brief Initialize rviz visual tools for text and markers visualization
+ */
 void ButtonPresser::initRvizVisualTools() {
 	// Visualization
 	// ^^^^^^^^^^^^^
@@ -180,61 +208,37 @@ void ButtonPresser::moveToSearchingPose() {
 }
 
 /**
- * @brief Predefined sequence of movements to look around for the aruco markers, by using joint space goals.
- *       It will deploy a series of positions waypoints to follow until the aruco markers are found.
+ * @brief Move the robot to the static predefined parked position
+ * @return true if the robot has moved to the parked position, false otherwise
  */
-void ButtonPresser::lookAroundForArucoMarkers() {
+bool ButtonPresser::moveToParkedPosition(void) {
+	RCLCPP_INFO(LOGGER, "Moving the robot to predefined parking pose");
+	// using predefined joint space goal position
+	bool valid_motion = this->robotPlanAndMove(parked_joint_positions);
+	if (!valid_motion) {
+		RCLCPP_ERROR(LOGGER, "Could not move to parked position");
+	}
+	return valid_motion;
+}
 
-	float range_min = -3.1, range_max = 3.1; // when the robotic arm is mounted on a table without space constraints
-	float extra_segment_min = -3.1, extra_segment_max = -2.7;
+/**
+ * @brief Predefined sequence of movements to look around for the aruco markers, by using joint space goals.
+ *       It repeats the sequence of waypoints until the aruco markers are found.
+ * @param look_nearby true if the aruco markers are nearby, false otherwise, changes the motion type
+ */
+void ButtonPresser::lookAroundForArucoMarkers(bool look_nearby) {
 
 	// first move the robot arm to the static searching pose, looking in front of the robot arm with the camera facing downwards
-	std::vector<double> first_position = {range_min, -0.5, -0.35, 0.0, 1.74, 0.0};
+	std::vector<double> first_position = {-3.1, -0.5, -0.35, 0.0, 1.74, 0.0};
 	bool valid_motion = this->robotPlanAndMove(first_position);
 
 	// then create array of waypoints to follow in joint space, in order to look around for the aruco markers
 	std::vector<std::vector<double>> waypoints;
-
-	// first layer of waypoints: camera facing forward --> suitable for searching distant aruco markers
-	// it rotates 360 degrees in order to look everywhere around the robot, regardless of robot arm position
-	for (float i = range_min; i <= range_max; i += 0.2) {
-		std::vector<double> pos = {i, -0.5, -0.35, 0.0, 1.74, 0.0};
-		waypoints.push_back(pos);
-	}
-
-	if (load_base_arg) {
-		// limit robot movement range when the robotic arm is mounted on the mobile robot base
-		range_min = -1.5;
-		range_max = 3.1;
-	}
-
-	// second layer of waypoints: camera facing slighly downwards --> suitable for searching close aruco markers
-	for (float i = range_max; i >= range_min; i -= 0.2) {
-		std::vector<double> pos = {i, -1.0, 0.4, 0.0, 1.74, 0.0};
-		waypoints.push_back(pos);
-	}
-
-	if (load_base_arg) {
-		// adds extra segment to cover maximum angle in the second and third search layers
-		for (float i = extra_segment_max; i >= extra_segment_min; i -= 0.2) {
-			std::vector<double> pos = {i, -0.9, 0.25, 0.0, 1.74, 0.0};
-			waypoints.push_back(pos);
-		}
-
-		for (float i = extra_segment_min; i <= extra_segment_max; i += 0.2) {
-			std::vector<double> pos = {i, -1.1, 0.7, 0.0, 1.74, 0.0};
-			waypoints.push_back(pos);
-		}
-	}
-
-	// third layer of waypoints: camera facing downwards --> suitable for searching interactible aruco markers
-	for (float i = range_min; i <= range_max; i += 0.2) {
-		std::vector<double> pos = {i, -1.2, 0.8, 0.0, 1.74, 0.0};
-		waypoints.push_back(pos);
-	}
+	waypoints = this->computeSearchingWaypoints(look_nearby);
 
 	// iterate over the waypoints and move the robot arm to each of them
-	for (unsigned short i = 0; i < waypoints.size(); i++) {
+	int waypoints_size = (int) waypoints.size();
+	for (short i = 0; i < waypoints_size; i++) {
 
 		RCLCPP_INFO(LOGGER, "Moving to waypoint %d", i);
 
@@ -245,68 +249,131 @@ void ButtonPresser::lookAroundForArucoMarkers() {
 			continue; // attempt planning to next waypoint and skip this one
 		}
 
+		// wait for 50ms before checking if aruco have been detected
+		std::this_thread::sleep_for(std::chrono::milliseconds(25));
+
 		// while the robot is moving, check whether the aruco markers have been detected between each waypoint
 		// if yes, stop the robot and start the demo
-
-		// wait for 50ms before checking if aruco have been detected
-		std::this_thread::sleep_for(std::chrono::milliseconds(50));
-
-		// check whether the aruco markers have been detected
 		if (ready) {
 			RCLCPP_INFO(LOGGER, "Aruco markers detected, ending search");
 			break;
+		} else {
+			if (i == waypoints_size - 1) {
+				// if the aruco markers have not been detected, reiterate the waypoints
+				RCLCPP_INFO(LOGGER, "Aruco markers not detected yet, reiterating waypoints search");
+				i = -1; // reset the counter to reiterate the waypoints
+			}
 		}
 	}
+}
+
+/**
+ * @brief Compute the waypoints to follow in joint space, in order to look around for the aruco markers
+ * @param look_nearby true if the aruco markers are nearby, false otherwise, changes the motion type
+ * @return the array of waypoints to follow in joint space
+ */
+std::vector<std::vector<double>> ButtonPresser::computeSearchingWaypoints(bool look_nearby) {
+
+	float range_min = -3.1, range_max = 3.1; // when the robotic arm is mounted on a table without space constraints
+	float extra_segment_min = -3.1, extra_segment_max = -2.7;
+
+	std::vector<std::vector<double>> waypoints;
+	if (!look_nearby) {
+
+		// first layer of waypoints: camera facing forward --> suitable for searching distant aruco markers
+		// it rotates 360 degrees in order to look everywhere around the robot, regardless of robot arm position
+		for (float i = range_min; i <= range_max; i += 0.2) {
+			std::vector<double> pos = {i, -0.5, -0.35, 0.0, 1.74, 0.0};
+			waypoints.push_back(pos);
+		}
+		// it doesn't perform the other 2 layers of waypoints, because they are used only for close aruco markers
+
+	} else {
+		// first layer of waypoints is skipped because it is used only for distant aruco markers
+		// TODO: maybe add extra first layer of waypoints
+		if (this->load_base_arg) {
+			// limit robot movement range when the robotic arm is mounted on the mobile robot base
+			range_min = -1.5;
+			range_max = 3.1;
+		}
+
+		// second layer of waypoints: camera facing slighly downwards --> suitable for searching close aruco markers
+		for (float i = range_max; i >= range_min; i -= 0.2) {
+			std::vector<double> pos = {i, -1.0, 0.4, 0.0, 1.74, 0.0};
+			waypoints.push_back(pos);
+		}
+
+		if (load_base_arg) {
+			// adds extra segment to cover maximum angle in the second and third search layers
+			for (float i = extra_segment_max; i >= extra_segment_min; i -= 0.2) {
+				std::vector<double> pos = {i, -0.9, 0.25, 0.0, 1.74, 0.0};
+				waypoints.push_back(pos);
+			}
+
+			for (float i = extra_segment_min; i <= extra_segment_max; i += 0.2) {
+				std::vector<double> pos = {i, -1.1, 0.7, 0.0, 1.74, 0.0};
+				waypoints.push_back(pos);
+			}
+		}
+
+		// third layer of waypoints: camera facing downwards --> suitable for searching interactible aruco markers
+		for (float i = range_min; i <= range_max; i += 0.2) {
+			std::vector<double> pos = {i, -1.2, 0.8, 0.0, 1.74, 0.0};
+			waypoints.push_back(pos);
+		}
+	}
+
+	return waypoints;
 }
 
 /**
  * @param aruco_markers_array the array of aruco markers detected by the camera published on /aruco_markers
  * @brief Callback function for the aruco markers subscriber
  */
-void ButtonPresser::arucoMarkersCallback(const ros2_aruco_interfaces::msg::ArucoMarkers::SharedPtr aruco_markers_array) {
+void ButtonPresser::arucoMarkersCorrectedCallback(const ros2_aruco_interfaces::msg::ArucoMarkers::SharedPtr aruco_markers_array) {
 
-	// first acquire aruco markers array mutex
-	{ // scope for the lock
-		std::lock_guard<std::mutex> lock(aruco_markers_mutex);
+	// first check if the markers have all been detected
+	if (aruco_markers_array->poses.size() < n_btns) {
+		return; // skip and wait until all markers are detected
+	}
 
-		// first check if the markers have all been detected
-		if (aruco_markers_array->poses.size() < n_btns) {
+	// then check whether the required markers are present in the array
+	for (int i = 0; i < n_btns; i++) {
+		bool found = false;
+		for (unsigned int j = 0; j < aruco_markers_array->poses.size(); j++) {
+			if (aruco_markers_array->marker_ids[j] == btn_ids[i]) {
+				found = true;
+				break;
+			}
+		}
+		if (!found) {
 			return; // skip and wait until all markers are detected
 		}
+	}
 
-		// then check whether the required markers are present in the array
-		for (int i = 0; i < n_btns; i++) {
-			bool found = false;
-			for (unsigned int j = 0; j < aruco_markers_array->poses.size(); j++) {
-				if (aruco_markers_array->marker_ids[j] == btn_ids[i]) {
-					found = true;
-					break;
-				}
-			}
-			if (!found) {
-				return; // skip and wait until all markers are detected
-			}
-		}
+	// transform the poses of the aruco markers with respect to the fixed base frame of reference
+	geometry_msgs::msg::TransformStamped tf_camera_base_msg;
+	try {
+		tf_camera_base_msg = tf_buffer_->lookupTransform(fixed_base_frame, camera_frame_name, tf2::TimePointZero);
+	} catch (const tf2::TransformException &ex) {
+		RCLCPP_ERROR(LOGGER, "%s", ex.what());
+		return;
+	}
 
-		// transform the poses of the aruco markers with respect to the fixed base frame of reference
-		geometry_msgs::msg::TransformStamped tf_camera_base_msg;
-		try {
-			tf_camera_base_msg = tf_buffer_->lookupTransform(fixed_base_frame, camera_frame_name, tf2::TimePointZero);
-		} catch (const tf2::TransformException &ex) {
-			RCLCPP_ERROR(LOGGER, "%s", ex.what());
-			return;
-		}
+	geometry_msgs::msg::Pose aruco_marker_tf_pose;
+	// assign the markers to the correct array position based on their id
+	for (int i = 0; i < n_btns; i++) {
+		for (unsigned int j = 0; j < aruco_markers_array->poses.size(); j++) {
+			if (aruco_markers_array->marker_ids[j] == btn_ids[i]) {
+				// transform the aruco poses to the fixed base frame of reference
+				tf2::doTransform(aruco_markers_array->poses[j], aruco_marker_tf_pose, tf_camera_base_msg);
 
-		geometry_msgs::msg::Pose aruco_marker_tf_pose;
-		// assign the markers to the correct array position based on their id
-		for (int i = 0; i < n_btns; i++) {
-			for (unsigned int j = 0; j < aruco_markers_array->poses.size(); j++) {
-				if (aruco_markers_array->marker_ids[j] == btn_ids[i]) {
-					// transform the aruco poses to the fixed base frame of reference
-					tf2::doTransform(aruco_markers_array->poses[j], aruco_marker_tf_pose, tf_camera_base_msg);
+				// acquire aruco markers array mutex lock
+				{ // scope for the lock
+					std::lock_guard<std::mutex> lock(aruco_markers_mutex);
 					aruco_markers[i] = std::make_shared<geometry_msgs::msg::Pose>(aruco_marker_tf_pose);
-					break;
 				}
+				break;
 			}
 		}
 	}
@@ -316,10 +383,52 @@ void ButtonPresser::arucoMarkersCallback(const ros2_aruco_interfaces::msg::Aruco
 }
 
 /**
- * @brief Main thread function for the button presser demo
+ * @brief callback for aruco pose estimation node, receiving a single marker pose
+ *        Accepts a single marker pose and returns it
+ * @param aruco_markers_array the array of aruco markers detected by the camera published on /aruco_markers
  */
-void ButtonPresser::buttonPresserDemoThread() {
-	RCLCPP_INFO(LOGGER, "Starting button presser demo thread");
+void ButtonPresser::arucoMarkerCallback(const ros2_aruco_interfaces::msg::ArucoMarkers::SharedPtr aruco_markers_array) {
+
+	// first check if the markers have all been detected
+	if (aruco_markers_array->poses.size() != 1) {
+		return; // skip and wait until all markers are detected
+	}
+
+	// then check whether the required markers are present in the array
+	if (aruco_markers_array->marker_ids[0] != reference_marker_id) {
+		return; // skip and wait until all markers are detected
+	}
+
+	// transform the pose of the aruco marker with respect to the fixed base frame of reference
+	geometry_msgs::msg::TransformStamped tf_camera_base_msg;
+	try {
+		tf_camera_base_msg = tf_buffer_->lookupTransform(fixed_base_frame, camera_frame_name, tf2::TimePointZero);
+	} catch (const tf2::TransformException &ex) {
+		RCLCPP_ERROR(LOGGER, "%s", ex.what());
+		return;
+	}
+
+	geometry_msgs::msg::Pose aruco_marker_tf_pose;
+	// assign the markers to the correct array position based on their id
+
+	// transform the aruco poses to the fixed base frame of reference
+	tf2::doTransform(aruco_markers_array->poses[0], aruco_marker_tf_pose, tf_camera_base_msg);
+
+	// create a PoseStamped message to return with the aruco marker pose estimated
+	geometry_msgs::msg::PoseStamped::SharedPtr aruco_marker_tf_pose_stamped = std::make_shared<geometry_msgs::msg::PoseStamped>();
+	aruco_marker_tf_pose_stamped->pose = aruco_marker_tf_pose;
+	aruco_marker_tf_pose_stamped->header.frame_id = fixed_base_frame;
+	aruco_marker_tf_pose_stamped->header.stamp = this->now();
+
+	this->reference_marker_pose = aruco_marker_tf_pose_stamped;
+
+	ready = true;
+}
+
+/**
+ * @brief waits until the aruco markers have been detected, then saves their positions
+ */
+void ButtonPresser::saveMarkersPositions() {
 	while (rclcpp::ok()) {
 		if (ready) { // starts the demo
 			RCLCPP_INFO(LOGGER, "Button setup detected, demo can start");
@@ -333,82 +442,89 @@ void ButtonPresser::buttonPresserDemoThread() {
 					aruco_markers_saved[j] = std::make_shared<geometry_msgs::msg::Pose>(*aruco_markers[j]);
 				}
 			}
-
-			RCLCPP_INFO(LOGGER, "Moving to looking position");
-			// first move to the predefined looking pose
-			geometry_msgs::msg::PoseStamped::SharedPtr looking_pose = this->computeLookingPose();
-			this->robotPlanAndMove(looking_pose);
-
-			// then press the buttons in order
-			RCLCPP_INFO(LOGGER, "Pressing button 1 ...");
-			// button 1
-			geometry_msgs::msg::PoseStamped::SharedPtr pose_above_button_1 = this->getPoseAboveButton(1);
-			this->robotPlanAndMove(pose_above_button_1);
-
-			// descent to press the button
-			// geometry_msgs::msg::PoseStamped::SharedPtr pose_pressing_button_1 = this->getPosePressingButton(
-			//	std::make_shared<geometry_msgs::msg::Pose>(pose_above_button_1->pose), 1);
-			// this->robotPlanAndMove(pose_pressing_button_1, true);
-
-			// compute linear waypoints to press the button
-			std::vector<geometry_msgs::msg::Pose> linear_waypoints_btn1 = this->computeLinearWaypoints(
-				std::make_shared<geometry_msgs::msg::Pose>(pose_above_button_1->pose), delta_pressing[0], 0.0, 0.0);
-
-			// move the robot arm along the linear waypoints --> descend to press the button
-			this->robotPlanAndMove(linear_waypoints_btn1);
-
-			// reverse the waypoints
-			std::reverse(linear_waypoints_btn1.begin(), linear_waypoints_btn1.end());
-			// move the robot arm along the linear waypoints --> ascend to release the button
-			this->robotPlanAndMove(linear_waypoints_btn1);
-
-			// button 2
-			RCLCPP_INFO(LOGGER, "Pressing button 2 ...");
-			geometry_msgs::msg::PoseStamped::SharedPtr pose_above_button_2 = this->getPoseAboveButton(2);
-			this->robotPlanAndMove(pose_above_button_2);
-
-			// compute linear waypoints to press the button
-			std::vector<geometry_msgs::msg::Pose> linear_waypoints_btn2 = this->computeLinearWaypoints(
-				std::make_shared<geometry_msgs::msg::Pose>(pose_above_button_2->pose), delta_pressing[1], 0.0, 0.0);
-
-			// move the robot arm along the linear waypoints --> descend to press the button
-			this->robotPlanAndMove(linear_waypoints_btn2);
-
-			// reverse the waypoints
-			std::reverse(linear_waypoints_btn2.begin(), linear_waypoints_btn2.end());
-			// move the robot arm along the linear waypoints --> ascend to release the button
-			this->robotPlanAndMove(linear_waypoints_btn2);
-
-			// button 3
-			RCLCPP_INFO(LOGGER, "Pressing button 3 ...");
-			geometry_msgs::msg::PoseStamped::SharedPtr pose_above_button_3 = this->getPoseAboveButton(3);
-			this->robotPlanAndMove(pose_above_button_3);
-
-			// compute linear waypoints to press the button
-			std::vector<geometry_msgs::msg::Pose> linear_waypoints_btn3 = this->computeLinearWaypoints(
-				std::make_shared<geometry_msgs::msg::Pose>(pose_above_button_3->pose), delta_pressing[2], 0.0, 0.0);
-
-			// move the robot arm along the linear waypoints --> descend to press the button
-			this->robotPlanAndMove(linear_waypoints_btn3);
-
-			// reverse the waypoints
-			std::reverse(linear_waypoints_btn3.begin(), linear_waypoints_btn3.end());
-			// move the robot arm along the linear waypoints --> ascend to release the button
-			this->robotPlanAndMove(linear_waypoints_btn3);
-
-			// move back to the looking pose
-			RCLCPP_INFO(LOGGER, "Returning to looking pose and ending demo");
-			this->robotPlanAndMove(looking_pose);
-
-			// end of demo
-
-			break;
 		} else {
-			// wait until it's ready
-			std::this_thread::sleep_for(std::chrono::milliseconds(500));
-			continue;
+			// wait for 50ms before checking if aruco have been detected
+			std::this_thread::sleep_for(std::chrono::milliseconds(50));
 		}
 	}
+}
+
+/**
+ * @brief Main thread function for the button presser demo
+ */
+void ButtonPresser::buttonPresserDemoThread() {
+	RCLCPP_INFO(LOGGER, "Starting button presser demo thread");
+
+	this->saveMarkersPositions();
+
+	RCLCPP_INFO(LOGGER, "Moving to looking position");
+	// first move to the predefined looking pose
+	geometry_msgs::msg::PoseStamped::SharedPtr looking_pose = this->computeLookingPose();
+	this->robotPlanAndMove(looking_pose);
+
+	// then press the buttons in order
+	RCLCPP_INFO(LOGGER, "Pressing button 1 ...");
+	// button 1
+	geometry_msgs::msg::PoseStamped::SharedPtr pose_above_button_1 = this->getPoseAboveButton(1);
+	this->robotPlanAndMove(pose_above_button_1);
+
+	// descent to press the button
+	// geometry_msgs::msg::PoseStamped::SharedPtr pose_pressing_button_1 = this->getPosePressingButton(
+	//	std::make_shared<geometry_msgs::msg::Pose>(pose_above_button_1->pose), 1);
+	// this->robotPlanAndMove(pose_pressing_button_1, true);
+
+	// compute linear waypoints to press the button
+	std::vector<geometry_msgs::msg::Pose> linear_waypoints_btn1 = this->computeLinearWaypoints(
+		std::make_shared<geometry_msgs::msg::Pose>(pose_above_button_1->pose), delta_pressing[0], 0.0, 0.0);
+
+	// move the robot arm along the linear waypoints --> descend to press the button
+	this->robotPlanAndMove(linear_waypoints_btn1);
+
+	// reverse the waypoints
+	std::reverse(linear_waypoints_btn1.begin(), linear_waypoints_btn1.end());
+	// move the robot arm along the linear waypoints --> ascend to release the button
+	this->robotPlanAndMove(linear_waypoints_btn1);
+
+	// button 2
+	RCLCPP_INFO(LOGGER, "Pressing button 2 ...");
+	geometry_msgs::msg::PoseStamped::SharedPtr pose_above_button_2 = this->getPoseAboveButton(2);
+	this->robotPlanAndMove(pose_above_button_2);
+
+	// compute linear waypoints to press the button
+	std::vector<geometry_msgs::msg::Pose> linear_waypoints_btn2 = this->computeLinearWaypoints(
+		std::make_shared<geometry_msgs::msg::Pose>(pose_above_button_2->pose), delta_pressing[1], 0.0, 0.0);
+
+	// move the robot arm along the linear waypoints --> descend to press the button
+	this->robotPlanAndMove(linear_waypoints_btn2);
+
+	// reverse the waypoints
+	std::reverse(linear_waypoints_btn2.begin(), linear_waypoints_btn2.end());
+	// move the robot arm along the linear waypoints --> ascend to release the button
+	this->robotPlanAndMove(linear_waypoints_btn2);
+
+	// button 3
+	RCLCPP_INFO(LOGGER, "Pressing button 3 ...");
+	geometry_msgs::msg::PoseStamped::SharedPtr pose_above_button_3 = this->getPoseAboveButton(3);
+	this->robotPlanAndMove(pose_above_button_3);
+
+	// compute linear waypoints to press the button
+	std::vector<geometry_msgs::msg::Pose> linear_waypoints_btn3 = this->computeLinearWaypoints(
+		std::make_shared<geometry_msgs::msg::Pose>(pose_above_button_3->pose), delta_pressing[2], 0.0, 0.0);
+
+	// move the robot arm along the linear waypoints --> descend to press the button
+	this->robotPlanAndMove(linear_waypoints_btn3);
+
+	// reverse the waypoints
+	std::reverse(linear_waypoints_btn3.begin(), linear_waypoints_btn3.end());
+	// move the robot arm along the linear waypoints --> ascend to release the button
+	this->robotPlanAndMove(linear_waypoints_btn3);
+
+	// move back to the looking pose
+	RCLCPP_INFO(LOGGER, "Returning to looking pose and ending demo");
+	this->robotPlanAndMove(looking_pose);
+
+	// end of demo
+
 	RCLCPP_INFO(LOGGER, "Ending button presser demo thread");
 }
 
@@ -667,9 +783,9 @@ bool ButtonPresser::robotPlanAndMove(geometry_msgs::msg::PoseStamped::SharedPtr 
 /**
  * @param pose_waypoints the sequence of waypoints to follow for the end effector
  * @brief Plan and move the robot to the sequence of poses, in cartesian space
- * @return true if plan was successful and if the movement was at least partially completed, false otherwise
+ * @return percentage of completion of the linear sequence of waypoints
  */
-bool ButtonPresser::robotPlanAndMove(std::vector<geometry_msgs::msg::Pose> pose_waypoints) {
+double ButtonPresser::robotPlanAndMove(std::vector<geometry_msgs::msg::Pose> pose_waypoints) {
 
 	RCLCPP_INFO(LOGGER, "Planning and moving to target pose with linear path");
 
@@ -710,11 +826,11 @@ bool ButtonPresser::robotPlanAndMove(std::vector<geometry_msgs::msg::Pose> pose_
 	if (completed_proportion == -1.0) {
 		// couldn't reach even the first waypoint
 		RCLCPP_ERROR(LOGGER, "Could not compute cartesian path successfully");
-		return false;
+		return 0.0;
 	} else {
 		// execute the valid portion of the planned path
 		move_group->execute(cartesian_trajectory);
-		return true;
+		return completed_proportion;
 	}
 }
 
@@ -786,48 +902,22 @@ bool ButtonPresser::robotPlanAndMove(std::vector<double> joint_space_goal) {
 	return bool(response);
 }
 
-int main(int argc, char *argv[]) {
-	rclcpp::init(argc, argv);
+// getter for the ready flag
+bool ButtonPresser::isReady() {
+	return this->ready;
+}
 
-	// read parameters
-	rclcpp::NodeOptions node_options;
-	node_options.automatically_declare_parameters_from_overrides(true);
+// setter for the ready flag
+void ButtonPresser::setReady(bool ready) {
+	this->ready = ready;
+}
 
-	// Create an instance of the PoseStampedSubscriberNode
-	auto node = std::make_shared<ButtonPresser>(node_options);
+// getter for the reference marker pose
+geometry_msgs::msg::PoseStamped::SharedPtr ButtonPresser::getReferenceMarkerPose() {
+	return this->reference_marker_pose;
+}
 
-	rclcpp::executors::MultiThreadedExecutor executor;
-
-	auto main_thread = std::make_unique<std::thread>([&executor, &node]() {
-		executor.add_node(node->get_node_base_interface());
-		executor.spin();
-	});
-
-	// initialize planner, move group, planning scene and get general info
-	node->initPlanner();
-
-	// initialize visual tools for drawing on rviz
-	node->initRvizVisualTools();
-
-	// wait 5 seconds so that the robot does not move instantly
-	// std::this_thread::sleep_for(std::chrono::milliseconds(5000));
-
-	// NOTE: change the following function to switch between static search and dynamic search
-
-	// move to the predefined static searching pose
-	// node->moveToSearchingPose();
-
-	// alternatively start waving the robot arm to find the buttons setup
-	node->lookAroundForArucoMarkers();
-
-	// start the demo thread once the robot is in the searching pose
-	std::thread button_presser_demo_thread = std::thread(&ButtonPresser::buttonPresserDemoThread, node);
-	button_presser_demo_thread.detach();
-
-	main_thread->join();
-	button_presser_demo_thread.join();
-
-	// Cleanup and shutdown
-	rclcpp::shutdown();
-	return 0;
+// getter for delta_pressing array
+std::array<double, 3> ButtonPresser::getDeltaPressing() const {
+	return std::array<double, 3>{delta_pressing[0], delta_pressing[1], delta_pressing[2]};
 }
