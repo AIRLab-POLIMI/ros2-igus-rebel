@@ -13,7 +13,7 @@ using namespace igus_rebel_commander_action_servers;
  * @param options the node options
  */
 ButtonPresserActionServers::ButtonPresserActionServers(std::shared_ptr<ButtonPresser> &button_presser_api,
-													 const rclcpp::NodeOptions &options)
+													   const rclcpp::NodeOptions &options)
 	: Node("button_presser_action_server", options) {
 
 	this->button_presser_api_ = button_presser_api;
@@ -40,7 +40,7 @@ ButtonPresserActionServers::ButtonPresserActionServers(std::shared_ptr<ButtonPre
  * @return rclcpp_action::GoalResponse the response to the goal request
  */
 rclcpp_action::GoalResponse ButtonPresserActionServers::handle_press_goal(const rclcpp_action::GoalUUID & /*uuid*/,
-																		 std::shared_ptr<const ButtonPressAction::Goal> /*goal*/) {
+																		  std::shared_ptr<const ButtonPressAction::Goal> /*goal*/) {
 
 	return rclcpp_action::GoalResponse::ACCEPT_AND_EXECUTE;
 }
@@ -84,7 +84,7 @@ void ButtonPresserActionServers::execute_press_callback(const std::shared_ptr<Go
  * @return rclcpp_action::GoalResponse the response to the goal request
  */
 rclcpp_action::GoalResponse ButtonPresserActionServers::handle_find_goal(const rclcpp_action::GoalUUID & /*uuid*/,
-																		std::shared_ptr<const ButtonFindAction::Goal> /*goal*/) {
+																		 std::shared_ptr<const ButtonFindAction::Goal> /*goal*/) {
 	return rclcpp_action::GoalResponse::ACCEPT_AND_EXECUTE;
 }
 
@@ -114,7 +114,6 @@ void ButtonPresserActionServers::handle_find_accepted(const std::shared_ptr<Goal
  */
 void ButtonPresserActionServers::execute_find_callback(const std::shared_ptr<GoalHandleButtonFind> goal_handle) {
 	RCLCPP_INFO(LOGGER, "Executing goal request for finding buttons");
-	const auto goal = goal_handle->get_goal();
 
 	// look in the surroundings for an aruco marker until it is found
 	// and get the position of the found aruco marker
@@ -454,6 +453,8 @@ int main(int argc, char *argv[]) {
 
 	// initialize visual tools for drawing on rviz
 	button_presser_api_node->initRvizVisualTools();
+
+	main_thread->join();
 
 	rclcpp::shutdown();
 	return 0;

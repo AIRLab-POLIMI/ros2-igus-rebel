@@ -104,10 +104,13 @@ void ButtonPresser::initPlanner() {
 	std::map<std::string, double> group_state_map = std::map<std::string, double>();
 	joint_model_group->getVariableDefaultPositions("parked", group_state_map);
 	parked_joint_positions = std::vector<double>(group_state_map.size());
+	std::string joint_names_values = "Parked joint positions: ";
 	for (const auto &pair : group_state_map) {
 		// assumes that the joints are ordered in the same way as the move_group interface does
 		parked_joint_positions[joint_model_group->getVariableGroupIndex(pair.first)] = pair.second;
+		joint_names_values += pair.first + ": " + std::to_string(pair.second) + ", ";
 	}
+	RCLCPP_INFO(LOGGER, "%s", joint_names_values.c_str());
 
 	// Using the RobotModel we can construct a PlanningScene that maintains the state of the world (including the robot).
 	planning_scene = new planning_scene::PlanningScene(robot_model);

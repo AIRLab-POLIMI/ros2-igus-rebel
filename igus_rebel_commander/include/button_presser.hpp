@@ -66,7 +66,7 @@ private:
 	const int btn_ids[n_btns] = {btn_1, btn_2, btn_3};
 
 	// the big aruco marker used as pose reference for the buttons setup
-	const int reference_marker_id = 0;
+	const int reference_marker_id = 16;
 	geometry_msgs::msg::PoseStamped::SharedPtr reference_marker_pose;
 
 	// mutex lock for aruco markers array
