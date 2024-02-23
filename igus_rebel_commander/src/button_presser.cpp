@@ -14,11 +14,12 @@ ButtonPresser::ButtonPresser(const rclcpp::NodeOptions &node_options) : Node("bu
 
 	// aruco markers subscriber to multi_aruco_plane_detection node
 	aruco_markers_sub = this->create_subscription<ros2_aruco_interfaces::msg::ArucoMarkers>(
-		"/aruco/markers/corrected", 10, std::bind(&ButtonPresser::arucoMarkersCorrectedCallback, this, std::placeholders::_1));
+		this->aruco_markers_corrected_topic, 10,
+		std::bind(&ButtonPresser::arucoMarkersCorrectedCallback, this, std::placeholders::_1));
 
 	// aruco markers subscriber to aruco_recognition node
 	aruco_single_marker_sub = this->create_subscription<ros2_aruco_interfaces::msg::ArucoMarkers>(
-		"/aruco/markers", 10, std::bind(&ButtonPresser::arucoMarkerCallback, this, std::placeholders::_1));
+		this->aruco_single_marker_topic, 10, std::bind(&ButtonPresser::arucoMarkerCallback, this, std::placeholders::_1));
 
 	ready = false;
 
@@ -240,7 +241,7 @@ void ButtonPresser::lookAroundForArucoMarkers(bool look_nearby) {
 	waypoints = this->computeSearchingWaypoints(look_nearby);
 
 	// iterate over the waypoints and move the robot arm to each of them
-	int waypoints_size = (int) waypoints.size();
+	int waypoints_size = (int)waypoints.size();
 	for (short i = 0; i < waypoints_size; i++) {
 
 		RCLCPP_INFO(LOGGER, "Moving to waypoint %d", i);

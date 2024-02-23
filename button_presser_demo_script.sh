@@ -7,12 +7,12 @@ run_ros2_launch_in_konsole() {
 
 run_ros2_launch_in_konsole "multi_aruco_plane_detection multi_aruco_plane_detection.launch.py" &
 
-sleep 5 &
+sleep 1 
 
 # Spawn Konsole terminals for each ROS 2 launch file
-run_ros2_launch_in_konsole "igus_rebel_moveit_config moveit_controller.launch.py hardware_protocol:=cri load_base:=true" &
+run_ros2_launch_in_konsole "igus_rebel_moveit_config moveit_controller.launch.py hardware_protocol:=simulation load_base:=true" &
 
-sleep 10 &
+sleep 4
 
 run_ros2_launch_in_konsole "igus_rebel_commander button_press_demo.launch.py load_base:=true" 
 

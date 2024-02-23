@@ -48,6 +48,9 @@ private:
 	// load base arg
 	bool load_base_arg;
 
+	const std::string aruco_markers_corrected_topic = "/aruco/markers/corrected";
+	const std::string aruco_single_marker_topic = "/aruco/markers/big";
+
 	// vector of double values for the joint position of the parked group state value
 	std::vector<double> parked_joint_positions;
 

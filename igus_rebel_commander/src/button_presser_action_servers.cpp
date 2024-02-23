@@ -62,7 +62,9 @@ rclcpp_action::CancelResponse ButtonPresserActionServers::handle_press_cancel(
  */
 void ButtonPresserActionServers::handle_press_accepted(const std::shared_ptr<GoalHandleButtonPress> goal_handle) {
 	// execute callback asynchronously to avoid blocking the action server
-	std::thread{std::bind(&ButtonPresserActionServers::execute_press_callback, this, std::placeholders::_1), goal_handle}.detach();
+	std::thread{
+		std::bind(&ButtonPresserActionServers::execute_press_callback, this, std::placeholders::_1), goal_handle}
+		.detach();
 }
 
 /**
