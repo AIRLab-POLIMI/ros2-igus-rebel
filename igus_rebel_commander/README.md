@@ -1,16 +1,15 @@
-# Movement and autonomous control of Igus Rebel via MoveIt2 C++  APIs in ROS2
+# Movement and autonomous control of Igus Rebel via MoveIt2 C++ APIs in ROS2
 
 This package offers autonomous command and control software using MoveIt2 APIs in ROS2. The code makes use of the `move_group_interface` 
 and `planning_scene_interface` to command the robot in a simulated or real environment, allowing interactions with objects and
 avoiding obstacles in the environment. The motion planning is collision-free thanks to the collision definitions in the SRDF configuration file.
 
 This package presents several demos, and the main functions needed to control the robot in a real environment with real sensor feedback data.
-The functions are collected in a API source code file, which are used by the demo programs to control the robot.
+The functions are collected in an API source code file, adn the APIs are used by the demo programs to command and control the robot.
 
-There are 3 main demos:
+There are 2 main demos in this package:
 1. Commander Demo: sample functions to demonstrate the use of MoveIt2 APIs and interfaces.
-2. Aruco Follower Demo: a demo that uses the camera to detect Aruco markers and follow them with the robot last joint.
-3.  Button Pressing Demo: a demo that uses the camera to detect a box setup with buttons and presses 3 buttons in a sequence.
+2. Aruco Follower Demo: a demo that uses the camera to detect Aruco markers and follow them with the robot's last joint.
 
 ## 1. Commander Node:
 
@@ -44,9 +43,7 @@ orthogonally to the marker plane.
 To start the demo, type in separate terminal windows:
 
 ``` bash
-$ ros2 launch realsense2_camera rs_launch.py enable_color:=true enable_depth:=true pointcloud.enable:=true
-
-$ ros2 launch ros2_aruco_pose_estimation aruco_recognition.launch.py
+$ ros2 launch aruco_pose_estimation aruco_pose_estimation.launch.py
 
 $ ros2 launch igus_rebel_moveit_config moveit_controller.launch.py hardware_protocol:=cri
 
@@ -57,28 +54,4 @@ Parameters:
 - `load_base`: 'true' or 'false' --> whether the robot arm is mounted on top of a mobile robot base
 - `hardware_protocol`: 'cri' or 'simulation' --> whether to use the real robot or the simulation
 - `testing`: 'true' or 'false' --> whether to use the testing mode, which uses a fixed marker pose for testing purposes
-
-## 3. Button Presser demo:
-
-**The Button Pressing demo is a demo that uses the camera to detect a box setup with buttons and presses 3 buttons in a sequence.**
-
-The demo requires having a button setup box, having 3 buttons and a series of aruco markers. The aruco markers are used to detect the position
-and orientation in XYZ space of the box. The robot knowledge includes only the relative positioning of the buttons with respect to the 
-markers placed on the box. The robot performs a static or dynamic search for the buttons, and then presses them in a sequence.
-- Static search: static predefined joints positions which describe a state of the robot in which the buttons are visible in the camera frame
-- Dynamic search: a predefined set of motions that allow the robot to turn around itself, rotating the camera frame in space, until
-the buttons are visible in the camera frame. Once the buttons are visible, the searching motion stops.
-Once the markers are recognized and their position and orientation memorized, the robot then moves to a position in front
-of the markers. Then it presses each button in a sequence, using the end effector to press them. 
-
-To start the demo, type in separate terminal windows:
-
-``` bash
-$ ros2 launch multi_aruco_plane_detection multi_aruco_plane_detection.launch.py
-
-$ ros2 launch igus_rebel_moveit_config moveit_controller.launch.py hardware_protocol:=cri load_base:=true
-
-$ ros2 launch igus_rebel_commander button_presser_demo.launch.py load_base:=true
-```
-
 

@@ -57,7 +57,7 @@ The computer running the node must use the static IPv4 address `192.168.1.101`
 
 ## Packages
 
-### XACRO macros for URDF configurations: `igus_rebel_description`
+### 1. XACRO macros for URDF configurations: `igus_rebel_description`
 
 Load URDF models of the robot depending on the desidered configuration. The parameters to be set are:
 - `load_gazebo`: (default `false`) if true, loads the gazebo simulation environment (requires the `ros-gz` package)
@@ -68,7 +68,7 @@ Load URDF models of the robot depending on the desidered configuration. The para
 - `hardware_protocol` (default `simulation`) choose the protocol to be used for the robot control interface [`cri`, `mock_hardware`, `simulation`]
 
 
-### MoveIt2 planner and controller `igus_rebel_moveit_config`
+### 2. MoveIt2 planner and controller `igus_rebel_moveit_config`
 
 Run Rviz2 and MoveIt2 interfaces with `ros2 launch igus_rebel_moveit_config demo.launch.py`, using the same parameters specified above.
 
@@ -83,13 +83,13 @@ The **hardware interfaces** to be used can be set up in the package `igus_rebel_
 - simulation interface, for simulating the robot control interface with Rviz2 and the joint trajectory controller
 - CRI interface, for controlling the real robot with the CRI protocol (ethernet connection)
 
-### Gazebo simulation environment for Igus Rebel and multiple sensors: `igus_rebel_gazebo_ignition`:
+### 3. Gazebo simulation environment for Igus Rebel and multiple sensors: `igus_rebel_gazebo_ignition`:
 
 The launch file `ignition.launch.py` loads the gazebo simulation environment with the robot and the sensors and the visual control
 interfaces integrated directly in the simulation environment. The package allows to also start up the default simulation environment for testing purposes.
 The package contains also the bridge configuration files for bridgin topics across Gazebo and ROS2.
 
-### ROS2 control and hardware interfaces for the Igus Rebel robot: `igus_rebel_hw_controller`
+### 4. ROS2 control and hardware interfaces for the Igus Rebel robot: `igus_rebel_hw_controller`
 
 The package contains the hardware interface for the robot control, using the CRI ethernet protocol. 
 The packages contains also the simulation hardware interfaces, provided for controlling the robot using velocity and position control interfaces. 
@@ -103,7 +103,7 @@ hardware interface is used for controlling the robot via position or velocity co
 to provide feedback data for the control loop (when using velocity inputs control). The position feedbacks are derivated in time to provide
 velocity feedback data.
 
-### Command and control demo programs using MoveIt2 MoveGroup C++ API: `igus_rebel_commander`
+### 5. Command and control demo programs using MoveIt2 MoveGroup C++ API: `igus_rebel_commander`
 
 The package contains a set of demo programs for controlling the robot using the MoveIt2 MoveGroup C++ API. The programs are used for
 testing the robot control and the motion planning capabilities of the robot in a variety of scenarios. The programs are used for showing the
@@ -115,7 +115,7 @@ capabilities of the robot while performing autonomous control tasks.
   box is found, the end effector of the robot will press the buttons in a sequence.
 - Commander Demo: a set of functions replicating the moveit2 cpp api tutorials using the igus rebel robot.
 
-### Servo control of the robot end effector: `igus_rebel_servo`
+### 6. Servo control of the robot end effector: `igus_rebel_servo`
 
 Using MoveIt2 Servo library, the package _will_ allow to control the robot end effector using servoing techniques. The package is currently
 under development and is not working correctly at the moment.

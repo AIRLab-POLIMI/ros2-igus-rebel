@@ -3,14 +3,15 @@
 <package format="3">
 	<name>igus_rebel_commander</name>
 	<version>0.1.0</version>
-	<description> MoveIt2 C++ interface for commanding the robot. Demo scripts
-		for giving a goal position in both cartesian space and robot joint space
+	<description>
+		ROS2 package for command and control of the Igus Rebel 6-axis robotic arm. A few demos showing
+		the capabilities of the autonomous control using MoveIt2 and Aruco markers are provided.
 	</description>
 
 	<maintainer email="simone.giampa@mail.polimi.it">Simone Giampà</maintainer>
 	<license>AIRLAB</license>
 	<url type="website">polimi.it</url>
-	<url type="repository">https://github.com/SimonGiampy/ros2-igus-rebel</url>
+	<url type="repository">https://github.com/AIRLab-POLIMI/ros2-igus-rebel</url>
 	<author email="simone.giampa@mail.polimi.it">Simone Giampà</author>
 
 	<buildtool_depend>ament_cmake</buildtool_depend>
@@ -25,13 +26,12 @@
 	<exec_depend>moveit_ros_visualization</exec_depend>
 	<exec_depend>rviz2</exec_depend>
 
-
 	<depend>rclcpp</depend>
 	<depend>moveit_visual_tools</depend>
 	<depend>moveit_core</depend>
 	<depend>pluginlib</depend>
 	<depend>moveit_kinematics</depend>
-	<depend>ros2_aruco_interfaces</depend>
+	<depend>aruco_interfaces</depend>
 
 	<test_depend>ament_lint_auto</test_depend>
 	<test_depend>ament_lint_common</test_depend>

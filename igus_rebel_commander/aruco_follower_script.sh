@@ -5,18 +5,10 @@ run_ros2_launch_in_konsole() {
     konsole --hold -e bash -c "ros2 launch $1"
 }
 
-run_ros2_launch_in_konsole "realsense2_camera rs_launch.py enable_color:=true pointcloud.enable:=true" &
+run_ros2_launch_in_konsole "aruco_pose_estimation aruco_pose_estimation.launch.py" & sleep 1 
 
-sleep 2 &
-
-run_ros2_launch_in_konsole "ros2_aruco aruco_recognition.launch.py" &
-
-sleep 5 &
-
-# Spawn Konsole terminals for each ROS 2 launch file
 run_ros2_launch_in_konsole "igus_rebel_moveit_config moveit_controller.launch.py hardware_protocol:=cri load_base:=false" &
-
-sleep 10 &
+sleep 3
 
 run_ros2_launch_in_konsole "igus_rebel_commander aruco_follower_demo.launch.py testing:=false load_base:=false" 
 
