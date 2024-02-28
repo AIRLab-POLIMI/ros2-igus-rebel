@@ -639,7 +639,7 @@ Visualization Manager:
   Global Options:
     Background Color: 48; 48; 48
     Fixed Frame: igus_rebel_base_link
-    Frame Rate: 30
+    Frame Rate: 120
   Name: root
   Tools:
     - Class: rviz_default_plugins/Interact
@@ -726,7 +726,7 @@ Window Geometry:
     collapsed: false
   Displays:
     collapsed: false
-  Height: 1016
+  Height: 1080
   Hide Left Dock: false
   Hide Right Dock: false
   Image:
@@ -746,6 +746,6 @@ Window Geometry:
     collapsed: false
   Views:
     collapsed: false
-  Width: 1850
-  X: 70
-  Y: 27
+  Width: 1920
+  X: 0
+  Y: 0
