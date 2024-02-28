@@ -10,7 +10,7 @@ namespace cri_keywords {
 const std::string START = "CRISTART";
 const std::string END = "CRIEND";
 
-//generic
+// generic
 const std::string TYPE_STATUS = "STATUS";
 const std::string TYPE_OPINFO = "OPINFO";
 const std::string TYPE_GSIG = "GSIG";
@@ -56,7 +56,7 @@ const std::string COMMAND_MOTIONTYPECARTBASE = "MotionTypeCartBase";
 const std::string CONFIG_GETKINEMATICLIMITS = "GetKinematicLimits";
 const std::string CONFIG_GETKINEMATICLIMITS_ANSWER = "KinematicLimits";
 
-}  // namespace cri_keywords
-}  // namespace igus_rebel_hw_controller
+} // namespace cri_keywords
+} // namespace igus_rebel_hw_controller
 
 #endif

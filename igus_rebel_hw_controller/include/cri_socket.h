@@ -2,12 +2,12 @@
 #ifndef CRI_SOCKET_H
 #define CRI_SOCKET_H
 
-#include <stdio.h>
-#include <sys/socket.h>
 #include <array>
 #include <list>
 #include <mutex>
+#include <stdio.h>
 #include <string>
+#include <sys/socket.h>
 #include <thread>
 
 #include "cri_keywords.h"
@@ -23,48 +23,47 @@ namespace igus_rebel_hw_controller {
 
 class CriSocket {
 
-   private:
-    int sock;
-    std::string ip;
-    int port;
-    int timeout;
-    std::list<std::string> unprocessedMessages;
+private:
+	int sock;
+	std::string ip;
+	int port;
+	int timeout;
+	std::list<std::string> unprocessedMessages;
 
-    bool continueReceive;
-    std::thread receiveThread;
-    std::thread listCheckThread;
-    std::mutex socketWriteLock;
-    std::mutex connectionLock;
-    std::mutex messageLock;
-    unsigned int maxUnprocessedMessages;
-    int listCheckWaitMs;
+	bool continueReceive;
+	std::thread receiveThread;
+	std::thread listCheckThread;
+	std::mutex socketWriteLock;
+	std::mutex connectionLock;
+	std::mutex messageLock;
+	unsigned int maxUnprocessedMessages;
+	int listCheckWaitMs;
 
-    bool connectionNeeded;
-    static const int bufferSize = 4096;
+	bool connectionNeeded;
+	static const int bufferSize = 4096;
 
-    std::array<char, bufferSize> fragmentBuffer;
-    int fragmentLength;
+	std::array<char, bufferSize> fragmentBuffer;
+	int fragmentLength;
 
-    void makeConnection();
-    void separateMessages(const char* msg);
+	void makeConnection();
+	void separateMessages(const char *msg);
 
-    void receiveThreadFunction();
-    void listCheckThreadFunction();
+	void receiveThreadFunction();
+	void listCheckThreadFunction();
 
-    bool isSocketOk();
+	bool isSocketOk();
 
-   public:
-    CriSocket(const std::string& ip, const int& port, const int& timeout);
-    ~CriSocket();
+public:
+	CriSocket(const std::string &ip, const int &port, const int &timeout);
+	~CriSocket();
 
 	void setIp(std::string ip);
-    void start();
-    void stop();
-    bool hasMessage();
-    std::string getMessage();
-    void sendMessage(const std::string& msg);
-
+	void start();
+	void stop();
+	bool hasMessage();
+	std::string getMessage();
+	void sendMessage(const std::string &msg);
 };
-}  // namespace igus_rebel_hw_controller
+} // namespace igus_rebel_hw_controller
 
 #endif
