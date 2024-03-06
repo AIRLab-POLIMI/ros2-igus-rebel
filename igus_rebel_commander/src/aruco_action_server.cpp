@@ -17,6 +17,10 @@ ArucoActionServer::ArucoActionServer(const rclcpp::NodeOptions & options = rclcp
 	// Create a subscriber for the aruco marker array
 	aruco_marker_sub_ = this->create_subscription<aruco_interfaces::msg::ArucoMarkers>(
 		"/aruco/markers", 10, std::bind(&ArucoActionServer::aruco_marker_callback, this, std::placeholders::_1));
+	
+	// Create a subscriber for the goal done message	
+	goal_done_sub_ = this->create_subscription<std_msgs::msg::Bool>(
+		"/goal/done", 10, std::bind(&ArucoActionServer::goal_done_callback, this, std::placeholders::_1));
 
 	// Retrieve the camera frame parameter from the config YAML file of the aruco detector
 	this->declare_parameter("testing", rclcpp::PARAMETER_BOOL);
@@ -70,6 +74,10 @@ void ArucoActionServer::aruco_marker_callback(const aruco_interfaces::msg::Aruco
         geometry_msgs::msg::Pose pose = aruco_marker_array.poses[i];
         arucos[id] = pose; // Using the subscript operator
     }	
+}
+
+void ArucoActionServer::goal_done_callback(const std_msgs::msg::Bool goal_done_msg) {
+	goal_done = goal_done_msg.data;
 }
 
 void ArucoActionServer::processPose(const geometry_msgs::msg::Pose aruco_pose, float distance) {
@@ -212,10 +220,12 @@ void ArucoActionServer::execute(const std::shared_ptr<GoalHandleAruco> goal_hand
 
 	processPose(aruco_pose, distance);
 
-	if (rclcpp::ok()) {
-		goal_handle->succeed(result);
-		RCLCPP_INFO(this->get_logger(), "Goal succeeded");
+	while(!goal_done) {
+		sleep(1);
 	}
+	goal_done = false;
+	goal_handle->succeed(result);
+	RCLCPP_INFO(this->get_logger(), "Goal succeeded");
 }
 
 int main(int argc, char ** argv)

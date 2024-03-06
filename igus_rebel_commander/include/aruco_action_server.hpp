@@ -1,6 +1,7 @@
 // ROS2 includes
 #include <geometry_msgs/msg/pose_array.hpp>
 #include <geometry_msgs/msg/pose_stamped.hpp>
+#include <std_msgs/msg/bool.hpp>
 #include <aruco_interfaces/msg/aruco_markers.hpp>
 #include "aruco_action_interfaces/action/follow_aruco.hpp"
 #include <rclcpp/rclcpp.hpp>
@@ -42,6 +43,7 @@ private:
 	 * @param aruco_marker_array: array of aruco markers in the camera frame
 	 */
 	void aruco_marker_callback(const aruco_interfaces::msg::ArucoMarkers aruco_marker_array);
+	void goal_done_callback(const std_msgs::msg::Bool goal_done_msg);
 
 	/**
 	 * @brief processes one pose: computing the goal pose for pointing / touching the aruco marker
@@ -56,6 +58,9 @@ private:
 	rclcpp::Publisher<geometry_msgs::msg::PoseStamped>::SharedPtr goal_pose_pub_;
 	// aruco markers subscriber
 	rclcpp::Subscription<aruco_interfaces::msg::ArucoMarkers>::SharedPtr aruco_marker_sub_;
+
+	// goal done subscriber
+	rclcpp::Subscription<std_msgs::msg::Bool>::SharedPtr goal_done_sub_;
 
 	// map with aruco id and the corresponding pose
 	std::map<int64_t, geometry_msgs::msg::Pose> arucos;
@@ -76,7 +81,7 @@ private:
 	// parameters for the goal pose computation
 	const float goal_radius = 0.8;		// radius in meters of a reachable goal
 	const float reachable_radius = 0.7; // radius in meters of the position that the robot will reach
-
+	bool goal_done = false;				// flag to indicate if the goal is reached	
 	
 	// callback function for handling new goals
     rclcpp_action::GoalResponse handle_goal(const rclcpp_action::GoalUUID & uuid, std::shared_ptr<const Aruco::Goal> goal);

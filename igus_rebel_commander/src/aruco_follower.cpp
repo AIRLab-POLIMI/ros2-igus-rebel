@@ -19,6 +19,8 @@ ArucoFollower::ArucoFollower(const rclcpp::NodeOptions &node_options) : Node("fo
 	goal_pose_sub = this->create_subscription<geometry_msgs::msg::PoseStamped>(
 		"/goal_pose", 10, std::bind(&ArucoFollower::goalPoseCallback, this, std::placeholders::_1));
 
+	goal_done_pub = this->create_publisher<std_msgs::msg::Bool>("/goal/done", 10);
+
 	goal_pose.header.frame_id = ""; // initialize the goal pose for the fisrt assignment
 
 	// track the goal pose asynchrounously
@@ -210,7 +212,10 @@ void ArucoFollower::trackGoalPose() {
 
 		if (bool(response)) { // if the plan was successful
 			RCLCPP_INFO(LOGGER, "moving the robot with cartesian space goal");
-			move_group->execute(my_plan);
+			moveit::core::MoveItErrorCode plan_response = move_group->execute(my_plan);
+			std_msgs::msg::Bool msg;
+			msg.data = (bool)plan_response;
+			goal_done_pub->publish(msg);
 		} else {
 			RCLCPP_ERROR(LOGGER, "Could not compute plan successfully");
 		}

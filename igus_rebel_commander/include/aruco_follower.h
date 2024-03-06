@@ -17,6 +17,7 @@
 #include <moveit/robot_state/conversions.h>
 #include <moveit_visual_tools/moveit_visual_tools.h>
 #include <moveit_msgs/msg/display_trajectory.hpp>
+#include <std_msgs/msg/bool.hpp>
 
 class ArucoFollower : public rclcpp::Node {
    private:
@@ -35,6 +36,9 @@ class ArucoFollower : public rclcpp::Node {
 
 	// goal pose subscriber
 	rclcpp::Subscription<geometry_msgs::msg::PoseStamped>::SharedPtr goal_pose_sub;
+
+	// goal publisher
+	rclcpp::Publisher<std_msgs::msg::Bool>::SharedPtr goal_done_pub;
 
 	// thread for tracking the goal pose
 	std::thread track_goal_pose_thread;
