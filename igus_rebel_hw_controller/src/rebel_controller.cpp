@@ -91,9 +91,8 @@ void RebelController::socketMessagesThread() {
 		if (cri_socket.hasMessage()) {
 			std::string msg = cri_socket.getMessage();
 
-			// RCLCPP_INFO(rclcpp::get_logger("hw_controller::rebel_controller"), "raw msg data: %s", msg.c_str());
+			//RCLCPP_INFO(rclcpp::get_logger("hw_controller::rebel_controller"), "raw msg data: %s", msg.c_str());
 			cri_messages::MessageType type = cri_messages::CriMessage::GetMessageType(msg);
-			// RCLCPP_DEBUG(rclcpp::get_logger("hw_controller::rebel_controller"), "data type: %d", type);
 
 			switch (type) {
 			case cri_messages::MessageType::STATUS: {
@@ -103,13 +102,6 @@ void RebelController::socketMessagesThread() {
 				processStatus(currentStatus);
 
 				status_count++;
-				break;
-			}
-
-			case cri_messages::MessageType::MESSAGE: {
-				cri_messages::Message message = cri_messages::Message(msg);
-				// Not sure if the ROS node should display these?
-				// RCLCPP_INFO(rclcpp::get_logger("hw_controller::rebel_controller"), "MESSAGE: %s", message.message.c_str());
 				break;
 			}
 
@@ -149,7 +141,8 @@ void RebelController::socketMessagesThread() {
 			default:
 				if (type != cri_messages::MessageType::OPINFO && type != cri_messages::MessageType::GSIG &&
 					type != cri_messages::MessageType::GRIPPERSTATE && type != cri_messages::MessageType::RUNSTATE &&
-					type != cri_messages::MessageType::CMDACK) {
+					type != cri_messages::MessageType::CMDACK && type != cri_messages::MessageType::LOGMSG &&
+					type != cri_messages::MessageType::VARIABLES && type != cri_messages::MessageType::CYCLESTAT) {
 					RCLCPP_WARN(rclcpp::get_logger("hw_controller::rebel_controller"), "raw unknown data: %s", msg.c_str());
 				}
 

@@ -20,6 +20,9 @@ const std::string TYPE_MESSAGE = "MESSAGE";
 const std::string TYPE_CMD = "CMD";
 const std::string TYPE_CONFIG = "CONFIG";
 const std::string TYPE_INFO = "INFO";
+const std::string TYPE_LOGMSG = "LOGMSG";
+const std::string TYPE_VARIABLES = "VARIABLES";
+const std::string TYPE_CYCLESTAT = "CYCLESTAT";
 
 // new additions from ROS2 repository
 const std::string TYPE_EXECACK = "EXECACK";

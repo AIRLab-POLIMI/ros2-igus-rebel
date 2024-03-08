@@ -58,13 +58,14 @@ void CriSocket::makeConnection() {
 void CriSocket::separateMessages(const char *msg) {
 	const char *start;
 	const char *end = msg;
-
+	/*TODO: FIX ERROR: messages discarded and not re-built
 	if (fragmentLength != 0) {
 		start = std::strstr(msg, cri_keywords::START.c_str());
 		end = std::strstr(msg, cri_keywords::END.c_str());
 
 		if (end == nullptr || (start != nullptr && end > start)) {
 			RCLCPP_ERROR(rclcpp::get_logger("hw_controller::cri_socket"), "There was a partial robot message, but could not find the end of it in the next message.");
+			RCLCPP_ERROR(rclcpp::get_logger("hw_controller::cri_socket"), "Fragment: %s", msg);
 		} else {
 			std::string result1(fragmentBuffer.front(), fragmentLength);
 			std::string result2(msg, end - msg);
@@ -77,6 +78,7 @@ void CriSocket::separateMessages(const char *msg) {
 
 		fragmentLength = 0;
 	}
+	*/
 
 	while (true) {
 		start = std::strstr(end, cri_keywords::START.c_str());
@@ -88,6 +90,7 @@ void CriSocket::separateMessages(const char *msg) {
 		end = std::strstr(start, cri_keywords::END.c_str());
 
 		if (end == nullptr) {
+			/*
 			// Found a start without end.
 			const char *remainingStart = start + cri_keywords::START.size();
 			const char *remainingEnd = std::strchr(remainingStart, '\0');
@@ -101,7 +104,7 @@ void CriSocket::separateMessages(const char *msg) {
 			} else {
 				RCLCPP_ERROR(rclcpp::get_logger("hw_controller::cri_socket"), "Socket read was not null-terminated, somehow.");
 			}
-
+			*/
 			break;
 		}
 
@@ -125,6 +128,7 @@ void CriSocket::receiveThreadFunction() {
 		}
 
 		int valread = read(sock, buffer, bufferSize);
+		//RCLCPP_INFO(rclcpp::get_logger("hw_controller::cri_socket"), "#bytes read from socket = %d", valread);
 
 		if (!isSocketOk()) {
 			connectionNeeded = true;

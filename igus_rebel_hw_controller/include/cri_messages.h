@@ -32,6 +32,9 @@ enum class MessageType {
 	CMD,
 	CONFIG,
 	INFO,
+	LOGMSG,
+	VARIABLES,
+	CYCLESTAT,
 
 	// new additions from the more extensive list of messages
 	EXECACK,
