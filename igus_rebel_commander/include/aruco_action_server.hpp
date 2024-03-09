@@ -3,10 +3,12 @@
 #include <geometry_msgs/msg/pose_stamped.hpp>
 #include <std_msgs/msg/bool.hpp>
 #include <aruco_interfaces/msg/aruco_markers.hpp>
-#include "aruco_action_interfaces/action/follow_aruco.hpp"
 #include <rclcpp/rclcpp.hpp>
 #include "rclcpp_action/rclcpp_action.hpp"
 #include "rclcpp_components/register_node_macro.hpp"
+
+// customa action msg 
+#include "igus_rebel_commander/action/follow_aruco.hpp"
 
 // tf2 includes
 #include <tf2/LinearMath/Matrix3x3.h>
@@ -26,7 +28,7 @@
 class ArucoActionServer : public rclcpp::Node {
 
 public:
-    using Aruco = aruco_action_interfaces::action::FollowAruco;
+    using Aruco = igus_rebel_commander::action::FollowAruco;
     using GoalHandleAruco = rclcpp_action::ServerGoalHandle<Aruco>;
 
 	// camera frame name

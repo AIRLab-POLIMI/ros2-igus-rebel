@@ -1,24 +1,24 @@
 #include "aruco_action_server.hpp"
 
-ArucoActionServer::ArucoActionServer(const rclcpp::NodeOptions & options = rclcpp::NodeOptions()) : Node("goal_pose_publisher", options) {
-  	using namespace std::placeholders;
+ArucoActionServer::ArucoActionServer(const rclcpp::NodeOptions &options = rclcpp::NodeOptions()) : Node("goal_pose_publisher", options) {
+	using namespace std::placeholders;
 
 	// Initialize action server
 	this->action_server_ = rclcpp_action::create_server<Aruco>(
-	this,
-	"aruco",
-	std::bind(&ArucoActionServer::handle_goal, this, _1, _2),
-	std::bind(&ArucoActionServer::handle_cancel, this, _1),
-	std::bind(&ArucoActionServer::handle_accepted, this, _1));
-  
-  	// Create a publisher for the goal pose
+		this,
+		"aruco",
+		std::bind(&ArucoActionServer::handle_goal, this, _1, _2),
+		std::bind(&ArucoActionServer::handle_cancel, this, _1),
+		std::bind(&ArucoActionServer::handle_accepted, this, _1));
+
+	// Create a publisher for the goal pose
 	goal_pose_pub_ = this->create_publisher<geometry_msgs::msg::PoseStamped>("/goal_pose", 10);
 
 	// Create a subscriber for the aruco marker array
 	aruco_marker_sub_ = this->create_subscription<aruco_interfaces::msg::ArucoMarkers>(
 		"/aruco/markers", 10, std::bind(&ArucoActionServer::aruco_marker_callback, this, std::placeholders::_1));
-	
-	// Create a subscriber for the goal done message	
+
+	// Create a subscriber for the goal done message
 	goal_done_sub_ = this->create_subscription<std_msgs::msg::Bool>(
 		"/goal/done", 10, std::bind(&ArucoActionServer::goal_done_callback, this, std::placeholders::_1));
 
@@ -69,11 +69,11 @@ ArucoActionServer::ArucoActionServer(const rclcpp::NodeOptions & options = rclcp
 
 void ArucoActionServer::aruco_marker_callback(const aruco_interfaces::msg::ArucoMarkers aruco_marker_array) {
 	// Update the map with received marker IDs and poses
-    for (size_t i = 0; i < aruco_marker_array.marker_ids.size(); ++i) {
-        int64_t id = aruco_marker_array.marker_ids[i];
-        geometry_msgs::msg::Pose pose = aruco_marker_array.poses[i];
-        arucos[id] = pose; // Using the subscript operator
-    }	
+	for (size_t i = 0; i < aruco_marker_array.marker_ids.size(); ++i) {
+		int64_t id = aruco_marker_array.marker_ids[i];
+		geometry_msgs::msg::Pose pose = aruco_marker_array.poses[i];
+		arucos[id] = pose; // Using the subscript operator
+	}
 }
 
 void ArucoActionServer::goal_done_callback(const std_msgs::msg::Bool goal_done_msg) {
@@ -153,45 +153,40 @@ void ArucoActionServer::processPose(const geometry_msgs::msg::Pose aruco_pose, f
 	goal_pose_pub_->publish(goal_pose);
 }
 
-
 rclcpp_action::GoalResponse ArucoActionServer::handle_goal(
-  const rclcpp_action::GoalUUID & uuid,
-  std::shared_ptr<const Aruco::Goal> goal)
-{
+	const rclcpp_action::GoalUUID &uuid,
+	std::shared_ptr<const Aruco::Goal> goal) {
 	goal_id = goal->aruco_id;
 	RCLCPP_INFO(this->get_logger(), "Check if aruco with id %ld exists...", goal_id);
 	(void)uuid;
 
-  	auto it = arucos.find(goal->aruco_id);
+	auto it = arucos.find(goal->aruco_id);
 	if (it != arucos.end()) {
 		// ID exists in the map
 		// You can access the corresponding pose using it->second
 		RCLCPP_INFO(this->get_logger(), "Aruco with id %ld found, execute goal.", goal_id);
-		
+
 		return rclcpp_action::GoalResponse::ACCEPT_AND_EXECUTE;
 	} else {
 		// ID doesn't exist in the map
 		RCLCPP_INFO(this->get_logger(), "Aruco with id %ld not found, cancel Goal.", goal_id);
 		return rclcpp_action::GoalResponse::REJECT;
-	}  
+	}
 }
 
 rclcpp_action::CancelResponse ArucoActionServer::handle_cancel(
-  const std::shared_ptr<GoalHandleAruco> goal_handle)
-{
+	const std::shared_ptr<GoalHandleAruco> goal_handle) {
 	RCLCPP_INFO(this->get_logger(), "Received request to cancel goal");
 	(void)goal_handle;
 	return rclcpp_action::CancelResponse::ACCEPT;
-}	
+}
 
-void ArucoActionServer::handle_accepted(const std::shared_ptr<GoalHandleAruco> goal_handle)
-{
+void ArucoActionServer::handle_accepted(const std::shared_ptr<GoalHandleAruco> goal_handle) {
 	using namespace std::placeholders;
 	std::thread{std::bind(&ArucoActionServer::execute, this, _1), goal_handle}.detach();
 }
 
-void ArucoActionServer::execute(const std::shared_ptr<GoalHandleAruco> goal_handle)
-{
+void ArucoActionServer::execute(const std::shared_ptr<GoalHandleAruco> goal_handle) {
 	auto result = std::make_shared<Aruco::Result>();
 	(void)goal_handle;
 	RCLCPP_INFO(this->get_logger(), "Executing goal");
@@ -220,7 +215,7 @@ void ArucoActionServer::execute(const std::shared_ptr<GoalHandleAruco> goal_hand
 
 	processPose(aruco_pose, distance);
 
-	while(!goal_done) {
+	while (!goal_done) {
 		sleep(1);
 	}
 	goal_done = false;
@@ -228,14 +223,13 @@ void ArucoActionServer::execute(const std::shared_ptr<GoalHandleAruco> goal_hand
 	RCLCPP_INFO(this->get_logger(), "Goal succeeded");
 }
 
-int main(int argc, char ** argv)
-{
-    rclcpp::init(argc, argv);
+int main(int argc, char **argv) {
+	rclcpp::init(argc, argv);
 
-    auto action_server = std::make_shared<ArucoActionServer>();
-    
-    rclcpp::spin(action_server);
+	auto action_server = std::make_shared<ArucoActionServer>();
 
-    rclcpp::shutdown();
-    return 0;
+	rclcpp::spin(action_server);
+
+	rclcpp::shutdown();
+	return 0;
 }
