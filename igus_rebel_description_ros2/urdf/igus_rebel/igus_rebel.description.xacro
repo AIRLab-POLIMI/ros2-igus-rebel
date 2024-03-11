@@ -6,7 +6,6 @@
 	</material>
 
 	<xacro:macro name="igus_rebel_description">
-		
 		<!-- Set both at 0.0 if collapsing is not interesting in gazebo -->
 		<xacro:property name="damping" value="0.0" />
 		<xacro:property name="friction" value="0.0" />
@@ -34,10 +33,9 @@
 		<joint name="joint1" type="revolute">
 			<parent link="igus_rebel_base_link" />
 			<child link="link_1" />
-			<origin rpy="0.0 0.0 0.0" xyz="0.0 0 0.100" />
+			<origin rpy="0.0 0.0 0.0" xyz="0.0 0 0.103" />
 			<axis xyz="0 0 1" />
-			<limit effort="330.0" lower="${-pi*179/180}" upper="${pi*179/180}"
-				velocity="${pi*45/180}" />
+			<limit effort="330.0" lower="${-pi*179/180}" upper="${pi*179/180}" velocity="${pi/4.0}" />
 			<dynamics damping="${damping}" friction="${friction}" />
 		</joint>
 		<link name="link_1">
@@ -65,11 +63,11 @@
 		<joint name="joint2" type="revolute">
 			<parent link="link_1" />
 			<child link="link_2" />
-			<origin rpy="0.0 ${pi/6} 0.0" xyz="0.0 0 0.149" />
+			<origin rpy="0.0 ${pi/6} 0.0" xyz="0.0 0.0 0.149" />
 			<axis xyz="0 1 0" />
 			<!-- pi*2/3 are the physical limits, but to avoid any collisions we set the actual
 			limits lower -->
-			<limit effort="330.0" lower="${-pi*11/18}" upper="${pi*11/18}" velocity="${pi*45/180}" />
+			<limit effort="330.0" lower="${-pi*11/18}" upper="${pi*11/18}" velocity="${pi/4.0}" />
 			<dynamics damping="${damping}" friction="${friction}" />
 		</joint>
 
@@ -98,11 +96,9 @@
 		<joint name="joint3" type="revolute">
 			<parent link="link_2" />
 			<child link="link_5" />
-			<origin rpy="0.0 ${pi/6} 0.0" xyz="0.0 0.0 0.2384" />
+			<origin rpy="0.0 ${pi/6} 0.0" xyz="0.0 0.0 0.237" />
 			<axis xyz="0 1 0" />
-			<!-- pi*2/3 are the physical limits, but to avoid any collisions we set the actual
-			limits lower -->
-			<limit effort="330.0" lower="${-pi*11/18}" upper="${pi*11/18}" velocity="${pi*45/180}" />
+			<limit effort="330.0" lower="${-pi*11/18}" upper="${pi*11/18}" velocity="${pi/4.0}" />
 			<dynamics damping="${damping}" friction="${friction}" />
 		</joint>
 
@@ -127,15 +123,16 @@
 				<inertia ixx="0.03" ixy="0.0" ixz="0.0" iyy="0.03" iyz="0.0" izz="0.03" />
 			</inertial>
 		</link>
+
 		<joint name="joint4" type="revolute">
 			<parent link="link_5" />
 			<child link="link_6" />
-			<origin rpy="0.0 0.0 0.0" xyz="0.0 0 ${0.149 - 0.03}" />
+			<origin rpy="0.0 0.0 0.0" xyz="0.0 0.0 0.127" />
 			<axis xyz="0 0 1" />
-			<limit effort="330.0" lower="${-pi*179/180}" upper="${pi*179/180}"
-				velocity="${pi*45/180}" />
+			<limit effort="330.0" lower="${-pi*179/180}" upper="${pi*179/180}" velocity="${pi/4.0}" />
 			<dynamics damping="${damping}" friction="${friction}" />
 		</joint>
+
 		<link name="link_6">
 			<visual>
 				<geometry>
@@ -161,10 +158,10 @@
 		<joint name="joint5" type="revolute">
 			<parent link="link_6" />
 			<child link="link_7" />
-			<origin rpy="0.0 ${-pi/24} 0.0" xyz="0.0 0 ${0.14 + 0.03}" />
+			<origin rpy="0.0 ${-pi/24} 0.0" xyz="0.0 0.0 0.170" />
 			<axis xyz="0 1 0" />
 			<limit effort="330.0" lower="${-pi*19/36 + pi/24}" upper="${pi*19/36 + pi/24}"
-				velocity="${pi*45/180}" />
+				velocity="${pi/4.0}" />
 			<dynamics damping="${damping}" friction="${friction}" />
 		</joint>
 
@@ -190,14 +187,12 @@
 			</inertial>
 		</link>
 
-
 		<joint name="joint6" type="revolute">
 			<parent link="link_7" />
 			<child link="link_8" />
 			<origin rpy="0.0 0.0 0.0" xyz="0.0 0 0.1208" />
 			<axis xyz="0 0 1" />
-			<limit effort="330.0" lower="${-pi*179/180}" upper="${pi*179/180}"
-				velocity="${pi*45/180}" />
+			<limit effort="330.0" lower="${-pi*179/180}" upper="${pi*179/180}" velocity="${pi/4.0}" />
 			<dynamics damping="${damping}" friction="${friction}" />
 		</joint>
 
@@ -226,7 +221,7 @@
 		<joint name="joint7" type="fixed">
 			<parent link="link_8" />
 			<child link="flange" />
-			<origin rpy="0.0 ${-pi/2} 0.0" xyz="0.0 0 0.0012" />
+			<origin rpy="0.0 ${-pi/2} 0.0" xyz="0.0 0 0.0052" />
 			<axis xyz="0 0 0" />
 			<dynamics damping="${damping}" friction="${friction}" />
 		</joint>
