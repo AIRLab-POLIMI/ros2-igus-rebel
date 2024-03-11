@@ -66,11 +66,19 @@ add_executable(aruco_follower
 ament_target_dependencies(aruco_follower
 	pluginlib moveit_core moveit_kinematics moveit_visual_tools moveit_ros_planning_interface)
 
+# aruco toucher --> given aruco pose, the robot "touches" it
+add_executable(aruco_toucher
+	src/aruco_toucher.cpp)
+ament_target_dependencies(aruco_toucher
+	pluginlib moveit_core moveit_kinematics moveit_visual_tools moveit_ros_planning_interface
+	std_msgs geometry_msgs tf2_ros tf2_geometry_msgs)
+
 install(TARGETS commander_demo
 	aruco_follower
 	goal_pose_publisher
 	test_goal_pose_computation
 	aruco_action_server
+	aruco_toucher
 	DESTINATION lib/${PROJECT_NAME}
 )
 
