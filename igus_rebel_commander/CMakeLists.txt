@@ -25,8 +25,13 @@ find_package(builtin_interfaces REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(rosidl_default_generators REQUIRED)
 
+set(actions
+	"action/FollowAruco.action" 
+	"action/MoveManipulator.action"
+)
+
 rosidl_generate_interfaces(${PROJECT_NAME}
-	"action/FollowAruco.action"
+	${actions}
 	DEPENDENCIES builtin_interfaces std_msgs
 )
 
@@ -57,7 +62,18 @@ add_executable(aruco_action_server
 ament_target_dependencies(aruco_action_server
 	rclcpp rclcpp_action rclcpp_components std_msgs geometry_msgs tf2_ros tf2_geometry_msgs aruco_interfaces
 )
-rosidl_target_interfaces(aruco_action_server ${PROJECT_NAME} "rosidl_typesupport_cpp")
+rosidl_get_typesupport_target(cpp_typesupport_target ${PROJECT_NAME} "rosidl_typesupport_cpp")
+target_link_libraries(aruco_action_server "${cpp_typesupport_target}")
+
+# manipulator_action_server --> handles manipulator group state received from a BT client
+add_executable(manipulator_action_server
+	src/manipulator_action_server.cpp)
+ament_target_dependencies(manipulator_action_server
+	rclcpp rclcpp_action rclcpp_components std_msgs geometry_msgs tf2_ros tf2_geometry_msgs aruco_interfaces
+	pluginlib moveit_core moveit_kinematics moveit_visual_tools moveit_ros_planning_interface
+)
+rosidl_get_typesupport_target(cpp_typesupport_target ${PROJECT_NAME} "rosidl_typesupport_cpp")
+target_link_libraries(manipulator_action_server "${cpp_typesupport_target}")
 
 # aruco follower --> given aruco pose, the robot "follows" it
 add_executable(aruco_follower
@@ -78,6 +94,7 @@ install(TARGETS commander_demo
 	goal_pose_publisher
 	test_goal_pose_computation
 	aruco_action_server
+	manipulator_action_server
 	aruco_toucher
 	DESTINATION lib/${PROJECT_NAME}
 )
