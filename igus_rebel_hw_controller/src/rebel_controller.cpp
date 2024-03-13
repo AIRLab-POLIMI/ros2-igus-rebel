@@ -45,7 +45,7 @@ RebelController::~RebelController() {
  * contains a jog, under normal position command operation it should be left at 0.
  */
 void RebelController::alivejogThread() {
-	RCLCPP_DEBUG(rclcpp::get_logger("hw_controller::rebel_controller"), "Starting to send ALIVEJOG");
+	RCLCPP_DEBUG(logger_, "Starting to send ALIVEJOG");
 
 	// continue alive must be set to true as long as the robot is not moving (sends 0 jog velocities)
 	// or if the robot is moving, send the correct jog values (computed velocities)
@@ -66,9 +66,6 @@ void RebelController::alivejogThread() {
 		}
 		msg << "CRIEND" << std::endl;
 
-		// This seems unnecessary, if any weird communication behaviour occurs
-		// then it might have been there for a reason. Else remove this in a
-		// future release
 		{
 			std::lock_guard<std::mutex> lockGuard(aliveLock);
 			cri_socket.sendMessage(msg.str());
@@ -78,20 +75,20 @@ void RebelController::alivejogThread() {
 		std::this_thread::sleep_for(std::chrono::milliseconds(aliveWaitMs));
 	}
 
-	RCLCPP_WARN(rclcpp::get_logger("hw_controller::rebel_controller"), "Stopped to send ALIVEJOG");
+	RCLCPP_WARN(logger_, "Stopped to send ALIVEJOG");
 }
 
 /**
  * @brief processes the messages by type from the socket queue
  */
 void RebelController::socketMessagesThread() {
-	RCLCPP_DEBUG(rclcpp::get_logger("hw_controller::rebel_controller"), "Starting to process robot messages");
+	RCLCPP_DEBUG(logger_, "Starting to process robot messages");
 
 	while (continueMessage) {
 		if (cri_socket.hasMessage()) {
 			std::string msg = cri_socket.getMessage();
 
-			//RCLCPP_INFO(rclcpp::get_logger("hw_controller::rebel_controller"), "raw msg data: %s", msg.c_str());
+			//RCLCPP_INFO(logger_, "raw msg data: %s", msg.c_str());
 			cri_messages::MessageType type = cri_messages::CriMessage::GetMessageType(msg);
 
 			switch (type) {
@@ -109,7 +106,7 @@ void RebelController::socketMessagesThread() {
 				cri_messages::Command command = cri_messages::Command(msg);
 
 				// Not sure if the ROS node should display these?
-				RCLCPP_INFO(rclcpp::get_logger("hw_controller::rebel_controller"), "CMD: %s", command.command.c_str());
+				RCLCPP_INFO(logger_, "CMD: %s", command.command.c_str());
 				break;
 			}
 
@@ -126,15 +123,15 @@ void RebelController::socketMessagesThread() {
 
 			case cri_messages::MessageType::INFO: {
 				cri_messages::Info info = cri_messages::Info(msg);
-				RCLCPP_INFO(rclcpp::get_logger("hw_controller::rebel_controller"), "INFO: %s", info.info.c_str());
+				RCLCPP_INFO(logger_, "INFO: %s", info.info.c_str());
 				break;
 			}
 			case cri_messages::MessageType::CMDERROR: {
-				RCLCPP_ERROR(rclcpp::get_logger("hw_controller::rebel_controller"), "command error received: %s", msg.c_str());
+				RCLCPP_ERROR(logger_, "command error received: %s", msg.c_str());
 				break;
 			}
 			case cri_messages::MessageType::EXECACK: {
-				RCLCPP_INFO(rclcpp::get_logger("hw_controller::rebel_controller"), "EXECACK received");
+				RCLCPP_INFO(logger_, "EXECACK received");
 				break;
 			}
 
@@ -143,7 +140,7 @@ void RebelController::socketMessagesThread() {
 					type != cri_messages::MessageType::GRIPPERSTATE && type != cri_messages::MessageType::RUNSTATE &&
 					type != cri_messages::MessageType::CMDACK && type != cri_messages::MessageType::LOGMSG &&
 					type != cri_messages::MessageType::VARIABLES && type != cri_messages::MessageType::CYCLESTAT) {
-					RCLCPP_WARN(rclcpp::get_logger("hw_controller::rebel_controller"), "raw unknown data: %s", msg.c_str());
+					RCLCPP_WARN(logger_, "raw unknown data: %s", msg.c_str());
 				}
 
 				break;
@@ -151,7 +148,7 @@ void RebelController::socketMessagesThread() {
 		}
 	}
 
-	RCLCPP_DEBUG(rclcpp::get_logger("hw_controller::rebel_controller"), "Stopped to process robot messages");
+	RCLCPP_DEBUG(logger_, "Stopped to process robot messages");
 }
 
 /**
@@ -205,7 +202,7 @@ void RebelController::processStatus(const cri_messages::Status &status) {
 
 	if (lastKinstate != currentKinstate) {
 		if (lastKinstate != cri_messages::Kinstate::NO_ERROR) {
-			RCLCPP_INFO(rclcpp::get_logger("hw_controller::rebel_controller"), "Kinematics error resolved [%s]", kinstateMessage.c_str());
+			RCLCPP_INFO(logger_, "Kinematics error resolved [%s]", kinstateMessage.c_str());
 		}
 
 		if (currentKinstate != cri_messages::Kinstate::NO_ERROR) {
@@ -231,7 +228,7 @@ void RebelController::processStatus(const cri_messages::Status &status) {
 				kinstateMessage = kinstate_msg_map.at(currentKinstate);
 			}
 
-			RCLCPP_ERROR(rclcpp::get_logger("hw_controller::rebel_controller"), "Kinematics error [%s]", kinstateMessage.c_str());
+			RCLCPP_ERROR(logger_, "Kinematics error [%s]", kinstateMessage.c_str());
 		}
 	}
 
@@ -279,7 +276,7 @@ void RebelController::processStatus(const cri_messages::Status &status) {
 				}
 
 				if (errorMsg != "") {
-					RCLCPP_ERROR(rclcpp::get_logger("hw_controller::rebel_controller"), "Joint %i Error: [%s]", i, errorMsg.c_str());
+					RCLCPP_ERROR(logger_, "Joint %i Error: [%s]", i, errorMsg.c_str());
 				}
 			}
 		}
@@ -297,16 +294,16 @@ void RebelController::GetReferenceInfo() {
 }
 
 void RebelController::computeStatusFrequencyThread() {
-	RCLCPP_DEBUG(rclcpp::get_logger("hw_controller::rebel_controller"), "Starting to compute status frequency");
+	RCLCPP_DEBUG(logger_, "Starting to compute status frequency");
 	status_count = 0;
 
 	while (continueMessage) {
 		std::this_thread::sleep_for(std::chrono::milliseconds(1000));
-		RCLCPP_DEBUG(rclcpp::get_logger("hw_controller::rebel_controller"), "Status frequency: %d Hz", status_count);
+		RCLCPP_DEBUG(logger_, "Status frequency: %d Hz", status_count);
 		status_count = 0;
 	}
 
-	RCLCPP_DEBUG(rclcpp::get_logger("hw_controller::rebel_controller"), "Stopped to compute status frequency");
+	RCLCPP_DEBUG(logger_, "Stopped to compute status frequency");
 }
 
 /**
@@ -345,7 +342,7 @@ hardware_interface::CallbackReturn RebelController::on_init(const hardware_inter
 			// convert string to double
 			cri_joint_offset = std::stod(joint.parameters.at("cri_joint_offset"));
 		} else {
-			RCLCPP_WARN(rclcpp::get_logger("hw_controller::rebel_controller"),
+			RCLCPP_WARN(logger_,
 						"No cri_joint_offset specified for joint %s, using default value of %lf", joint.name.c_str(), cri_joint_offset);
 		}
 		pos_offset_.push_back(cri_joint_offset);
@@ -367,14 +364,14 @@ hardware_interface::CallbackReturn RebelController::on_init(const hardware_inter
 
 	// print command interfaces names
 	for (const hardware_interface::InterfaceInfo &cmd_interface : info.joints.at(0).command_interfaces) {
-		RCLCPP_INFO(rclcpp::get_logger("hw_controller::rebel_controller"), "Command interface found: %s", cmd_interface.name.c_str());
+		RCLCPP_INFO(logger_, "Command interface found: %s", cmd_interface.name.c_str());
 	}
 	// print state interfaces names
 	for (const hardware_interface::InterfaceInfo &state_interface : info.joints.at(0).state_interfaces) {
-		RCLCPP_INFO(rclcpp::get_logger("hw_controller::rebel_controller"), "State interface found: %s", state_interface.name.c_str());
+		RCLCPP_INFO(logger_, "State interface found: %s", state_interface.name.c_str());
 	}
 
-	RCLCPP_INFO(rclcpp::get_logger("hw_controller::rebel_controller"), "Detected %lu joints in the urdf file", jogs_.size());
+	RCLCPP_INFO(logger_, "Detected %lu joints in the urdf file", jogs_.size());
 	return hardware_interface::CallbackReturn::SUCCESS;
 }
 
@@ -417,7 +414,7 @@ hardware_interface::CallbackReturn RebelController::on_activate(const rclcpp_lif
  * 	does not provide a way to do so.
  */
 void RebelController::shutdown() {
-	RCLCPP_INFO(rclcpp::get_logger("hw_controller::rebel_controller"), "Shutting down the robot");
+	RCLCPP_INFO(logger_, "Shutting down the robot");
 	this->on_deactivate(rclcpp_lifecycle::State());
 }
 
@@ -432,7 +429,7 @@ hardware_interface::CallbackReturn RebelController::on_deactivate(const rclcpp_l
 
 	std::this_thread::sleep_for(std::chrono::milliseconds(aliveWaitMs + 10));
 
-	RCLCPP_INFO(rclcpp::get_logger("hw_controller::rebel_controller"), "Stopping the robot");
+	RCLCPP_INFO(logger_, "Stopping the robot");
 
 	Command(cri_keywords::COMMAND_DISABLE);
 	Command(cri_keywords::COMMAND_DISCONNECT);
@@ -566,7 +563,7 @@ hardware_interface::return_type RebelController::write(const rclcpp::Time & /*ti
 			for (unsigned int i = 0; i < n_joints; i++) {
 				output += std::to_string(cmd_velocity_[i]) + " ";
 			}
-			RCLCPP_INFO(rclcpp::get_logger("hw_controller::rebel_controller"), "cmd_velocity_: %s", output.c_str());
+			RCLCPP_INFO(logger_, "cmd_velocity_: %s", output.c_str());
 			output = "";
 			for (unsigned int i = 0; i < n_joints; i++) {
 				// Use the velocities from the command vector and convert them to the right unit
@@ -575,7 +572,7 @@ hardware_interface::return_type RebelController::write(const rclcpp::Time & /*ti
 				output += std::to_string(jogs_[i]) + " ";
 			}
 
-			// RCLCPP_INFO(rclcpp::get_logger("hw_controller::rebel_controller"), "Moved with velocity %s", output.c_str());
+			// RCLCPP_INFO(logger_, "Moved with velocity %s", output.c_str());
 			cmd_last_velocity_ = cmd_velocity_;
 		}
 
@@ -604,7 +601,7 @@ hardware_interface::return_type RebelController::write(const rclcpp::Time & /*ti
 
 			Command(msg.str()); // sends move joint command via position control
 
-			RCLCPP_INFO(rclcpp::get_logger("hw_controller::rebel_controller"), "Move position msg: %s", msg.str().c_str());
+			RCLCPP_INFO(logger_, "Move position msg: %s", msg.str().c_str());
 
 			cmd_last_position_ = cmd_position_;
 		}

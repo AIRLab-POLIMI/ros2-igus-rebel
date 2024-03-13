@@ -24,6 +24,8 @@ namespace igus_rebel_hw_controller {
 class CriSocket {
 
 private:
+	rclcpp::Logger logger_ = rclcpp::get_logger("hw_controller::cri_socket");
+
 	int sock;
 	std::string ip;
 	int port;
@@ -46,7 +48,7 @@ private:
 	int fragmentLength;
 
 	void makeConnection();
-	void separateMessages(const char *msg);
+	void addDataToStack(const char *msg, int length);
 
 	void receiveThreadFunction();
 	void listCheckThreadFunction();

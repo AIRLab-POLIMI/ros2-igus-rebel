@@ -6,11 +6,6 @@ namespace igus_rebel_hw_controller {
 namespace cri_messages {
 MessageType CriMessage::GetMessageType(const std::string &msg) {
 	size_t typeStart = 0;
-	/*
-	while(msg[typeStart] == ' ') {
-			typeStart += 1;  // skip multiple spaces
-	}*/
-	typeStart = msg.find(" ", typeStart) + 1;
 
 	size_t typeEnd = msg.find(" ", typeStart);
 

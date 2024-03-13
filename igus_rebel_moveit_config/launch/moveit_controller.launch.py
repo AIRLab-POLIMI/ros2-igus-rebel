@@ -51,6 +51,7 @@ def launch_setup(context, *args, **kwargs):
             {"use_sim_time": use_sim_time},
         ],
         output="screen",
+        arguments=["--ros-args", "--log-level", "info"],
         # IRON_ONLY: listening to /robot_description to have the complete URDF
         # parameters=[{"robot_description": ""}, ros2_controllers_file],
         # remappings=[("~/robot_description", "/robot_description")],

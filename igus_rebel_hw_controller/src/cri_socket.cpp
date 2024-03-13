@@ -8,7 +8,7 @@ CriSocket::CriSocket(const std::string &ip, const int &port, const int &timeout)
 																				   timeout(timeout),
 																				   unprocessedMessages(),
 																				   continueReceive(false),
-																				   maxUnprocessedMessages(25), // Small for testing
+																				   maxUnprocessedMessages(25),
 																				   listCheckWaitMs(500),
 																				   connectionNeeded(false),
 																				   fragmentBuffer{0},
@@ -29,7 +29,7 @@ void CriSocket::makeConnection() {
 		struct sockaddr_in serv_addr;
 
 		if ((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
-			RCLCPP_ERROR(rclcpp::get_logger("hw_controller::cri_socket"), "Socket creation error.");
+			RCLCPP_ERROR(logger_, "Socket creation error.");
 			std::this_thread::sleep_for(std::chrono::milliseconds(100));
 			continue;
 		}
@@ -39,123 +39,95 @@ void CriSocket::makeConnection() {
 
 		// Convert IPv4 and IPv6 addresses from text to binary form
 		if (inet_pton(AF_INET, ip.c_str(), &serv_addr.sin_addr) <= 0) {
-			RCLCPP_ERROR(rclcpp::get_logger("hw_controller::cri_socket"), "Invalid robot IP address / Address not supported.");
+			RCLCPP_ERROR(logger_, "Invalid robot IP address / Address not supported.");
 			std::this_thread::sleep_for(std::chrono::milliseconds(100));
 			continue;
 		}
 
 		if (connect(sock, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0) {
-			RCLCPP_ERROR(rclcpp::get_logger("hw_controller::cri_socket"), "Connection Failed.");
+			RCLCPP_ERROR(logger_, "Connection Failed.");
 			std::this_thread::sleep_for(std::chrono::milliseconds(100));
 			continue;
 		}
 
 		connectionNeeded = false;
-		RCLCPP_INFO(rclcpp::get_logger("hw_controller::cri_socket"), "Connected to ReBeL at %s:%d", ip.c_str(), port);
+		RCLCPP_INFO(logger_, "Connected to ReBeL at %s:%d", ip.c_str(), port);
 	}
 }
 
-void CriSocket::separateMessages(const char *msg) {
-	const char *start;
-	const char *end = msg;
-	/*TODO: FIX ERROR: messages discarded and not re-built
-	if (fragmentLength != 0) {
-		start = std::strstr(msg, cri_keywords::START.c_str());
-		end = std::strstr(msg, cri_keywords::END.c_str());
+/**
+ * @brief Add data to the stack of unprocessed messages.
+ * @param msg The message containing the data to be separated and added to the stack.
+ * @param length The length of the message.
+ */
+void CriSocket::addDataToStack(const char *msg, int length) {
+	std::string data_msg = std::string(msg, length);
 
-		if (end == nullptr || (start != nullptr && end > start)) {
-			RCLCPP_ERROR(rclcpp::get_logger("hw_controller::cri_socket"), "There was a partial robot message, but could not find the end of it in the next message.");
-			RCLCPP_ERROR(rclcpp::get_logger("hw_controller::cri_socket"), "Fragment: %s", msg);
-		} else {
-			std::string result1(fragmentBuffer.front(), fragmentLength);
-			std::string result2(msg, end - msg);
+	bool complete = true;
+	long unsigned int start_pos = data_msg.find(cri_keywords::START);
+	long unsigned int end_pos = data_msg.find(cri_keywords::END);
 
-			{ // defines the local scope of the lockGuard, critical section here
+	do {
+
+		// check whether there is a complete message remaining in the buffer
+		complete = !(start_pos == std::string::npos || end_pos == std::string::npos);
+
+		if (complete) {
+			// after "START" there is a whitespace, a number and a whitespace
+			// we need to skip these
+			start_pos = start_pos + cri_keywords::START.size() + 1;
+			start_pos = data_msg.find(" ", start_pos) + 1;
+
+			std::string data = data_msg.substr(start_pos, end_pos - start_pos);
+			{
+				// defines the local scope of the lockGuard, critical section here
 				std::lock_guard<std::mutex> lockGuard(messageLock);
-				unprocessedMessages.push_front(result1 + result2);
+				unprocessedMessages.push_front(data);
 			}
+
+			data_msg = data_msg.substr(end_pos + cri_keywords::END.size());
+
+			start_pos = data_msg.find(cri_keywords::START);
+			end_pos = data_msg.find(cri_keywords::END);
 		}
 
-		fragmentLength = 0;
-	}
-	*/
-
-	while (true) {
-		start = std::strstr(end, cri_keywords::START.c_str());
-
-		if (start == nullptr) {
-			break;
-		}
-
-		end = std::strstr(start, cri_keywords::END.c_str());
-
-		if (end == nullptr) {
-			/*
-			// Found a start without end.
-			const char *remainingStart = start + cri_keywords::START.size();
-			const char *remainingEnd = std::strchr(remainingStart, '\0');
-
-			if (remainingEnd != nullptr) {
-				fragmentLength = remainingEnd - remainingStart;
-
-				for (int i = 0; i < fragmentLength; i++) {
-					fragmentBuffer[i] = *(remainingStart + i);
-				}
-			} else {
-				RCLCPP_ERROR(rclcpp::get_logger("hw_controller::cri_socket"), "Socket read was not null-terminated, somehow.");
-			}
-			*/
-			break;
-		}
-
-		{ // defines the local scope of the lockGuard, critical section here
-			std::lock_guard<std::mutex> lockGuard(messageLock);
-			unprocessedMessages.push_front(std::string(
-				start + cri_keywords::START.size() + 1,
-				end - (start + cri_keywords::START.size() + 1) - 1));
-		}
-	}
+	} while (!complete);
 }
 
 void CriSocket::receiveThreadFunction() {
-	RCLCPP_DEBUG(rclcpp::get_logger("hw_controller::cri_socket"), "Starting to receive messages from robot.");
+	if (connectionNeeded) {
+		makeConnection();
+	}
+
+	RCLCPP_INFO(logger_, "Starting to receive messages from robot.");
 
 	char buffer[bufferSize] = {0};
 
 	while (continueReceive) {
-		if (connectionNeeded) {
-			makeConnection();
-		}
+		if (isSocketOk()) {
+			int valread = read(sock, buffer, bufferSize);
 
-		int valread = read(sock, buffer, bufferSize);
-		//RCLCPP_INFO(rclcpp::get_logger("hw_controller::cri_socket"), "#bytes read from socket = %d", valread);
-
-		if (!isSocketOk()) {
-			connectionNeeded = true;
-		} else {
 			if (valread == 0) {
-				RCLCPP_WARN(rclcpp::get_logger("hw_controller::cri_socket"), "Empty message received");
+				RCLCPP_WARN(logger_, "Empty message received");
 				connectionNeeded = true;
 			} else {
-				separateMessages(buffer);
+				addDataToStack(buffer, valread);
 			}
 		}
-
-		// std::this_thread::sleep_for(std::chrono::milliseconds(10));
 	}
 
-	RCLCPP_DEBUG(rclcpp::get_logger("hw_controller::cri_socket"), "Stopped to receive messages from robot.");
+	RCLCPP_INFO(logger_, "Stopped to receive messages from robot.");
 }
 
 // Make sure that we do not fill our entire memory with messages from the robot in case something
 // goes wrong with processing them.
 // Also, later we should just stop the robot here, because this could be unsafe.
 void CriSocket::listCheckThreadFunction() {
-	RCLCPP_DEBUG(rclcpp::get_logger("hw_controller::cri_socket"), "Starting to check if the message list is being processed.");
+	RCLCPP_DEBUG(logger_, "Starting to check if the message list is being processed.");
 
 	while (continueReceive) {
 		if (unprocessedMessages.size() > maxUnprocessedMessages) {
-			RCLCPP_WARN(rclcpp::get_logger("hw_controller::cri_socket"), "Robot messages are not processed fast enough. Discarding messages.");
+			RCLCPP_WARN(logger_, "Robot messages are not processed fast enough. Discarding messages.");
 
 			while (unprocessedMessages.size() > (maxUnprocessedMessages * 0.9)) {
 				unprocessedMessages.pop_back();
@@ -165,7 +137,7 @@ void CriSocket::listCheckThreadFunction() {
 		std::this_thread::sleep_for(std::chrono::milliseconds(listCheckWaitMs));
 	}
 
-	RCLCPP_DEBUG(rclcpp::get_logger("hw_controller::cri_socket"), "Stopped to check if the message list is being processed.");
+	RCLCPP_DEBUG(logger_, "Stopped to check if the message list is being processed.");
 }
 
 void CriSocket::setIp(std::string ip) {
@@ -178,12 +150,12 @@ bool CriSocket::isSocketOk() {
 	int retval = getsockopt(sock, SOL_SOCKET, SO_ERROR, &error, &len);
 
 	if (retval != 0) {
-		RCLCPP_ERROR(rclcpp::get_logger("hw_controller::cri_socket"), "Error getting socket error code: %s", strerror(retval));
+		RCLCPP_ERROR(logger_, "Error getting socket error code: %s", strerror(retval));
 		return false;
 	}
 
 	if (error != 0) {
-		RCLCPP_ERROR(rclcpp::get_logger("hw_controller::cri_socket"), "Socket error: %s", strerror(error));
+		RCLCPP_ERROR(logger_, "Socket error: %s", strerror(error));
 		return false;
 	}
 
@@ -194,7 +166,7 @@ void CriSocket::start() {
 	connectionNeeded = true;
 	continueReceive = true;
 
-	listCheckThread = std::thread(&CriSocket::listCheckThreadFunction, this);
+	// listCheckThread = std::thread(&CriSocket::listCheckThreadFunction, this);
 	receiveThread = std::thread(&CriSocket::receiveThreadFunction, this);
 }
 
@@ -207,24 +179,27 @@ void CriSocket::stop() {
 		receiveThread.join();
 	}
 
-	if (listCheckThread.joinable()) {
-		listCheckThread.join();
-	}
+	// if (listCheckThread.joinable()) {
+	//	listCheckThread.join();
+	// }
 }
 
 bool CriSocket::hasMessage() {
-	return unprocessedMessages.size() > 0;
+	bool check;
+	{
+		std::lock_guard<std::mutex> lockGuard(messageLock);
+		check = unprocessedMessages.size() > 0;
+	}
+	return check;
 }
 
 std::string CriSocket::getMessage() {
-	std::lock_guard<std::mutex> lockGuard(messageLock);
-
-	if (!hasMessage()) {
-		return "";
+	std::string msg;
+	{
+		std::lock_guard<std::mutex> lockGuard(messageLock);
+		msg = unprocessedMessages.back();
+		unprocessedMessages.pop_back();
 	}
-
-	std::string msg = unprocessedMessages.back();
-	unprocessedMessages.pop_back();
 
 	return msg;
 }
@@ -238,12 +213,9 @@ void CriSocket::sendMessage(const std::string &msg) {
 
 	int sent = send(sock, msg.c_str(), msg.length(), 0);
 
-	if (!isSocketOk()) {
-		connectionNeeded = true;
-	}
-
 	if (sent < 0) {
-		connectionNeeded = true;
+		// connectionNeeded = true;
+		RCLCPP_WARN(logger_, "failed to send message data to the robot.");
 	}
 }
 } // namespace igus_rebel_hw_controller

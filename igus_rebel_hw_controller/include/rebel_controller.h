@@ -39,17 +39,22 @@ private:
 	const std::string ip_address = "192.168.1.102";
 	const int port = 3920;
 
+	rclcpp::Logger logger_ = rclcpp::get_logger("hw_controller::rebel_controller");
+
+	// socket for communication with the robot
 	CriSocket cri_socket;
 
 	// status message
 	cri_messages::Status currentStatus;
 
+	// socket message handling
 	bool continueAlive;
 	bool continueMessage;
 	std::thread aliveThread;
 	std::thread messageThread;
 	int aliveWaitMs;
 
+	// command counter for the CRI protocol
 	int cmd_counter;
 	std::mutex counterLock;
 	std::mutex aliveLock;
