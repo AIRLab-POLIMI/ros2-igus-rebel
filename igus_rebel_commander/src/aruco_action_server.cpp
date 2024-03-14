@@ -65,6 +65,22 @@ ArucoActionServer::ArucoActionServer(const rclcpp::NodeOptions &options = rclcpp
 				link_ref_transform.transform.translation.y, link_ref_transform.transform.translation.z);
 
 	link_ref_z = link_ref_transform.transform.translation.z;
+
+	int64_t test_id = 10;
+	geometry_msgs::msg::Pose test_pose;
+	test_pose.position.x = 1.0;
+	test_pose.position.x = 1.0;
+	arucos[test_id] = test_pose;
+
+	test_id = 1;
+	test_pose.position.x = -1.0;
+	test_pose.position.x = -1.0;
+	arucos[test_id] = test_pose;
+
+	test_id = 7;
+	test_pose.position.x = 1.4;
+	test_pose.position.x = -1.6;
+	arucos[test_id] = test_pose;
 }
 
 void ArucoActionServer::aruco_marker_callback(const aruco_interfaces::msg::ArucoMarkers aruco_marker_array) {
