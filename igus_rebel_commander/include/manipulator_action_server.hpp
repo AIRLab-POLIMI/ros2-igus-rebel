@@ -51,16 +51,6 @@ public:
 	// initialize rviz visual tools for text and markers visualization
 	void initRvizVisualTools(void);
 
-    // thread for tracking the goal pose and moving the robot to the goal pose
-	void manipulator_thread(void);
-
-    /**
-	 * @param target_pose the cartesian pose target with reference frame associated
-	 * @return result of the movement
-	 * @brief Plan and move the robot to the target pose
-	 */
-	bool robotPlanAndMove(geometry_msgs::msg::PoseStamped::SharedPtr target_pose);
-
 	/**
 	 * @brief Plan and move the robot to the joint space goal
 	 * @param joint_space_goal the joint space goal, sequence of 6 joint values expressed in radians

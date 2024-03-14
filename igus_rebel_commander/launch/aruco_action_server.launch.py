@@ -61,13 +61,13 @@ def launch_setup(context, *args, **kwargs):
     )
 
     # test node for publishing a goal pose to check whether the goal pose is computed correctly
-    test_goal_pose_computation_node = Node(
-        package="igus_rebel_commander",
-        executable="test_goal_pose_computation",
-        name="test_goal_pose_computation_node",
-        output="screen",
-        condition=IfCondition(LaunchConfiguration("testing")),
-    )
+    # test_goal_pose_computation_node = Node(
+    #     package="igus_rebel_commander",
+    #     executable="test_goal_pose_computation",
+    #     name="test_goal_pose_computation_node",
+    #     output="screen",
+    #     condition=IfCondition(LaunchConfiguration("testing")),
+    # )
 
     if (LaunchConfiguration("testing").perform(context) == "true"):
         rviz_file_name = "aruco_pose_test.rviz"

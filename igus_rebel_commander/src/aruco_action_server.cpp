@@ -12,7 +12,7 @@ ArucoActionServer::ArucoActionServer(const rclcpp::NodeOptions &options = rclcpp
 		std::bind(&ArucoActionServer::handle_accepted, this, _1));
 
 	// Create a publisher for the goal pose
-	goal_pose_pub_ = this->create_publisher<geometry_msgs::msg::PoseStamped>("/goal_pose", 10);
+	goal_pose_pub_ = this->create_publisher<geometry_msgs::msg::PoseStamped>("/aruco_pointer", 10);
 
 	// Create a subscriber for the aruco marker array
 	aruco_marker_sub_ = this->create_subscription<aruco_interfaces::msg::ArucoMarkers>(

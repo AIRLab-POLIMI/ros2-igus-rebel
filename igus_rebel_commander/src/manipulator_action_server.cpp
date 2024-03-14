@@ -66,30 +66,30 @@ void ManipulatorActionServer::execute(const std::shared_ptr<GoalHandleManipulato
     
 	this->robotPlanAndMove(target);
 
-	while (rclcpp::ok() && ready) {
-		if (ready) {
-			RCLCPP_INFO(LOGGER, "Goal available");
-			// acquire lock on the goal pose to read the last pose available
-			{
-				std::lock_guard<std::mutex> lock(goal_pose_mutex);
-				// check if the current goal pose has been initialized
-				if (goal_pose != nullptr) {
-					// get the current goal pose
-					current_goal_pose = goal_pose;
-					// reset the ready flag
-					ready = false;
-				}
-			}
+	// while (rclcpp::ok() && ready) {
+	// 	if (ready) {
+	// 		RCLCPP_INFO(LOGGER, "Goal available");
+	// 		// acquire lock on the goal pose to read the last pose available
+	// 		{
+	// 			std::lock_guard<std::mutex> lock(goal_pose_mutex);
+	// 			// check if the current goal pose has been initialized
+	// 			if (goal_pose != nullptr) {
+	// 				// get the current goal pose
+	// 				current_goal_pose = goal_pose;
+	// 				// reset the ready flag
+	// 				ready = false;
+	// 			}
+	// 		}
 
-			// plan and move the robot to the current goal pose
-			this->robotPlanAndMove(current_goal_pose);
+	// 		// plan and move the robot to the current goal pose
+	// 		this->robotPlanAndMove(current_goal_pose);
 
-			// sleep for a while
-			//std::this_thread::sleep_for(std::chrono::seconds(10));
+	// 		// sleep for a while
+	// 		//std::this_thread::sleep_for(std::chrono::seconds(10));
 
-			this->robotPlanAndMove(parked_joint_positions);
-		}
-	}
+	// 		this->robotPlanAndMove(parked_joint_positions);
+	// 	}
+	// }
 	
 	goal_handle->succeed(result);
 	RCLCPP_INFO(this->get_logger(), "Goal succeeded");
@@ -256,60 +256,60 @@ void ManipulatorActionServer::initRvizVisualTools() {
 	RCLCPP_INFO(LOGGER, "Loaded rviz visual tools");
 }
 
-bool ManipulatorActionServer::robotPlanAndMove(geometry_msgs::msg::PoseStamped::SharedPtr target_pose) {
-	RCLCPP_INFO(LOGGER, "Planning and moving to target cartesian pose");
+// bool ManipulatorActionServer::robotPlanAndMove(geometry_msgs::msg::PoseStamped::SharedPtr target_pose) {
+// 	RCLCPP_INFO(LOGGER, "Planning and moving to target cartesian pose");
 
-	// publish a coordinate axis corresponding to the pose with rviz visual tools
-	visual_tools->setBaseFrame(fixed_base_frame);
-	visual_tools->publishAxisLabeled(target_pose->pose, "target");
-	visual_tools->trigger();
+// 	// publish a coordinate axis corresponding to the pose with rviz visual tools
+// 	visual_tools->setBaseFrame(fixed_base_frame);
+// 	visual_tools->publishAxisLabeled(target_pose->pose, "target");
+// 	visual_tools->trigger();
 
-	// set the target pose
-	move_group->setStartState(*move_group->getCurrentState());
-	move_group->setGoalPositionTolerance(0.001);
-	move_group->setGoalOrientationTolerance(0.05);
-	move_group->setPoseTarget(*target_pose, end_effector_link);
-	move_group->setPlannerId("RRTConnectkConfigDefault");
-	move_group->setPlanningTime(5.0);
+// 	// set the target pose
+// 	move_group->setStartState(*move_group->getCurrentState());
+// 	move_group->setGoalPositionTolerance(0.001);
+// 	move_group->setGoalOrientationTolerance(0.05);
+// 	move_group->setPoseTarget(*target_pose, end_effector_link);
+// 	move_group->setPlannerId("RRTConnectkConfigDefault");
+// 	move_group->setPlanningTime(5.0);
 
-	// optionally limit accelerations and velocity scaling
-	move_group->setMaxVelocityScalingFactor(0.3);
-	move_group->setMaxAccelerationScalingFactor(0.3);
+// 	// optionally limit accelerations and velocity scaling
+// 	move_group->setMaxVelocityScalingFactor(0.3);
+// 	move_group->setMaxAccelerationScalingFactor(0.3);
 
-	move_group->clearPathConstraints();
+// 	move_group->clearPathConstraints();
 
-	// create plan for reaching the goal pose
-	// make several attempts at planning until a valid motion is found or the maximum number of retries is reached
-	int attempt = 0;
-	bool valid_motion = false;
-	moveit::planning_interface::MoveGroupInterface::Plan plan_motion;
-	moveit::core::MoveItErrorCode response;
-	while (attempt < 3 && !valid_motion) {
-		// attempt at planning and moving to the joint space goal
-		response = move_group->plan(plan_motion);
-		valid_motion = bool(response);
-		attempt++;
-	}
+// 	// create plan for reaching the goal pose
+// 	// make several attempts at planning until a valid motion is found or the maximum number of retries is reached
+// 	int attempt = 0;
+// 	bool valid_motion = false;
+// 	moveit::planning_interface::MoveGroupInterface::Plan plan_motion;
+// 	moveit::core::MoveItErrorCode response;
+// 	while (attempt < 3 && !valid_motion) {
+// 		// attempt at planning and moving to the joint space goal
+// 		response = move_group->plan(plan_motion);
+// 		valid_motion = bool(response);
+// 		attempt++;
+// 	}
 
-	// show output of planned movement
-	RCLCPP_INFO(LOGGER, "Plan result = %s", moveit::core::error_code_to_string(response).c_str());
+// 	// show output of planned movement
+// 	RCLCPP_INFO(LOGGER, "Plan result = %s", moveit::core::error_code_to_string(response).c_str());
 
-	// visualizing the trajectory
-	joint_model_group = move_group->getCurrentState()->getJointModelGroup(PLANNING_GROUP);
-	auto link_eef = move_group->getCurrentState()->getLinkModel(end_effector_link);
-	// TODO: this trajectory line is not displayed properly in rviz
-	visual_tools->setBaseFrame(plan_motion.trajectory_.multi_dof_joint_trajectory.header.frame_id);
-	visual_tools->publishTrajectoryLine(plan_motion.trajectory_, link_eef, joint_model_group);
-	visual_tools->trigger();
+// 	// visualizing the trajectory
+// 	joint_model_group = move_group->getCurrentState()->getJointModelGroup(PLANNING_GROUP);
+// 	auto link_eef = move_group->getCurrentState()->getLinkModel(end_effector_link);
+// 	// TODO: this trajectory line is not displayed properly in rviz
+// 	visual_tools->setBaseFrame(plan_motion.trajectory.multi_dof_joint_trajectory.header.frame_id);
+// 	visual_tools->publishTrajectoryLine(plan_motion.trajectory, link_eef, joint_model_group);
+// 	visual_tools->trigger();
 
-	if (bool(response)) { // if the plan was successful
-		RCLCPP_INFO(LOGGER, "moving the robot with cartesian space goal");
-		move_group->execute(plan_motion);
-	} else {
-		RCLCPP_ERROR(LOGGER, "Could not compute plan successfully");
-	}
-	return bool(response);
-}
+// 	if (bool(response)) { // if the plan was successful
+// 		RCLCPP_INFO(LOGGER, "moving the robot with cartesian space goal");
+// 		move_group->execute(plan_motion);
+// 	} else {
+// 		RCLCPP_ERROR(LOGGER, "Could not compute plan successfully");
+// 	}
+// 	return bool(response);
+// }
 
 /**
  * @brief Plan and move the robot to the joint space goal
@@ -374,7 +374,7 @@ bool ManipulatorActionServer::robotPlanAndMove(std::vector<double> joint_space_g
 	RCLCPP_INFO(LOGGER, "Planning to the searching position = %s", moveit::core::error_code_to_string(response).c_str());
 
 	visual_tools->setBaseFrame(root_base_frame);
-	visual_tools->publishTrajectoryLine(search_plan.trajectory_, goal_state.getLinkModel(end_effector_link), joint_model_group);
+	visual_tools->publishTrajectoryLine(search_plan.trajectory, goal_state.getLinkModel(end_effector_link), joint_model_group);
 	visual_tools->trigger();
 
 	if (bool(response)) {
@@ -387,41 +387,41 @@ bool ManipulatorActionServer::robotPlanAndMove(std::vector<double> joint_space_g
 	return bool(response);
 }
 
-void ManipulatorActionServer::manipulator_thread() {
-	// sleep for a while before starting the test
-	std::this_thread::sleep_for(std::chrono::seconds(5));
+// void ManipulatorActionServer::manipulator_thread() {
+// 	// sleep for a while before starting the test
+// 	std::this_thread::sleep_for(std::chrono::seconds(5));
 
-	this->robotPlanAndMove(target);
+// 	this->robotPlanAndMove(target);
 
-	while (rclcpp::ok()) {
-		if (ready) {
-			RCLCPP_INFO(LOGGER, "Goal available");
-			// acquire lock on the goal pose to read the last pose available
-			{
-				std::lock_guard<std::mutex> lock(goal_pose_mutex);
-				// check if the current goal pose has been initialized
-				if (goal_pose != nullptr) {
-					// get the current goal pose
-					current_goal_pose = goal_pose;
-					// reset the ready flag
-					ready = false;
-				}
-			}
+// 	while (rclcpp::ok()) {
+// 		if (ready) {
+// 			RCLCPP_INFO(LOGGER, "Goal available");
+// 			// acquire lock on the goal pose to read the last pose available
+// 			{
+// 				std::lock_guard<std::mutex> lock(goal_pose_mutex);
+// 				// check if the current goal pose has been initialized
+// 				if (goal_pose != nullptr) {
+// 					// get the current goal pose
+// 					current_goal_pose = goal_pose;
+// 					// reset the ready flag
+// 					ready = false;
+// 				}
+// 			}
 
-			// plan and move the robot to the current goal pose
-			this->robotPlanAndMove(current_goal_pose);
+// 			// plan and move the robot to the current goal pose
+// 			this->robotPlanAndMove(current_goal_pose);
 
-			// sleep for a while
-			std::this_thread::sleep_for(std::chrono::seconds(10));
+// 			// sleep for a while
+// 			std::this_thread::sleep_for(std::chrono::seconds(10));
 
-			this->robotPlanAndMove(parked_joint_positions);
+// 			this->robotPlanAndMove(parked_joint_positions);
 
-		} else {
-			// sleep for a while
-			std::this_thread::sleep_for(std::chrono::milliseconds(100));
-		}
-	}
-}
+// 		} else {
+// 			// sleep for a while
+// 			std::this_thread::sleep_for(std::chrono::milliseconds(100));
+// 		}
+// 	}
+// }
 
 int main(int argc, char **argv) {
 	rclcpp::init(argc, argv);

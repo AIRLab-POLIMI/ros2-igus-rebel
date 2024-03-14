@@ -17,7 +17,7 @@ ArucoFollower::ArucoFollower(const rclcpp::NodeOptions &node_options) : Node("fo
 
 	// aruco goal pose subscriber with callback thread
 	goal_pose_sub = this->create_subscription<geometry_msgs::msg::PoseStamped>(
-		"/goal_pose", 10, std::bind(&ArucoFollower::goalPoseCallback, this, std::placeholders::_1));
+		"/aruco_pointer", 10, std::bind(&ArucoFollower::goalPoseCallback, this, std::placeholders::_1));
 
 	goal_done_pub = this->create_publisher<std_msgs::msg::Bool>("/goal/done", 10);
 
@@ -193,6 +193,9 @@ void ArucoFollower::trackGoalPose() {
 		move_group->setGoalOrientationTolerance(0.1); // radians
 		move_group->setPoseTarget(current_goal_pose, end_effector_link);
 		move_group->setPlannerId("RRTConnectkConfigDefault");
+		// optionally limit accelerations and velocity scaling
+		move_group->setMaxVelocityScalingFactor(1.0);
+		move_group->setMaxAccelerationScalingFactor(0.5);
 		// move_group->setPlanningPipelineId("ompl");
 
 		// create plan for reaching the goal pose
