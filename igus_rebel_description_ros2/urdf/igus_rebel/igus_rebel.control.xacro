@@ -60,13 +60,12 @@
 			<xacro:rebel_joint name="joint1" position_min="${-pi*179/180}"
 				position_max="${pi*179/180}" />
 			<xacro:rebel_joint name="joint2" position_min="${-pi*2/3}" position_max="${pi*2/3}"
-				cri_joint_offset="${-pi/6.0}" />
+				cri_joint_offset="${-pi*0.8/180.0}" />
 			<xacro:rebel_joint name="joint3" position_min="${-pi*2/3}" position_max="${pi*2/3}"
-				cri_joint_offset="${-pi*34.0/180.0}" />
+				cri_joint_offset="${-pi*0.5/180.0}" /> 
 			<xacro:rebel_joint name="joint4" position_min="${-pi*179/180}"
 				position_max="${pi*179/180}" />
-			<xacro:rebel_joint name="joint5" position_min="${-pi*19/36}" position_max="${pi*19/36}"
-				cri_joint_offset="${pi/24.0}" />
+			<xacro:rebel_joint name="joint5" position_min="${-pi*19/36}" position_max="${pi*19/36}" />
 			<xacro:rebel_joint name="joint6" position_min="${-pi*179/180}"
 				position_max="${pi*179/180}" />
 

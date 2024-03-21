@@ -221,9 +221,15 @@ Status::Status(const std::string &messageString) : CriMessage(MessageType::STATU
 	FillArray(posCartRobot, posCartRobotString);
 	FillArray(posCartPlattform, posCartPlattformString);
 	overrideValue = std::stof(overrideValueString);
-	din = std::stoi(dinString);		// TODO: Process further to actual meaning
-	dout = std::stoi(doutString);	// TODO: Process further to actual meaning
-	eStop = std::stoi(eStopString); // TODO: Process further to actual meaning
+	din = std::stoi(dinString);
+	
+	try {
+		dout = std::stoi(doutString); // it gets "fffff" sometimes and throws an exception
+	} catch (std::invalid_argument &e) {
+		dout = 0; // set to 0 if it fails
+	}
+
+	eStop = std::stoi(eStopString);
 	supply = std::stoi(supplyString);
 	currentall = std::stoi(currentallString);
 	FillArray(currentjoints, currentjointsString);
