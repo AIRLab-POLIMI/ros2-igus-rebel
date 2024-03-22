@@ -7,7 +7,7 @@
 	<maintainer email="simone.giampa@mail.polimi.it">Simone Giampà</maintainer>
 	<license>AIRLAB</license>
 	<url type="website">polimi.it</url>
-	<url type="repository">https://github.com/SimonGiampy/ros2-igus-rebel</url>
+	<url type="repository">https://github.com/AIRLab-POLIMI/ros2-igus-rebel</url>
 	<author email="simone.giampa@mail.polimi.it">Simone Giampà</author>
 
 	<buildtool_depend>ament_cmake</buildtool_depend>

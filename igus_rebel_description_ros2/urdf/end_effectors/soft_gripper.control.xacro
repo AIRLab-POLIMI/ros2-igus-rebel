@@ -1,0 +1,21 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="igus_rebel">
+
+	<xacro:macro name="igus_rebel_gripper" params="use_dummy">
+		<ros2_control name="igus_rebel_gripper_control" type="actuator">
+
+			<hardware>
+				<plugin>igus_rebel_gripper_controller/GripperController</plugin>
+				<!-- Set use_dummy to true to connect to a dummy driver for testing purposes. -->
+				<param name="use_dummy">${use_dummy}</param>
+			</hardware>
+
+			<gpio name="soft_gripper_gpio">
+				<command_interface name="grip_cmd" />
+				<state_interface name="grip_state" />
+			</gpio>
+
+		</ros2_control>
+
+	</xacro:macro>
+</robot>

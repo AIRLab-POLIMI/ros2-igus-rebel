@@ -1,0 +1,29 @@
+<?xml version="1.0"?>
+<?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
+<package format="3">
+	<name>igus_rebel_gripper_controller</name>
+	<version>0.1.0</version>
+	<description>Hardware Interface and ROS2 control package for the soft gripper</description>
+
+	<maintainer email="simone.giampa@mail.polimi.it">Simone Giampà</maintainer>
+	<license>AIRLAB</license>
+	<url type="website">polimi.it</url>
+	<url type="repository">https://github.com/AIRLab-POLIMI/ros2-igus-rebel</url>
+	<author email="simone.giampa@mail.polimi.it">Simone Giampà</author>
+
+	<buildtool_depend>ament_cmake</buildtool_depend>
+
+	<depend>hardware_interface</depend>
+	<depend>pluginlib</depend>
+	<depend>rclcpp</depend>
+	<depend>rclcpp_lifecycle</depend>
+
+	<exec_depend>controller_manager</exec_depend>
+	<exec_depend>robot_state_publisher</exec_depend>
+	<exec_depend>rviz2</exec_depend>
+	<exec_depend>xacro</exec_depend>
+
+	<export>
+		<build_type>ament_cmake</build_type>
+	</export>
+</package>
