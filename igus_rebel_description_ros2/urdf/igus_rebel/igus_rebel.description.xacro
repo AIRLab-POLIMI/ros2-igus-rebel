@@ -2,7 +2,7 @@
 <robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="igus_rebel">
 
 	<material name="dark_grey">
-		<color rgba="${5/255.0} ${5/255.0} ${5/255.0} 1.000" />
+		<color rgba="${25/255.0} ${25/255.0} ${25/255.0} 1.000" />
 	</material>
 
 	<xacro:macro name="igus_rebel_description">
@@ -21,7 +21,7 @@
 			<collision>
 				<geometry>
 					<mesh
-						filename="file://$(find igus_rebel_description_ros2)/meshes/igus_rebel/Joint0.dae" />
+						filename="file://$(find igus_rebel_description_ros2)/meshes/igus_rebel_mod/Joint0.stl" />
 				</geometry>
 			</collision>
 			<inertial>
@@ -50,7 +50,7 @@
 			<collision>
 				<geometry>
 					<mesh
-						filename="file://$(find igus_rebel_description_ros2)/meshes/igus_rebel/Joint1.dae" />
+						filename="file://$(find igus_rebel_description_ros2)/meshes/igus_rebel_mod/Joint1.stl" />
 				</geometry>
 				<origin rpy="0 0 0" xyz="0 0 0" />
 			</collision>
@@ -65,8 +65,6 @@
 			<child link="link_2" />
 			<origin rpy="0.0 0.0 0.0" xyz="0.0 0.0 0.149" />
 			<axis xyz="0 1 0" />
-			<!-- pi*2/3 are the physical limits, but to avoid any collisions we set the actual
-			limits lower -->
 			<limit effort="330.0" lower="${-pi*80/180}" upper="${pi*140/180}" velocity="${pi/4.0}" />
 			<dynamics damping="${damping}" friction="${friction}" />
 		</joint>
@@ -83,7 +81,7 @@
 			<collision>
 				<geometry>
 					<mesh
-						filename="file://$(find igus_rebel_description_ros2)/meshes/igus_rebel/Joint2.dae" />
+						filename="file://$(find igus_rebel_description_ros2)/meshes/igus_rebel_mod/Joint2.stl" />
 				</geometry>
 				<origin rpy="0 0 0" xyz="0 0 0" />
 			</collision>
@@ -114,7 +112,7 @@
 			<collision>
 				<geometry>
 					<mesh
-						filename="file://$(find igus_rebel_description_ros2)/meshes/igus_rebel/Joint3.dae" />
+						filename="file://$(find igus_rebel_description_ros2)/meshes/igus_rebel_mod/Joint3.stl" />
 				</geometry>
 				<origin rpy="0 0 0" xyz="0 0 0" />
 			</collision>
@@ -145,7 +143,7 @@
 			<collision>
 				<geometry>
 					<mesh
-						filename="file://$(find igus_rebel_description_ros2)/meshes/igus_rebel/Joint4.dae" />
+						filename="file://$(find igus_rebel_description_ros2)/meshes/igus_rebel_mod/Joint4.stl" />
 				</geometry>
 				<origin rpy="0 0 0" xyz="0 0 0" />
 			</collision>
@@ -176,7 +174,7 @@
 			<collision>
 				<geometry>
 					<mesh
-						filename="file://$(find igus_rebel_description_ros2)/meshes/igus_rebel/Joint5.dae" />
+						filename="file://$(find igus_rebel_description_ros2)/meshes/igus_rebel_mod/Joint5.stl" />
 				</geometry>
 				<origin rpy="0 0 0" xyz="0 0 0" />
 			</collision>
@@ -207,7 +205,7 @@
 			<collision>
 				<geometry>
 					<mesh
-						filename="file://$(find igus_rebel_description_ros2)/meshes/igus_rebel/Joint6.dae" />
+						filename="file://$(find igus_rebel_description_ros2)/meshes/igus_rebel_mod/Joint6.stl" />
 				</geometry>
 				<origin rpy="0 0 0" xyz="0.0 0 0" />
 			</collision>
