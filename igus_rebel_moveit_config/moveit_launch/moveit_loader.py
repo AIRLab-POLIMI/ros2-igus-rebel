@@ -41,7 +41,7 @@ def declare_arguments():
     mount_arg = DeclareLaunchArgument(
         name="mount",
         default_value="mount_v1",
-        choices=["none", "mount_v1"],
+        choices=["none", "mount_v1", "mount_v2"],
         description="Mount to attach to the last joint",
     )
 
@@ -55,7 +55,7 @@ def declare_arguments():
     end_effector_arg = DeclareLaunchArgument(
         name="end_effector",
         default_value="toucher_v1",
-        choices=["toucher_v1", "none"],
+        choices=["toucher_v1", "soft_gripper", "none"],
         description="Which end_effector to attach to the mount",
     )
 

@@ -2,12 +2,20 @@
 <robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="igus_rebel">
 
 	<xacro:macro name="igus_rebel_gripper" params="use_dummy">
+
+		<!-- Set use_dummy to true to connect to a dummy driver for testing purposes. -->
+		<xacro:property name="baud_rate" value="115200"/>
+		<xacro:property name="serial_port" value="/dev/ttyUSB0"/>
+
 		<ros2_control name="igus_rebel_gripper_control" type="actuator">
 
 			<hardware>
-				<plugin>igus_rebel_gripper_controller/GripperController</plugin>
-				<!-- Set use_dummy to true to connect to a dummy driver for testing purposes. -->
+				<plugin>soft_gripper_controller/GripperController</plugin>
+				
 				<param name="use_dummy">${use_dummy}</param>
+				<param name="baud_rate">${baud_rate}</param>
+				<param name="serial_port">${serial_port}</param>
+
 			</hardware>
 
 			<gpio name="soft_gripper_gpio">

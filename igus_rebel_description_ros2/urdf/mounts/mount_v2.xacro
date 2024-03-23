@@ -1,11 +1,11 @@
 <?xml version="1.0"?>
-<robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="mount_v1">
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="mount_v2">
 
-	<material name="mount_dark_green">
-		<color rgba="${5/255.0} ${100/255.0} ${5/255.0} 1.000" />
+	<material name="mount_dark_grey">
+		<color rgba="${12/255.0} ${12/255.0} ${12/255.0} 1.000" />
 	</material>
 
-	<xacro:macro name="mount_v1" params="end_effector">
+	<xacro:macro name="mount_v2" params="end_effector">
 
 		<!-- links the flange on the last joint to the mount_v1 -->
 		<joint name="flange_to_mount" type="fixed">
@@ -29,7 +29,7 @@
 				<origin xyz="0.008 0 0" rpy="0 0 ${pi}" />
 				<geometry>
 					<mesh
-						filename="file://$(find igus_rebel_description_ros2)/meshes/mounts/mount_v1.stl"
+						filename="file://$(find igus_rebel_description_ros2)/meshes/mounts/mount_v2.stl"
 						scale="0.001 0.001 0.001" />
 				</geometry>
 				<material name="mount_dark_green" />
@@ -38,7 +38,7 @@
 				<origin xyz="0.008 0 0" rpy="0 0 ${pi}" />
 				<geometry>
 					<mesh
-						filename="file://$(find igus_rebel_description_ros2)/meshes/mounts/mount_v1.stl"
+						filename="file://$(find igus_rebel_description_ros2)/meshes/mounts/mount_v2.stl"
 						scale="0.001 0.001 0.001" />
 				</geometry>
 			</collision>
@@ -56,11 +56,20 @@
 
 
 		<!-- End effectors -->
-		<xacro:if value="${end_effector == 'toucher_v1'}">
+		<xacro:if value="${end_effector == 'soft_gripper'}">
+
+            <!-- description urdf of the soft gripper -->
 			<xacro:include
-				filename="$(find igus_rebel_description_ros2)/urdf/end_effectors/toucher_v1.xacro" />
-			<xacro:toucher_v1 parent="flange" />
+				filename="$(find igus_rebel_description_ros2)/urdf/end_effectors/soft_gripper.description.xacro" />
+
+            <!-- ros2 control of the soft gripper actuator -->
+            <xacro:include
+                filename="$(find igus_rebel_description_ros2)/urdf/end_effectors/soft_gripper.control.xacro" />
+            <xacro:igus_rebel_gripper use_dummy="false" />
+
 		</xacro:if>
+
+
 
 	</xacro:macro>
 </robot>

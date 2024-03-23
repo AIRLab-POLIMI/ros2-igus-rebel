@@ -9,9 +9,6 @@ controller_manager:
         joint_state_broadcaster:
             type: "joint_state_broadcaster/JointStateBroadcaster"
 
-        #gripper_controller:
-            #type: position_controllers/GripperActionController
-
 # joint trajectory controller configuration parameters documentation
 # https://control.ros.org/iron/doc/ros2_controllers/joint_trajectory_controller/doc/parameters.html
 

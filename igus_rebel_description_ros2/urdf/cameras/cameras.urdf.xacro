@@ -1,0 +1,70 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="igus_rebel">
+
+    <xacro:macro name="cameras" params="camera load_gazebo">
+
+        <!-- virtual frames for gazebo -->
+        <xacro:if value="${load_gazebo}">
+            <xacro:include filename="$(find igus_rebel_description_ros2)/urdf/cameras/virtual_camera_frames.xacro" />
+            <xacro:virtual_camera_frames />
+        </xacro:if>
+
+        <!-- Cameras -->
+        <xacro:if value="${camera == 'realsense'}">
+
+            <!-- includes the realsense D435 ros2 description file and its collision box-->
+            <xacro:arg name="use_nominal_extrinsics" default="false" />
+            <xacro:arg name="add_plug" default="true" />
+            <xacro:arg name="use_mesh" default="true" />
+            <xacro:include filename="$(find realsense2_description)/urdf/_d435.urdf.xacro" />
+
+            <xacro:sensor_d435 parent="camera_insert" use_nominal_extrinsics="$(arg use_nominal_extrinsics)" add_plug="$(arg add_plug)" use_mesh="$(arg use_mesh)">
+                <origin xyz="0.0 0 0" rpy="0 0 0" />
+            </xacro:sensor_d435>
+        </xacro:if>
+
+
+        <xacro:if value="${camera == 'oakd'}">
+
+            <!-- Macro for inertial box -->
+            <xacro:macro name="inertial_box" params="mass x y z *origin">
+                <inertial>
+                    <xacro:insert_block name="origin" />
+                    <mass value="${mass}" />
+                    <inertia ixx="${(1/12) * mass * (y*y+z*z)}" ixy="0.0" ixz="0.0" iyy="${(1/12) * mass * (x*x+z*z)}" iyz="0.0" izz="${(1/12) * mass * (x*x+y*y)}" />
+                </inertial>
+            </xacro:macro>
+
+            <xacro:property name="oakd_length" value="0.0803" />
+            <xacro:property name="oakd_width" value="0.0957" />
+            <xacro:property name="oakd_depth" value="0.1267" />
+            <xacro:property name="oakd_mass" value="0.15" />
+
+            <joint name="camera_insert_to_oak_d_pro_camera" type="fixed">
+                <parent link="camera_insert" />
+                <child link="camera_link" />
+                <origin xyz="0.03 0.005 0.0155" rpy="0 0 0" />
+            </joint>
+
+            <link name="camera_link">
+                <visual>
+                    <geometry>
+                        <mesh filename="file://$(find igus_rebel_description_ros2)/meshes/cameras/oak_d_pro_camera.dae" />
+                    </geometry>
+                </visual>
+                <collision>
+                    <origin rpy="0 0 0" xyz="0 0 0" />
+                    <geometry>
+                        <box size="${oakd_length} ${oakd_width} ${oakd_depth}" />
+                    </geometry>
+                </collision>
+                <xacro:inertial_box mass="${oakd_mass}" x="${oakd_length}" y="${oakd_width}" z="${oakd_depth}">
+                    <origin xyz="0.0 0 0.0" rpy="0 0 0" />
+                </xacro:inertial_box>
+            </link>
+
+        </xacro:if>
+
+    </xacro:macro>
+
+</robot>

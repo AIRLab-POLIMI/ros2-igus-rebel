@@ -2,8 +2,6 @@
 
 <robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="igus_rebel">
 
-	<xacro:arg name="use_dummy" default="false" />
-
 	<!-- TODO: add meshes, mount v2 and end effector tip link for the Soft gripper -->
 
 	<joint name="soft_gripper_joint" type="fixed">
@@ -33,10 +31,5 @@
 			<inertia ixx="0.0001" ixy="0.0" ixz="0.0" iyy="0.0001" iyz="0.0" izz="0.0001" />
 		</inertial>
 	</link>
-
-	<!-- Import gripper ros2_control description -->
-	<xacro:include
-		filename="$(find igus_rebel_description_ros2)/urdf/end_effectors/soft_gripper.control.xacro" />
-	<xacro:igus_rebel_control use_dummy="$(arg use_dummy)" />
 
 </robot>
