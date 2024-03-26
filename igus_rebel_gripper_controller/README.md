@@ -9,7 +9,27 @@ The commands will be received by the Arduino, which will then actuate the pneuma
 The soft gripper can be operated via a ros2 service call. The service server listens for string commands that are then sent via serial 
 interface to the Arduino controller. The service call can be used to open, close or turn off the pneumatic pump actuating the gripper.
 
-## Usage
+## Establish serial communication
+
+Before using the service call, it is necessary to establish serial communication between the Arduino and the computer.
+There are 2 ways to do this:
+1. Using the Arduino IDE: launch the Arduino IDE and open and close the serial monitor
+2. Use a sequence of commands in the terminal to create a serial connection between the Arduino and the computer
+```bash
+stty -F /dev/ttyACM0 raw ispeed 115200 ospeed 115200 cs8 -ignpar -cstopb -echo
+cat < /dev/ttyACM0 > /dev/null &
+```
+then test the connection with the following command:
+```bash
+echo -e "grip" > /dev/ttyACM0
+```
+
+Substitute `/dev/ttyACM0` with the port at which the Arduino is connected. The port can be found by running the following command:
+```bash
+ls -l /dev/tty
+```
+
+## ROS2-Control Usage
 
 To launch the service via CLI, you can type in a terminal the following command, where `<command>` can be either `release`, `grip` or `off`:
 
@@ -24,7 +44,7 @@ using the following command:
 ros2 launch igus_rebel_moveit_config demo.launch.py mount:=mount_v2 end_effector:=soft_gripper load_base:=true camera:=realsense
 ```
 
-### Configuration
+### Port Configuration
 
 The default port is set to `/dev/ttyACM0`, but it can be changed to any other port where the Arduino is connected.
 The port at which the Arduino is connected can be configured inside the `soft_gripper.control.xacro` file, in the folder

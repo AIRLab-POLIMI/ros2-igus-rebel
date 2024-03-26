@@ -75,8 +75,8 @@ private:
 	rclcpp::Logger logger_;
 
 	// Serial port configuration (UART)
-	std::string serial_port; // serial port to the arduino controller
-	int baud_rate;			 // baud rate for the serial port
+	std::string serial_port; // serial port to the arduino controller = "/dev/ttyACM0"
+	int baud_rate;			 // baud rate for the serial port - default = 115200
 	int serial_fd;			 // file descriptor for the serial port
 
 	// Store the command and state for the soft gripper

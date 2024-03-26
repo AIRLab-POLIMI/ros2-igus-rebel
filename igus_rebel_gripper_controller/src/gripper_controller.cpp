@@ -53,19 +53,20 @@ void GripperController::grip_service_callback(
  * @return true if the serial communication was successfully setup, false otherwise
  */
 bool GripperController::setup_serial_comm(void) {
-	serial_fd = open(serial_port.c_str(), O_RDWR | O_NOCTTY);
+	serial_fd = open(serial_port.c_str(), O_RDWR | O_NOCTTY | O_NDELAY);
 	if (serial_fd == -1) {
 		return false;
 	}
 
 	// configure the serial UART communication
-	struct termios options;
+	struct termios options;	
 	tcgetattr(serial_fd, &options);
 	cfsetispeed(&options, baud_rate); // Set baud rate
 	cfsetospeed(&options, baud_rate);
 	options.c_cflag &= ~PARENB; // No parity
 	options.c_cflag &= ~CSTOPB; // 1 stop bit
 	options.c_cflag |= CS8;		// 8 data bits
+	tcflush(serial_fd, TCIFLUSH);
 	tcsetattr(serial_fd, TCSANOW, &options);
 	return true;
 }
