@@ -9,8 +9,9 @@ GripperController::GripperController()
 	  baud_rate(B115200),
 	  serial_fd(-1),
 	  grip_actuation_time(1500) {
-
 	node_ = rclcpp::Node::make_shared("gripper_controller");
+	grip_cmd = "off";
+	grip_state = "off";
 }
 
 /**
@@ -32,6 +33,8 @@ void GripperController::grip_service_callback(
 		RCLCPP_ERROR(logger_, "Invalid command received: %s", grip_cmd.c_str());
 		return;
 	}
+
+	RCLCPP_INFO(logger_, "Service command: %s", grip_cmd.c_str());
 
 	// wait until grip_state is updated and equal to the command
 	while (grip_state != grip_cmd) {
@@ -73,6 +76,8 @@ hardware_interface::CallbackReturn GripperController::on_init(const hardware_int
 	}
 
 	// initialize the hardware interface command and state
+	hw_grip_cmd = new double;
+	hw_grip_state = new double;
 	*hw_grip_cmd = std::numeric_limits<double>::quiet_NaN();
 	*hw_grip_state = std::numeric_limits<double>::quiet_NaN();
 
@@ -80,6 +85,8 @@ hardware_interface::CallbackReturn GripperController::on_init(const hardware_int
 	// and set the serial port and baud rate
 	baud_rate = stoi(info_.hardware_parameters["baud_rate"]);
 	serial_port = info_.hardware_parameters["serial_port"];
+
+	RCLCPP_INFO(logger_, "Serial port: %s, Baud rate: %d", serial_port.c_str(), baud_rate);
 
 	// GripperController has exactly one state and command interface for the GPIO
 	const hardware_interface::ComponentInfo &gpio = info_.gpios[0];
@@ -134,6 +141,11 @@ hardware_interface::CallbackReturn GripperController::on_configure(const rclcpp_
 	grip_service_ = node_->create_service<igus_rebel_gripper_controller::srv::GripperActuation>(
 		service_topic_, std::bind(&GripperController::grip_service_callback, this, std::placeholders::_1, std::placeholders::_2));
 
+	node_spin_thread_ = std::thread([this]() {
+		rclcpp::spin(node_);
+		rclcpp::shutdown();
+	});
+
 	return hardware_interface::CallbackReturn::SUCCESS;
 }
 
@@ -147,10 +159,22 @@ hardware_interface::CallbackReturn GripperController::on_activate(const rclcpp_l
 	}
 
 	// attempt to establish communication with the arduino controller
-	bool comm_established = setup_serial_comm();
+	bool comm_established = false;
+	int attempts = 0;
+	while (!comm_established && attempts < 10) {
+		comm_established = setup_serial_comm();
+		attempts++;
+		if (!comm_established) {
+			RCLCPP_WARN(logger_, "Failed to establish communication with the arduino controller. Retrying...");
+			std::this_thread::sleep_for(std::chrono::seconds(1));
+		}
+	}
 	if (!comm_established) {
 		RCLCPP_ERROR(logger_, "Failed to establish communication with the arduino controller.");
 		return hardware_interface::CallbackReturn::ERROR;
+	} else {
+		RCLCPP_INFO(logger_, "Communication with the arduino controller established.");
+	
 	}
 
 	return hardware_interface::CallbackReturn::SUCCESS;
@@ -163,6 +187,8 @@ hardware_interface::CallbackReturn GripperController::on_deactivate(const rclcpp
 		close(serial_fd);
 	}
 
+	node_spin_thread_.join();
+
 	return hardware_interface::CallbackReturn::SUCCESS;
 }
 
@@ -174,14 +200,20 @@ hardware_interface::return_type GripperController::read(const rclcpp::Time & /*t
 }
 
 hardware_interface::return_type GripperController::write(const rclcpp::Time & /*time*/, const rclcpp::Duration & /*period*/) {
-
+	// checks if new commands arrived
+	// checks if the command is the same as the state
 	if (grip_cmd == grip_state) {
 		// no new command received, skip
 		return hardware_interface::return_type::OK;
 	}
 
 	// write the command to the serial port
-	::write(serial_fd, grip_cmd.c_str(), grip_cmd.length());
+	int len = grip_cmd.length();
+	char *command = (char*) malloc((len + 2) * sizeof(char));
+	strcpy(command, grip_cmd.c_str());
+	command[len] = '\n';
+	command[len + 1] = '\0';
+	::write(serial_fd, command, len + 2);
 
 	// update the state
 	grip_state = grip_cmd;

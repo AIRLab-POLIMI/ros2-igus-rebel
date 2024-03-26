@@ -94,6 +94,7 @@ private:
 	const std::string GPIO_STATE = "grip_state";
 
 	const std::string service_topic_ = "/gripper_actuate";
+	std::thread node_spin_thread_;
 	
 };
 

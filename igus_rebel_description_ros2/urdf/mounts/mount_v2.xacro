@@ -11,31 +11,28 @@
 		<joint name="flange_to_mount" type="fixed">
 			<parent link="flange" />
 			<child link="camera_mount" />
-			<origin rpy="0.0 0.0 0.0" xyz="0.0 0.0 0.0" />
+			<origin rpy="0.0 ${pi/2.0} 0.0" xyz="0.0 0.0 0.0" />
 			<axis xyz="0 0 0" />
 		</joint>
 
-		<!-- camera mount urdf produced with fusion 360 urdf converter plugin-->
-		<!-- camera mount == mount_v1 link -->
+		<!-- camera mount == mount_v2 link -->
 		<link name="camera_mount">
 			<inertial>
-				<origin xyz="-0.01802331112330381 -0.0023580203613042293 0.03423412904225139"
-					rpy="0 0 0" />
+				<origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0" />
 				<mass value="1.0033" />
-				<inertia ixx="0.001725" iyy="0.00146" izz="0.000623" ixy="-2.3e-05" iyz="0.000102"
-					ixz="0.000224" />
+				<inertia ixx="0.001" iyy="0.001" izz="0.001" ixy="0.0" iyz="0.001" ixz="0.001" />
 			</inertial>
 			<visual>
-				<origin xyz="0.008 0 0" rpy="0 0 ${pi}" />
+				<origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 ${pi/2.0}" />
 				<geometry>
 					<mesh
 						filename="file://$(find igus_rebel_description_ros2)/meshes/mounts/mount_v2.stl"
 						scale="0.001 0.001 0.001" />
 				</geometry>
-				<material name="mount_dark_green" />
+				<material name="mount_dark_grey" />
 			</visual>
 			<collision>
-				<origin xyz="0.008 0 0" rpy="0 0 ${pi}" />
+				<origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 ${pi/2.0}" />
 				<geometry>
 					<mesh
 						filename="file://$(find igus_rebel_description_ros2)/meshes/mounts/mount_v2.stl"
@@ -48,28 +45,25 @@
 		<joint name="mount_to_cam" type="fixed">
 			<parent link="camera_mount" />
 			<child link="camera_insert" />
-			<origin rpy="0.0 0.0 0.0" xyz="0.038 0.0 0.065" />
+			<origin rpy="0.0 ${-pi/2.0} 0.0" xyz="-0.1 0.0 -0.035" />
 			<axis xyz="0 0 0" />
 		</joint>
 
 		<link name="camera_insert" />
 
-
 		<!-- End effectors -->
 		<xacro:if value="${end_effector == 'soft_gripper'}">
 
-            <!-- description urdf of the soft gripper -->
+			<!-- description urdf of the soft gripper -->
 			<xacro:include
 				filename="$(find igus_rebel_description_ros2)/urdf/end_effectors/soft_gripper.description.xacro" />
 
-            <!-- ros2 control of the soft gripper actuator -->
-            <xacro:include
-                filename="$(find igus_rebel_description_ros2)/urdf/end_effectors/soft_gripper.control.xacro" />
-            <xacro:igus_rebel_gripper use_dummy="false" />
+			<!-- ros2 control of the soft gripper actuator -->
+			<xacro:include
+				filename="$(find igus_rebel_description_ros2)/urdf/end_effectors/soft_gripper.control.xacro" />
+			<xacro:igus_rebel_gripper use_dummy="false" />
 
 		</xacro:if>
-
-
 
 	</xacro:macro>
 </robot>

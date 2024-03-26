@@ -34,35 +34,36 @@ find_package(rclcpp REQUIRED)
 find_package(rclcpp_lifecycle REQUIRED)
 find_package(rosidl_default_generators REQUIRED)
 
-rosidl_generate_interfaces(${PROJECT_NAME}
+rosidl_generate_interfaces(${PROJECT_NAME}_interfaces
 	"srv/GripperActuation.srv"
 	DEPENDENCIES builtin_interfaces std_msgs
+	LIBRARY_NAME ${PROJECT_NAME}
 )
 
 # # COMPILE
 add_library(
-	soft_gripper_controller
+	igus_rebel_gripper_controller
 	SHARED
 	src/gripper_controller.cpp
 )
 
-ament_target_dependencies(
-	soft_gripper_controller
-	${INCLUDE_DEPENDS}
-)
-
-rosidl_get_typesupport_target(cpp_typesupport_target ${PROJECT_NAME} "rosidl_typesupport_cpp")
-target_link_libraries(soft_gripper_controller "${cpp_typesupport_target}")
+rosidl_get_typesupport_target(cpp_typesupport_target ${PROJECT_NAME}_interfaces "rosidl_typesupport_cpp")
+target_link_libraries(igus_rebel_gripper_controller PUBLIC "${cpp_typesupport_target}")
 
 # Export hardware plugins
 pluginlib_export_plugin_description_file(hardware_interface gripper_controller.xml)
 
-
-install(TARGETS soft_gripper_controller
+install(TARGETS igus_rebel_gripper_controller
 	EXPORT export_${PROJECT_NAME}
 	ARCHIVE DESTINATION lib
 	LIBRARY DESTINATION lib
 	RUNTIME DESTINATION bin
+)
+
+ament_target_dependencies(
+	igus_rebel_gripper_controller
+	PUBLIC
+	${INCLUDE_DEPENDS}
 )
 
 if(BUILD_TESTING)
@@ -70,11 +71,9 @@ if(BUILD_TESTING)
 	ament_lint_auto_find_test_dependencies()
 endif()
 
-
 ament_export_targets(export_${PROJECT_NAME})
 ament_export_dependencies(${INCLUDE_DEPENDS} rosidl_default_runtime)
 ament_export_include_directories(include)
-ament_export_libraries(soft_gripper_controller)
-
+ament_export_libraries(igus_rebel_gripper_controller)
 
 ament_package()

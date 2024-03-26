@@ -1,8 +1,10 @@
 <library path="igus_rebel_gripper_controller">
-	<class name="soft_gripper_controller/GripperController" type="soft_gripper_controller::GripperController" base_class_type="hardware_interface::ActuatorInterface">
+	<class name="igus_rebel_gripper_controller/GripperController"
+		type="igus_rebel_gripper_controller::GripperController"
+		base_class_type="hardware_interface::ActuatorInterface">
 
 		<description>
-        ROS2 Control hardware interface for the soft gripper installed on the igus rebel robot.
+			ROS2 Control hardware interface for the soft gripper installed on the igus rebel robot.
 		</description>
 	</class>
 </library>
