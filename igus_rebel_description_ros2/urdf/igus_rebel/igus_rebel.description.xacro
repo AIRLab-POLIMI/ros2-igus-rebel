@@ -193,7 +193,7 @@
 		<joint name="joint6" type="revolute">
 			<parent link="link_7" />
 			<child link="link_8" />
-			<origin rpy="0.0 0.0 0.0" xyz="0.0 0 0.1208" />
+			<origin rpy="0.0 0.0 0.0" xyz="0.0 0 0.126" />
 			<axis xyz="0 0 1" />
 			<limit effort="330.0" lower="${-pi*179/180}" upper="${pi*179/180}" velocity="${pi/4.0}" />
 			<dynamics damping="${damping}" friction="${friction}" />
@@ -225,7 +225,7 @@
 		<joint name="joint7" type="fixed">
 			<parent link="link_8" />
 			<child link="flange" />
-			<origin rpy="0.0 ${-pi/2} 0.0" xyz="0.0 0 0.0052" />
+			<origin rpy="0.0 ${-pi/2} 0.0" xyz="0.0 0.0 0.0" />
 			<axis xyz="0 0 0" />
 			<dynamics damping="${damping}" friction="${friction}" />
 		</joint>

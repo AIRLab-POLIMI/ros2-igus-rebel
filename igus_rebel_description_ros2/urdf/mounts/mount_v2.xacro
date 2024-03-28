@@ -11,7 +11,7 @@
 		<joint name="flange_to_mount" type="fixed">
 			<parent link="flange" />
 			<child link="camera_mount" />
-			<origin rpy="0.0 ${pi/2.0} 0.0" xyz="0.0 0.0 0.0" />
+			<origin rpy="0.0 ${pi/2.0} 0.0" xyz="0.02 0.0 0.0" />
 			<axis xyz="0 0 0" />
 		</joint>
 
@@ -45,7 +45,7 @@
 		<joint name="mount_to_cam" type="fixed">
 			<parent link="camera_mount" />
 			<child link="camera_insert" />
-			<origin rpy="0.0 ${-pi/2.0} 0.0" xyz="-0.1 0.0 -0.035" />
+			<origin rpy="0.0 ${-pi/2.0} 0.0" xyz="-0.1 0.0 -0.068" />
 			<axis xyz="0 0 0" />
 		</joint>
 

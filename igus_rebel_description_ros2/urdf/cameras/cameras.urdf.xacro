@@ -5,7 +5,8 @@
 
         <!-- virtual frames for gazebo -->
         <xacro:if value="${load_gazebo}">
-            <xacro:include filename="$(find igus_rebel_description_ros2)/urdf/cameras/virtual_camera_frames.xacro" />
+            <xacro:include
+                filename="$(find igus_rebel_description_ros2)/urdf/cameras/virtual_camera_frames.xacro" />
             <xacro:virtual_camera_frames />
         </xacro:if>
 
@@ -14,11 +15,13 @@
 
             <!-- includes the realsense D435 ros2 description file and its collision box-->
             <xacro:arg name="use_nominal_extrinsics" default="false" />
-            <xacro:arg name="add_plug" default="true" />
+            <xacro:arg name="add_plug" default="false" />
             <xacro:arg name="use_mesh" default="true" />
             <xacro:include filename="$(find realsense2_description)/urdf/_d435.urdf.xacro" />
 
-            <xacro:sensor_d435 parent="camera_insert" use_nominal_extrinsics="$(arg use_nominal_extrinsics)" add_plug="$(arg add_plug)" use_mesh="$(arg use_mesh)">
+            <xacro:sensor_d435 parent="camera_insert"
+                use_nominal_extrinsics="$(arg use_nominal_extrinsics)" add_plug="$(arg add_plug)"
+                use_mesh="$(arg use_mesh)">
                 <origin xyz="0.0 0 0" rpy="0 0 0" />
             </xacro:sensor_d435>
         </xacro:if>
@@ -31,7 +34,9 @@
                 <inertial>
                     <xacro:insert_block name="origin" />
                     <mass value="${mass}" />
-                    <inertia ixx="${(1/12) * mass * (y*y+z*z)}" ixy="0.0" ixz="0.0" iyy="${(1/12) * mass * (x*x+z*z)}" iyz="0.0" izz="${(1/12) * mass * (x*x+y*y)}" />
+                    <inertia ixx="${(1/12) * mass * (y*y+z*z)}" ixy="0.0" ixz="0.0"
+                        iyy="${(1/12) * mass * (x*x+z*z)}" iyz="0.0"
+                        izz="${(1/12) * mass * (x*x+y*y)}" />
                 </inertial>
             </xacro:macro>
 
@@ -49,7 +54,8 @@
             <link name="camera_link">
                 <visual>
                     <geometry>
-                        <mesh filename="file://$(find igus_rebel_description_ros2)/meshes/cameras/oak_d_pro_camera.dae" />
+                        <mesh
+                            filename="file://$(find igus_rebel_description_ros2)/meshes/cameras/oak_d_pro_camera.dae" />
                     </geometry>
                 </visual>
                 <collision>
@@ -58,7 +64,8 @@
                         <box size="${oakd_length} ${oakd_width} ${oakd_depth}" />
                     </geometry>
                 </collision>
-                <xacro:inertial_box mass="${oakd_mass}" x="${oakd_length}" y="${oakd_width}" z="${oakd_depth}">
+                <xacro:inertial_box mass="${oakd_mass}" x="${oakd_length}" y="${oakd_width}"
+                    z="${oakd_depth}">
                     <origin xyz="0.0 0 0.0" rpy="0 0 0" />
                 </xacro:inertial_box>
             </link>

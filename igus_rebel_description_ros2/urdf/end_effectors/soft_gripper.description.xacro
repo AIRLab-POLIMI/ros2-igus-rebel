@@ -13,7 +13,7 @@
 	<joint name="soft_gripper_joint" type="fixed">
 		<parent link="camera_mount" />
 		<child link="soft_gripper_mount" />
-		<origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 ${pi/2.0}" />
+		<origin xyz="0.0 0.0 -0.02" rpy="0.0 0.0 ${pi/2.0}" />
 	</joint>
 
 	<link name="soft_gripper_mount">
@@ -44,7 +44,7 @@
 	<joint name="soft_gripper_attachment" type="fixed">
 		<parent link="soft_gripper_mount" />
 		<child link="soft_gripper_link" />
-		<origin xyz="0.0 0 0" rpy="0 0 0" />
+		<origin xyz="0.0 0.0 0.0" rpy="0 0 0" />
 	</joint>
 
 	<link name="soft_gripper_link">
@@ -75,7 +75,7 @@
 	<joint name="soft_gripper_tip" type="fixed">
 		<parent link="soft_gripper_link" />
 		<child link="soft_gripper_tip_link" />
-		<origin xyz="0.0 0.0 0.1" rpy="${-pi/2.0} ${-pi/2.0} 0.0" />
+		<origin xyz="0.0 0.0 0.095" rpy="${-pi/2.0} ${-pi/2.0} 0.0" />
 	</joint>
 
 	<link name="soft_gripper_tip_link" />
