@@ -35,9 +35,10 @@
 				<origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 ${pi/2.0}" />
 				<geometry>
 					<mesh
-						filename="file://$(find igus_rebel_description_ros2)/meshes/mounts/mount_v2.stl"
+						filename="file://$(find igus_rebel_description_ros2)/meshes/mounts/mount_v2_collision_mesh.stl"
 						scale="0.001 0.001 0.001" />
 				</geometry>
+				<material name="mount_dark_grey" />
 			</collision>
 		</link>
 
