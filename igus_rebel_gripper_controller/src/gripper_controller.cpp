@@ -8,7 +8,7 @@ GripperController::GripperController()
 	  serial_port("/dev/ttyUSB0"),
 	  baud_rate(B115200),
 	  serial_fd(-1),
-	  grip_actuation_time(1500) {
+	  grip_actuation_time(1000) {
 	node_ = rclcpp::Node::make_shared("gripper_controller");
 	grip_cmd = "off";
 	grip_state = "off";

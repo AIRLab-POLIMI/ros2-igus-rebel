@@ -48,12 +48,12 @@ public:
 
 	hardware_interface::return_type write(const rclcpp::Time &time, const rclcpp::Duration &period) override;
 
+	// gripper states definitions
 	enum class GripperStates { GRIPPED, RELEASED, OFF };
-
-private:
-	
 	const std::vector<std::string> gripper_states = { "grip", "release", "off" };
 
+private:
+	// service server for the gripper pump actuation
 	rclcpp::Service<igus_rebel_gripper_controller::srv::GripperActuation>::SharedPtr grip_service_;
 
 	rclcpp::Node::SharedPtr node_;
