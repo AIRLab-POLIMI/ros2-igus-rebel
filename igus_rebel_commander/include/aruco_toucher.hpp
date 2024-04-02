@@ -34,7 +34,7 @@ private:
 	// vector of double values for the joint position of the parked group state value
 	std::vector<double> parked_joint_positions;
 
-    const std::vector<double> search_joint_positions = {M_PI/3.0, -M_PI_2, 40.0*M_PI/180.0, 0.0, 100.0 * M_PI/180.0, 0.0}; // radians
+    const std::vector<double> search_joint_positions = {60.0*M_PI/180.0, -60.0*M_PI/180.0, 70.0*M_PI/180.0, 0.0, 90.0 * M_PI/180.0, 0.0}; // radians
 
 	// tf2 listener and buffer for frame transformations
 	std::shared_ptr<tf2_ros::TransformListener> tf_listener_{nullptr};

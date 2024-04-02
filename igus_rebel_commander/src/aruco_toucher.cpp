@@ -295,11 +295,11 @@ bool ArucoToucher::robotPlanAndMove(geometry_msgs::msg::PoseStamped::SharedPtr t
 	move_group->setGoalOrientationTolerance(0.05);
 	move_group->setPoseTarget(*target_pose, end_effector_link);
 	move_group->setPlannerId("RRTConnectkConfigDefault");
-	move_group->setPlanningTime(5.0);
+	move_group->setPlanningTime(2.0);
 
 	// optionally limit accelerations and velocity scaling
 	move_group->setMaxVelocityScalingFactor(0.3);
-	move_group->setMaxAccelerationScalingFactor(0.3);
+	move_group->setMaxAccelerationScalingFactor(0.1);
 
 	move_group->clearPathConstraints();
 
@@ -322,7 +322,6 @@ bool ArucoToucher::robotPlanAndMove(geometry_msgs::msg::PoseStamped::SharedPtr t
 	// visualizing the trajectory
 	joint_model_group = move_group->getCurrentState()->getJointModelGroup(PLANNING_GROUP);
 	auto link_eef = move_group->getCurrentState()->getLinkModel(end_effector_link);
-	// TODO: this trajectory line is not displayed properly in rviz
 	visual_tools->setBaseFrame(plan_motion.trajectory.multi_dof_joint_trajectory.header.frame_id);
 	visual_tools->publishTrajectoryLine(plan_motion.trajectory, link_eef, joint_model_group);
 	visual_tools->trigger();
@@ -349,10 +348,10 @@ bool ArucoToucher::robotPlanAndMove(std::vector<double> joint_space_goal) {
 	move_group->setStartState(*move_group->getCurrentState());
 	move_group->setGoalPositionTolerance(0.001);   // meters ~ 5 mm
 	move_group->setGoalOrientationTolerance(0.05); // radians ~ 5 degrees
-	move_group->setPlanningTime(5.0);
+	move_group->setPlanningTime(2.0);
 	// optionally limit accelerations and velocity scaling
-	move_group->setMaxVelocityScalingFactor(0.5);
-	move_group->setMaxAccelerationScalingFactor(0.3);
+	move_group->setMaxVelocityScalingFactor(0.3);
+	move_group->setMaxAccelerationScalingFactor(0.1);
 
 	bool valid_motion = move_group->setJointValueTarget(goal_state);
 	if (!valid_motion) {

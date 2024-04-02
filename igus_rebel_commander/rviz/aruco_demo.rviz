@@ -397,13 +397,13 @@ Visualization Manager:
         Durability Policy: Volatile
         History Policy: Keep Last
         Reliability Policy: Reliable
-        Value: /aruco_image
+        Value: /aruco/image
       Value: true
   Enabled: true
   Global Options:
     Background Color: 48; 48; 48
-    Fixed Frame: world
-    Frame Rate: 30
+    Fixed Frame: igus_rebel_base_link
+    Frame Rate: 60
   Name: root
   Tools:
     - Class: rviz_default_plugins/Interact
