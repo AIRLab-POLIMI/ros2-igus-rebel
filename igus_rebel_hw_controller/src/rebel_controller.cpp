@@ -391,12 +391,9 @@ hardware_interface::CallbackReturn RebelController::on_activate(const rclcpp_lif
 
 	cri_socket.start();
 
-	// The following delay does not appear to be necessary, re-add if problems occur
-	// std::this_thread::sleep_for(std::chrono::milliseconds(500));
-
 	Command(cri_keywords::COMMAND_CONNECT);
 	Command(cri_keywords::COMMAND_RESET);
-	Command(cri_keywords::COMMAND_ENABLE);
+	//Command(cri_keywords::COMMAND_ENABLE);
 
 	continueAlive = true;
 	aliveThread = std::thread(&RebelController::alivejogThread, this);
@@ -404,6 +401,12 @@ hardware_interface::CallbackReturn RebelController::on_activate(const rclcpp_lif
 	GetConfig(cri_keywords::CONFIG_GETKINEMATICLIMITS);
 
 	Command("Override 100.0"); // change max velocity setting to 100% of the maximum possible velocity
+
+	// test referencing all joints
+	Command(cri_keywords::COMMAND_REFERENCING);
+	std::this_thread::sleep_for(std::chrono::milliseconds(1500));
+	Command(cri_keywords::COMMAND_RESET);
+	Command(cri_keywords::COMMAND_ENABLE);
 
 	return hardware_interface::CallbackReturn::SUCCESS;
 }

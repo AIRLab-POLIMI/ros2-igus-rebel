@@ -53,6 +53,7 @@ const std::string COMMAND_RESET = "Reset";
 const std::string COMMAND_ENABLE = "Enable";
 const std::string COMMAND_DISABLE = "Disable";
 const std::string COMMAND_DISCONNECT = "Disconnect";
+const std::string COMMAND_REFERENCING = "ReferenceAllJoints";
 const std::string COMMAND_MOTIONTYPEJOINT = "MotionTypeJoint";
 const std::string COMMAND_MOTIONTYPECARTBASE = "MotionTypeCartBase";
 
