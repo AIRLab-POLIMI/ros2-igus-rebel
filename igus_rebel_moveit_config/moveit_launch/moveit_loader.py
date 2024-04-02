@@ -40,7 +40,7 @@ def declare_arguments():
 
     mount_arg = DeclareLaunchArgument(
         name="mount",
-        default_value="mount_v1",
+        default_value="mount_v2",
         choices=["none", "mount_v1", "mount_v2"],
         description="Mount to attach to the last joint",
     )
@@ -54,7 +54,7 @@ def declare_arguments():
 
     end_effector_arg = DeclareLaunchArgument(
         name="end_effector",
-        default_value="toucher_v1",
+        default_value="soft_gripper",
         choices=["toucher_v1", "soft_gripper", "none"],
         description="Which end_effector to attach to the mount",
     )
@@ -68,7 +68,7 @@ def declare_arguments():
 
     load_base_arg = DeclareLaunchArgument(
         name="load_base",
-        default_value="false",
+        default_value="true",
         description="Load the mobile robot model and tower",
         choices=["true", "false"],
     )
