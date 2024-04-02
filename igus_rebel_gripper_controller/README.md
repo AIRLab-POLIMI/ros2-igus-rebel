@@ -14,7 +14,9 @@ interface to the Arduino controller. The service call can be used to open, close
 Before using the service call, it is necessary to establish serial communication between the Arduino and the computer.
 There are 2 ways to do this:
 1. Using the Arduino IDE: launch the Arduino IDE and open and close the serial monitor
-2. Use a sequence of commands in the terminal to create a serial connection between the Arduino and the computer
+2. Use a sequence of commands in the terminal to create a serial connection between the Arduino and the computer.
+
+The method 2 requires to run the following commands in the terminal:
 ```bash
 stty -F /dev/ttyACM0 raw ispeed 115200 ospeed 115200 cs8 -ignpar -cstopb -echo
 cat < /dev/ttyACM0 > /dev/null &
@@ -26,7 +28,19 @@ echo -e "grip" > /dev/ttyACM0
 
 Substitute `/dev/ttyACM0` with the port at which the Arduino is connected. The port can be found by running the following command:
 ```bash
-ls -l /dev/tty
+ls -l /dev/tty*
+```
+
+To make it more convenient to establish the serial connection, a series of __bash aliases__ can be created to run the above commands
+as soon as the bash command line is launched. To do so, add the following lines to the `.bashrc` file:
+
+```bash
+# enable serial communication on port /ttyACM0 for arduino
+alias enable_arduino='stty -F /dev/ttyACM0 raw ispeed 115200 ospeed 115200 cs8 -ignpar -cstopb -echo & cat < /dev/ttyACM0 > /dev/null &'
+# pump control commands via bash: quick commands
+alias pump_grip='echo -e "grip" > /dev/ttyACM0'
+alias pump_off='echo -e "off" > /dev/ttyACM0'
+alias pump_release='echo -e "release" > /dev/ttyACM0'
 ```
 
 ## ROS2-Control Usage

@@ -17,8 +17,10 @@
 
 				<xacro:if value="${hardware_protocol == 'cri'}">
 					<plugin>igus_rebel_hw_controller/RebelController</plugin>
-					<!--<param name="ip">192.168.1.102</param>-->
-					<!--<param name="port">3920</param>-->
+					<!--<param
+					name="ip">192.168.1.102</param>-->
+					<!--<param
+					name="port">3920</param>-->
 				</xacro:if>
 
 				<xacro:if value="${hardware_protocol == 'ignition'}">
@@ -32,7 +34,8 @@
 				<joint name="${name}">
 
 					<!-- Position control can be optionally deployed -->
-					<!--<command_interface name="position">
+					<!--<command_interface
+					name="position">
 						<param name="min">${position_min}</param>
 						<param name="max">${position_max}</param>
 					</command_interface>-->
@@ -45,7 +48,7 @@
 					<state_interface name="position">
 						<param name="initial_value">0.0</param>
 					</state_interface>
-					
+
 					<state_interface name="velocity">
 						<param name="initial_value">0.0</param>
 					</state_interface>
@@ -59,10 +62,8 @@
 
 			<xacro:rebel_joint name="joint1" position_min="${-pi*179/180}"
 				position_max="${pi*179/180}" />
-			<xacro:rebel_joint name="joint2" position_min="${-pi*2/3}" position_max="${pi*2/3}"
-				cri_joint_offset="${-pi*0.8/180.0}" />
-			<xacro:rebel_joint name="joint3" position_min="${-pi*2/3}" position_max="${pi*2/3}"
-				cri_joint_offset="${-pi*0.5/180.0}" /> 
+			<xacro:rebel_joint name="joint2" position_min="${-pi*2/3}" position_max="${pi*2/3}" />
+			<xacro:rebel_joint name="joint3" position_min="${-pi*2/3}" position_max="${pi*2/3}" />
 			<xacro:rebel_joint name="joint4" position_min="${-pi*179/180}"
 				position_max="${pi*179/180}" />
 			<xacro:rebel_joint name="joint5" position_min="${-pi*19/36}" position_max="${pi*19/36}" />

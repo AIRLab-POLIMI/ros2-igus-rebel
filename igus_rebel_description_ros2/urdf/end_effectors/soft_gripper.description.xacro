@@ -75,7 +75,10 @@
 	<joint name="soft_gripper_tip" type="fixed">
 		<parent link="soft_gripper_link" />
 		<child link="soft_gripper_tip_link" />
+		<!-- suction cup mounted: 7.5cm offset -->
+		<!-- M5 screw 50mm mounted: 8.5mm offset -->
 		<origin xyz="0.0 0.0 0.075" rpy="0.0 ${-pi/2.0} 0.0" />
+
 	</joint>
 
 	<link name="soft_gripper_tip_link" />
