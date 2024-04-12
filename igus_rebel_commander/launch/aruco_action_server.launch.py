@@ -84,6 +84,5 @@ def launch_setup(context, *args, **kwargs):
     return [
         aruco_follower_node,
         aruco_action_server_node,
-        TimerAction(period=1.0, actions=[test_goal_pose_computation_node]),
         rviz2_node,
     ]

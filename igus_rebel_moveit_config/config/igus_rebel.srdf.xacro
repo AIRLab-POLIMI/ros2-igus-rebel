@@ -113,9 +113,9 @@
 		<group_state name="stand" group="rebel_arm">
 			<joint name="joint1" value="${61.0 * pi / 180.0}" />
 			<joint name="joint2" value="${-60.0 * pi / 180.0}" />
-			<joint name="joint3" value="${66.0 * pi / 180.0}" />
+			<joint name="joint3" value="${72.0 * pi / 180.0}" />
 			<joint name="joint4" value="0" />
-			<joint name="joint5" value="${87.0 * pi / 180.0}" />
+			<joint name="joint5" value="${90.0 * pi / 180.0}" />
 			<joint name="joint6" value="${5.0 * pi / 180.0}" />
 		</group_state>
 
