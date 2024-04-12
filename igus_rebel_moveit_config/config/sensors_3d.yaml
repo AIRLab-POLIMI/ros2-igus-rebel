@@ -1,29 +1,32 @@
 sensors:
-     - realsense3d
+    - realsense3d
+    #- realsense3d_depth
 
 # pointcloud type sensor
 realsense3d:
     sensor_plugin: occupancy_map_monitor/PointCloudOctomapUpdater
     point_cloud_topic: /camera/depth/color/points
-    max_range: 5.0
+    max_range: 2.0
     point_subsample: 1
     padding_offset: 0.1
     padding_scale: 1.0
-    max_update_rate: 1.0
-    filtered_cloud_topic: /camera/depth/color/points/filtered
+    max_update_rate: 30.0
+    filtered_cloud_topic: /camera/depth/color/points_filtered
+
+# depth image type sensor
+# realsense3d_depth:
+#     sensor_plugin: occupancy_map_monitor/DepthImageOctomapUpdater
+#     image_topic: /camera/aligned_depth_to_color/image_raw
+#     queue_size: 3
+#     near_clipping_plane_distance: 0.3
+#     far_clipping_plane_distance: 2.0
+#     shadow_threshold: 0.2
+#     padding_scale: 4.0
+#     padding_offset: 0.03
+#     max_update_rate: 30.0
 
 octomap_frame: camera_depth_optical_frame
-octomap_resolution: 0.05
-max_range: 7.0
+octomap_resolution: 0.02
+max_range: 2.0
                 
-#realsense3d_depth:
-        #- sensor_plugin: occupancy_map_monitor/DepthImageOctomapUpdater
-        #  image_topic: /camera/depth/color/points
-        #  queue_size: 5
-        #  near_clipping_plane_distance: 0.3
-        #  far_clipping_plane_distance: 5.0
-        #  shadow_threshold: 0.2
-        #  padding_scale: 4.0
-        #  padding_offset: 0.03
-        #  max_update_rate: 1.0
-        #  filtered_cloud_topic: filtered_cloud
+

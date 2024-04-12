@@ -8,7 +8,7 @@ GripperController::GripperController()
 	  serial_port("/dev/ttyUSB0"),
 	  baud_rate(B115200),
 	  serial_fd(-1),
-	  grip_actuation_time(1000) {
+	  grip_actuation_time(1500) {
 	node_ = rclcpp::Node::make_shared("gripper_controller");
 	grip_cmd = "off";
 	grip_state = "off";
@@ -39,7 +39,7 @@ void GripperController::grip_service_callback(
 	// wait until grip_state is updated and equal to the command
 	while (grip_state != grip_cmd) {
 		// update the state
-		std::this_thread::sleep_for(std::chrono::milliseconds(20));
+		std::this_thread::sleep_for(std::chrono::milliseconds(1));
 	}
 
 	// wait for a predefined time to wait for the gripper to actuate
@@ -162,7 +162,7 @@ hardware_interface::CallbackReturn GripperController::on_activate(const rclcpp_l
 	// attempt to establish communication with the arduino controller
 	bool comm_established = false;
 	int attempts = 0;
-	while (!comm_established && attempts < 10) {
+	while (!comm_established && attempts < 5) {
 		comm_established = setup_serial_comm();
 		attempts++;
 		if (!comm_established) {

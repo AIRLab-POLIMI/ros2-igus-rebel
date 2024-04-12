@@ -32,8 +32,6 @@ void loop() {
 		} else if (command == "off") {
 			pump_off();
 		}
-
-		delay(100);
 	} else {
 		delay(10); // wait for some user input
 	}
