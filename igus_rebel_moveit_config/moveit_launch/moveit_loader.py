@@ -189,11 +189,32 @@ def load_ros2_controllers():
 def load_moveit(with_sensors3d: bool) -> list:
     """ Loads parameters required by move_group node interface """
 
+    # OMPL planner
     ompl_planning_yaml = load_yaml(
         "igus_rebel_moveit_config", "config/ompl_planning.yaml"
     )
     ompl_planning_pipeline_config = {"move_group": {}}
     ompl_planning_pipeline_config["move_group"].update(ompl_planning_yaml)
+
+    # STOMP planner
+    stomp_planner_yaml = load_yaml(
+        "igus_rebel_moveit_config", "config/stomp_planning.yaml"
+    )
+    stomp_planning_pipeline_config = {"move_group": {}}
+    stomp_planning_pipeline_config["move_group"].update(stomp_planner_yaml)
+
+    # Pilz cartesian limits
+    pilz_cartesian_limits_yaml = load_yaml(
+        "igus_rebel_moveit_config", "config/pilz_cartesian_limits.yaml"
+    )
+    pilz_cartesian_limits = {"robot_description_planning": pilz_cartesian_limits_yaml}
+    
+    # Multiple planners: STOMP and OMPL and Pilz industrial motion planner
+    multiple_planners_yaml = load_yaml(
+        "igus_rebel_moveit_config", "config/multiple_planning_pipelines.yaml"
+    )
+    planning_pipelines = {"move_group": multiple_planners_yaml}
+    planning_pipelines["move_group"].update(pilz_cartesian_limits)
 
     planning_scene_monitor_parameters = {
         "publish_planning_scene": True,
@@ -211,10 +232,6 @@ def load_moveit(with_sensors3d: bool) -> list:
         "igus_rebel_moveit_config", "config/moveit_controllers.yaml"
     )
 
-    # unused
-    move_it_yaml = load_yaml(
-        "igus_rebel_moveit_config", "config/moveit_py.yaml")
-
     joint_limits_yaml = load_yaml(
         "igus_rebel_moveit_config", "config/joint_limits.yaml"
     )
@@ -231,7 +248,10 @@ def load_moveit(with_sensors3d: bool) -> list:
     return [
         load_robot_description(),
         load_robot_description_semantic(),
-        ompl_planning_pipeline_config,
+        #ompl_planning_pipeline_config, # single planner config
+        #stomp_planning_pipeline_config, # single planner config
+        multiple_planners_yaml, # multiple planners config
+        pilz_cartesian_limits,
         planning_scene_monitor_parameters,
         kinematics,
         moveit_controllers_yaml,

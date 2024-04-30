@@ -1,0 +1,75 @@
+planning_pipelines: ["stomp", "pilz_industrial_motion_planner", "ompl"]
+default_planning_pipeline: stomp
+
+stomp:
+    planning_plugin: stomp_moveit/StompPlanner
+    # The order of the elements in the adapter corresponds to the order they are processed by the motion planning pipeline.
+    request_adapters: >-
+        default_planner_request_adapters/AddRuckigTrajectorySmoothing 
+        default_planner_request_adapters/AddTimeOptimalParameterization 
+        default_planner_request_adapters/Empty 
+        default_planner_request_adapters/FixStartStateBounds 
+        default_planner_request_adapters/FixStartStateCollision 
+        default_planner_request_adapters/FixStartStatePathConstraints 
+        default_planner_request_adapters/FixWorkspaceBounds 
+        default_planner_request_adapters/ResolveConstraintFrames 
+        stomp_moveit/StompSmoothingAdapter
+    response_adapters: >-
+        default_planning_response_adapters/AddTimeOptimalParameterization
+        default_planning_response_adapters/ValidateSolution
+        default_planning_response_adapters/DisplayMotionPath
+
+    stomp_moveit:
+        num_timesteps: 60
+        num_iterations: 40
+        num_iterations_after_valid: 0
+        num_rollouts: 30
+        max_rollouts: 30
+        exponentiated_cost_sensitivity: 0.5
+        control_cost_weight: 0.1
+        delta_t: 0.1
+
+pilz_industrial_motion_planner:
+    planning_plugin: pilz_industrial_motion_planner/CommandPlanner
+    # The order of the elements in the adapter corresponds to the order they are processed by the motion planning pipeline.
+    request_adapters: >-
+        default_planner_request_adapters/AddRuckigTrajectorySmoothing
+        default_planner_request_adapters/AddTimeOptimalParameterization
+        default_planner_request_adapters/FixStartStateBounds
+        default_planner_request_adapters/FixStartStateCollision
+        default_planner_request_adapters/FixStartStatePathConstraints
+        default_planner_request_adapters/FixWorkspaceBounds
+        default_planner_request_adapters/ResolveConstraintFrames
+        
+
+    default_planner_config: LIN
+    capabilities: >-
+        pilz_industrial_motion_planner/MoveGroupSequenceAction
+        pilz_industrial_motion_planner/MoveGroupSequenceService
+
+ompl:
+    planning_plugin: ompl_interface/OMPLPlanner
+    # To optionally use Ruckig for jerk-limited smoothing, add this line to the request adapters below
+    # default_planner_request_adapters/AddRuckigTrajectorySmoothing
+    request_adapters: >-
+        default_planner_request_adapters/AddTimeOptimalParameterization
+        default_planner_request_adapters/ResolveConstraintFrames
+        default_planner_request_adapters/FixWorkspaceBounds
+        default_planner_request_adapters/FixStartStateBounds
+        default_planner_request_adapters/FixStartStateCollision
+        default_planner_request_adapters/FixStartStatePathConstraints
+    start_state_max_bounds_error: 0.1
+    planner_configs:
+        RRTkConfigDefault:
+            type: geometric::RRT
+            range: 0.0  # Max motion added to tree. ==> maxDistance_ default: 0.0, if 0.0, set on setup()
+            goal_bias: 0.05  # When close to goal select goal, with this probability? default: 0.05
+        RRTConnectkConfigDefault:
+            type: geometric::RRTConnect
+            range: 0.0  # Max motion added to tree. ==> maxDistance_ default: 0.0, if 0.0, set on setup()
+        RRTstarkConfigDefault:
+            type: geometric::RRTstar
+            range: 0.0  # Max motion added to tree. ==> maxDistance_ default: 0.0, if 0.0, set on setup()
+            goal_bias: 0.05  # When close to goal select goal, with this probability? default: 0.05
+            delay_collision_checking: 1  # Stop collision checking as soon as C-free parent found. default 1
+    

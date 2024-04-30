@@ -5,13 +5,13 @@ sensors:
 # pointcloud type sensor
 realsense3d:
     sensor_plugin: occupancy_map_monitor/PointCloudOctomapUpdater
-    point_cloud_topic: /camera/depth/color/points
+    point_cloud_topic: /camera/depth/color/points/filtered
     max_range: 2.0
     point_subsample: 1
     padding_offset: 0.1
     padding_scale: 1.0
     max_update_rate: 30.0
-    filtered_cloud_topic: /camera/depth/color/points_filtered
+    filtered_cloud_topic: /octomap_filtered
 
 # depth image type sensor
 # realsense3d_depth:

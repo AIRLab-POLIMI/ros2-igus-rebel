@@ -100,7 +100,8 @@ def launch_setup(context, *args, **kwargs):
             {"use_sim_time": use_sim_time},
             moveit_loader.load_robot_description(),
             moveit_loader.load_robot_description_semantic(),
-        ],
+        ] +
+        moveit_loader.load_moveit(with_sensors3d=False),
         condition=IfCondition(
             PythonExpression(
                 ["'", LaunchConfiguration("rviz_file"), "' != 'none' "]
