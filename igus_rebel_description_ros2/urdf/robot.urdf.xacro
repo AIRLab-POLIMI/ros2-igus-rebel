@@ -50,6 +50,7 @@
 		<!-- castle with tower mounting sensors, batteries, computer and everyhting else, attached
 		to mobile_robot_base_link-->
 		<xacro:include filename="$(find igus_rebel_description_ros2)/urdf/mobile_robot/castle.urdf" />
+		<xacro:castle with_basket="true" />
 
 		<!-- load scout robot -->
 		<xacro:include

@@ -1,49 +1,84 @@
 <?xml version="1.0"?>
 <robot name="scout_v2" xmlns:xacro="http://ros.org/wiki/xacro">
 
-	<joint name="tower" type="fixed">
-		<parent link="mobile_robot_base_link" />
-		<child link="tower_link" />
-		<origin rpy="0.0 0.0 0" xyz="0.0 0.0 0.1" />
-		<axis xyz="0 0 -1" />
-	</joint>
+	<xacro:macro name="castle" params="with_basket">
 
-	<material name="dark_blue">
-		<color rgba="0.0 ${25/255} ${51/255} 0.7" />
-	</material>
+		<joint name="tower" type="fixed">
+			<parent link="mobile_robot_base_link" />
+			<child link="tower_link" />
+			<origin rpy="0.0 0.0 0" xyz="0.0 0.0 0.1" />
+			<axis xyz="0 0 -1" />
+		</joint>
 
-	<link name="tower_link">
-		<inertial>
-			<mass value="1" />
-			<inertia ixx="1" ixy="1" ixz="1" iyy="0" iyz="0" izz="0" />
-		</inertial>
-		<visual>
-			<origin xyz="0.19 0.0 0.345" rpy="0.0 0.0 0.0" />
-			<geometry>
-				<box size="0.38 0.32 0.69" />
-			</geometry>
-			<material name="dark_blue" />
-		</visual>
-		<visual>
-			<origin xyz="-0.09 0.0 0.105" rpy="0.0 0.0 0.0" />
-			<geometry>
-				<box size="0.18 0.32 0.21" />
-			</geometry>
-			<material name="dark_blue" />
-		</visual>
-		<collision>
-			<origin xyz="0.19 0.0 0.345" rpy="0.0 0.0 0.0" />
-			<geometry>
-				<box size="0.38 0.32 0.69" />
-			</geometry>
-		</collision>
-		<collision>
-			<origin xyz="-0.09 0.0 0.105" rpy="0.0 0.0 0.0" />
-			<geometry>
-				<box size="0.18 0.32 0.21" />
-			</geometry>
-		</collision>
-	</link>
+		<material name="dark_blue">
+			<color rgba="0.0 ${25/255} ${51/255} 0.7" />
+		</material>
+
+		<link name="tower_link">
+			<inertial>
+				<mass value="1" />
+				<inertia ixx="1" ixy="1" ixz="1" iyy="0" iyz="0" izz="0" />
+			</inertial>
+			<visual>
+				<origin xyz="0.19 0.0 0.345" rpy="0.0 0.0 0.0" />
+				<geometry>
+					<box size="0.38 0.32 0.69" />
+				</geometry>
+				<material name="dark_blue" />
+			</visual>
+			<visual>
+				<origin xyz="-0.09 0.0 0.105" rpy="0.0 0.0 0.0" />
+				<geometry>
+					<box size="0.18 0.32 0.21" />
+				</geometry>
+				<material name="dark_blue" />
+			</visual>
+			<collision>
+				<origin xyz="0.19 0.0 0.345" rpy="0.0 0.0 0.0" />
+				<geometry>
+					<box size="0.38 0.32 0.69" />
+				</geometry>
+			</collision>
+			<collision>
+				<origin xyz="-0.09 0.0 0.105" rpy="0.0 0.0 0.0" />
+				<geometry>
+					<box size="0.18 0.32 0.21" />
+				</geometry>
+			</collision>
+		</link>
+
+		<xacro:if value="$(arg with_basket)">
+
+			<!-- add basket -->
+			<joint name="basket_joint" type="fixed">
+				<parent link="tower_link" />
+				<child link="basket_link" />
+				<origin rpy="0.0 0.0 0" xyz="0.2 0.2 0.25" />
+				<axis xyz="0 0 -1" />
+			</joint>
+
+			<link name="basket_link">
+				<inertial>
+					<mass value="1" />
+					<inertia ixx="1" ixy="1" ixz="1" iyy="0" iyz="0" izz="0" />
+				</inertial>
+				<visual>
+					<origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0" />
+					<geometry>
+						<box size="0.4 0.4 0.2" />
+					</geometry>
+					<material name="dark_blue" />
+				</visual>
+				<collision>
+					<origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0" />
+					<geometry>
+						<box size="0.4 0.4 0.2" />
+					</geometry>
+				</collision>
+			</link>
+		</xacro:if>
+
+	</xacro:macro>
 
 
 </robot>
