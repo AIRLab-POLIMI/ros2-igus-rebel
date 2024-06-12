@@ -47,8 +47,10 @@
 			<origin xyz="0.0 0.0 0.0" rpy="0 0 ${-pi/3}" />
 		</joint>
 
-		<!-- castle with tower mounting sensors, batteries, computer and everyhting else, attached
-		to mobile_robot_base_link-->
+		<!-- castle with tower mounting sensors, batteries, computer and everyhting else, 
+		attached to mobile_robot_base_link
+		set with_basket to false to remove the extra box on the tower
+		-->
 		<xacro:include filename="$(find igus_rebel_description_ros2)/urdf/mobile_robot/castle.urdf" />
 		<xacro:castle with_basket="true" />
 

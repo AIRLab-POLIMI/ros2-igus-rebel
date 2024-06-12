@@ -47,7 +47,7 @@
 			</collision>
 		</link>
 
-		<xacro:if value="$(arg with_basket)">
+		<xacro:if value="${with_basket}">
 
 			<!-- add basket -->
 			<joint name="basket_joint" type="fixed">
