@@ -34,8 +34,10 @@ def declare_arguments():
     """ Returns list of launch arguments """
     rviz_file_arg = DeclareLaunchArgument(
         name="rviz_file",
-        default_value="none",
-        description="Path to the RViz configuration file",
+        default_value=PathJoinSubstitution(
+            [FindPackageShare("igus_rebel_moveit_config"), "rviz", "moveit.rviz"]
+        ),
+        description="Path of the rviz2 config file",
     )
 
     mount_arg = DeclareLaunchArgument(
@@ -86,6 +88,14 @@ def declare_arguments():
         description="Load the octomap server inside the planning scene",
         choices=["true", "false"],
     )
+
+    moveit_arg = DeclareLaunchArgument(
+        name="moveit",
+        default_value="true",
+        choices=["true", "false"],
+        description="Whether or not Moveit need to be executed",
+    )
+
     return [
         rviz_file_arg,
         load_base_arg,
@@ -94,7 +104,8 @@ def declare_arguments():
         end_effector_arg,
         hardware_protocol_arg,
         load_gazebo_arg,
-        load_octomap_arg
+        load_octomap_arg,
+        moveit_arg
     ]
 
 
@@ -128,7 +139,8 @@ def load_robot_description():
             LaunchConfiguration("hardware_protocol"),
             " load_gazebo:=",
             LaunchConfiguration("load_gazebo"),
-            " moveit:=true",
+            " moveit:=",
+            LaunchConfiguration("moveit"),
         ]
     )
 
@@ -196,12 +208,6 @@ def load_moveit(with_sensors3d: bool) -> list:
     ompl_planning_pipeline_config = {"move_group": {}}
     ompl_planning_pipeline_config["move_group"].update(ompl_planning_yaml)
 
-    # STOMP planner
-    stomp_planner_yaml = load_yaml(
-        "igus_rebel_moveit_config", "config/stomp_planning.yaml"
-    )
-    stomp_planning_pipeline_config = {"move_group": {}}
-    stomp_planning_pipeline_config["move_group"].update(stomp_planner_yaml)
 
     # Pilz cartesian limits
     pilz_cartesian_limits_yaml = load_yaml(

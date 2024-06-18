@@ -8,13 +8,8 @@ from launch.conditions import IfCondition
 
 
 def generate_launch_description():
+    
 
-    # Launch arguments are defined within moveit_controller.launch.py
-
-    # launch rviz
-    rviz_file = PathJoinSubstitution(
-        [FindPackageShare("igus_rebel_moveit_config"), "rviz", "moveit.rviz"]
-    )
 
     # include launch file from igus_rebel_moveit_config
     moveit_launch_file = PathJoinSubstitution(
@@ -27,7 +22,6 @@ def generate_launch_description():
 
     igus_rebel_moveit_config_launch = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(moveit_launch_file),
-        launch_arguments={"rviz_file": rviz_file}.items(),
     )
 
     # include launch file from igus_rebel_gazebo_ignition

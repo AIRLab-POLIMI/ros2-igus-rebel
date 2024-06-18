@@ -21,7 +21,7 @@
 			<origin xyz="0.0 0.0 0.02" rpy="0.0 ${pi} 0.0" />
 			<geometry>
 				<mesh
-					filename="package://igus_rebel_description_ros2/meshes/end_effectors/gripper_mount.stl"
+					filename="file://$(find igus_rebel_description_ros2)/meshes/end_effectors/gripper_mount.stl"
 					scale="0.001 0.001 0.001" />
 			</geometry>
 			<material name="gripper_white" />
@@ -30,7 +30,7 @@
 			<origin xyz="0.0 0.0 0.02" rpy="0.0 ${pi} 0.0" />
 			<geometry>
 				<mesh
-					filename="package://igus_rebel_description_ros2/meshes/end_effectors/gripper_mount_collision_mesh.stl"
+					filename="file://$(find igus_rebel_description_ros2)/meshes/end_effectors/gripper_mount_collision_mesh.stl"
 					scale="0.001 0.001 0.001" />
 			</geometry>
 		</collision>
@@ -52,7 +52,7 @@
 			<origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.5" />
 			<geometry>
 				<mesh
-					filename="package://igus_rebel_description_ros2/meshes/end_effectors/gripper.stl"
+					filename="file://$(find igus_rebel_description_ros2)/meshes/end_effectors/gripper.stl"
 					scale="0.001 0.001 0.001" />
 			</geometry>
 			<material name="gripper_light_blue" />
@@ -61,10 +61,10 @@
 			<origin xyz="0.0 0.0 0.02" rpy="0.0 0.0 0.5" />
 			<geometry>
 				<mesh
-				filename="package://igus_rebel_description_ros2/meshes/end_effectors/gripper_collision_mesh.stl"
-				scale="0.001 0.001 0.001" />
-		</geometry>
-	</collision>
+					filename="file://$(find igus_rebel_description_ros2)/meshes/end_effectors/gripper_collision_mesh.stl"
+					scale="0.001 0.001 0.001" />
+			</geometry>
+		</collision>
 		<inertial>
 			<origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.5" />
 			<mass value="0.1" />

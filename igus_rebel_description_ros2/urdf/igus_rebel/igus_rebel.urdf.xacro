@@ -31,8 +31,12 @@
 		</xacro:if>
 
 		<!-- Camera macro -->
-		<xacro:include filename="$(find igus_rebel_description_ros2)/urdf/cameras/cameras.urdf.xacro" />
-		<xacro:cameras camera="${camera}" load_gazebo="${load_gazebo}" />
+		<xacro:unless value="${mount == 'none'}"> <!-- Do not add cameras if no mount is present -->
+
+			<xacro:include filename="$(find igus_rebel_description_ros2)/urdf/cameras/cameras.urdf.xacro" />
+			<xacro:cameras camera="${camera}" load_gazebo="${load_gazebo}" />
+
+		</xacro:unless>
 
 		<!-- Gazebo macro -->
 		<xacro:if value="${load_gazebo}">

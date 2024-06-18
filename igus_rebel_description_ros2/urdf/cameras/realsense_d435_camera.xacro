@@ -1,0 +1,45 @@
+<?xml version="1.0"?>
+<robot name="realsense_d435_camera" xmlns:xacro="http://ros.org/wiki/xacro">
+
+    
+    <link name="container_realsense_link" />
+
+    <!-- This joint is in initialized statically, but using a imu filter, it will become a dynamic tf 
+    that will transfer the roational movement of the camera took from the imu data -->
+    <joint name="container_realsense_link_joint" type="fixed">
+        <parent link="container_realsense_link" />
+        <child link="realsense_optical_link" />
+    </joint>
+
+    <link name="realsense_optical_link" />
+
+    <!-- This joint is used to convert from an optical frame to a normal frame,
+        since there will be a dynamic tf between container_realsense_link_joint and realsense_optical_link
+        that will treat the latter as an optical frame -->
+    <joint name="realsense_optical_link_joint" type="fixed">
+        <parent link="realsense_optical_link" />
+        <child link="realsense_link" />
+		<origin xyz="0 0 0" rpy="${-pi/2} ${-pi/2} ${pi}" /> 
+    </joint>
+
+    <link name="realsense_link"/>
+
+    
+    <!-- Define arguments with default values -->
+    <xacro:arg name="parent" default="realsense_link" />
+    <xacro:arg name="use_nominal_extrinsics" default="true" />
+    <xacro:arg name="add_plug" default="false" />
+    <xacro:arg name="use_mesh" default="true" />
+
+    <xacro:include filename="$(find realsense2_description)/urdf/_d435.urdf.xacro" />
+
+    <xacro:sensor_d435 parent="$(arg parent)"
+        use_nominal_extrinsics="$(arg use_nominal_extrinsics)"
+        add_plug="$(arg add_plug)" use_mesh="$(arg use_mesh)">
+        <origin xyz="0.0 0 0" rpy="0 0 0" />
+    </xacro:sensor_d435>
+
+    <sensor_d435 />
+
+
+</robot>

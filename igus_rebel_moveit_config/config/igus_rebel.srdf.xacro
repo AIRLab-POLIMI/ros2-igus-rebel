@@ -34,11 +34,11 @@
 		</xacro:if>
 
 
-		<!-- If mount is placed -->
-		<xacro:if value="${mount != 'none'}">
+		<!-- If mount v1 is placed -->
+		<xacro:if value="${mount == 'mount_v1'}">
 
 			<!-- If camera is relasense or oakd and no end effector placed -->
-			<xacro:if value="${end_effector == 'none'}">
+			<xacro:unless value="${end_effector == 'toucher_v1'}">
 
 				<group name="rebel_arm">
 					<chain base_link="igus_rebel_base_link" tip_link="flange" />
@@ -47,7 +47,7 @@
 				<end_effector name="flange_EEF" parent_link="flange"
 					group="rebel_arm" />
 
-			</xacro:if>
+			</xacro:unless>
 
 			<!-- If camera is realsense or oakd and toucher v1 is placed -->
 			<xacro:if value="${end_effector == 'toucher_v1'}">
@@ -65,6 +65,25 @@
 					group="toucher_v1_group" parent_group="rebel_arm" />
 
 			</xacro:if>
+
+		</xacro:if>
+
+
+		<!-- If mount v2 is placed -->
+		<xacro:if value="${mount == 'mount_v2'}">
+
+			<!-- If camera is relasense or oakd and no end effector placed -->
+			<xacro:unless value="${end_effector == 'soft_gripper'}">
+
+				<group name="rebel_arm">
+					<chain base_link="igus_rebel_base_link" tip_link="flange" />
+				</group>
+
+				<end_effector name="flange_EEF" parent_link="flange"
+					group="rebel_arm" />
+
+			</xacro:unless>
+
 
 			<!-- If camera is realsense and soft gripper is placed -->
 			<xacro:if value="${end_effector == 'soft_gripper'}">
@@ -200,12 +219,14 @@
 
 
 		<!-- Collision checks due to the presence of the mount -->
-		<xacro:if value="${mount == 'mount_v1' or mount == 'mount_v2'}">
+		<xacro:if value="${mount == 'mount_v1'}">
 
 			<disable_collisions link1="link_5" link2="camera_mount" reason="Never" />
 			<disable_collisions link1="link_6" link2="camera_mount" reason="Never" />
 			<disable_collisions link1="link_7" link2="camera_mount" reason="Never" />
 			<disable_collisions link1="link_8" link2="camera_mount" reason="Adjacent" />
+
+			<!-- TODO: need to handle case when gripper is not none or toucher with a camera -->
 
 			<xacro:if value="${camera == 'oakd' and end_effector == 'none'}">
 
@@ -269,6 +290,92 @@
 				<disable_collisions link1="link_7" link2="toucher_v1" reason="Never" />
 				<disable_collisions link1="link_8" link2="toucher_v1" reason="Default" />
 				<disable_collisions link1="camera_link" link2="toucher_v1" reason="Never" />
+
+			</xacro:if>
+
+		</xacro:if>
+
+
+
+		<xacro:if value="${mount == 'mount_v2'}">
+
+			<disable_collisions link1="link_5" link2="camera_mount" reason="Never" />
+			<disable_collisions link1="link_6" link2="camera_mount" reason="Never" />
+			<disable_collisions link1="link_7" link2="camera_mount" reason="Never" />
+			<disable_collisions link1="link_8" link2="camera_mount" reason="Adjacent" />
+
+			<!-- TODO: need to handle case when gripper is not none or soft gripper with a camera -->
+
+
+			<xacro:if value="${camera == 'oakd' and end_effector == 'none'}">
+
+				<disable_collisions link1="camera_mount" link2="camera_link" reason="Adjacent" />
+				<disable_collisions link1="link_5" link2="camera_link" reason="Never" />
+				<disable_collisions link1="link_6" link2="camera_link" reason="Never" />
+				<disable_collisions link1="link_7" link2="camera_link" reason="Never" />
+				<disable_collisions link1="link_8" link2="camera_link" reason="Never" />
+
+			</xacro:if>
+
+			<xacro:if value="${camera == 'realsense' and end_effector == 'none'}">
+
+				<disable_collisions link1="camera_mount" link2="camera_link" reason="Adjacent" />
+				<disable_collisions link1="link_5" link2="camera_link" reason="Never" />
+				<disable_collisions link1="link_6" link2="camera_link" reason="Never" />
+				<disable_collisions link1="link_7" link2="camera_link" reason="Never" />
+				<disable_collisions link1="link_8" link2="camera_link" reason="Never" />
+
+			</xacro:if>
+
+			<xacro:if value="${camera == 'none' and end_effector == 'soft_gripper'}">
+
+				<disable_collisions link1="camera_mount" link2="soft_gripper_link" reason="Adjacent" />
+				<disable_collisions link1="camera_mount" link2="soft_gripper_mount" reason="Adjacent" />
+				<disable_collisions link1="link_2" link2="soft_gripper_link" reason="Never" />
+				<disable_collisions link1="link_2" link2="soft_gripper_mount" reason="Never" />
+				<disable_collisions link1="link_5" link2="soft_gripper_link" reason="Never" />
+				<disable_collisions link1="link_5" link2="soft_gripper_mount" reason="Never" />
+				<disable_collisions link1="link_6" link2="soft_gripper_link" reason="Never" />
+				<disable_collisions link1="link_6" link2="soft_gripper_mount" reason="Never" />
+				<disable_collisions link1="link_7" link2="soft_gripper_link" reason="Never" />
+				<disable_collisions link1="link_7" link2="soft_gripper_mount" reason="Never" />
+				<disable_collisions link1="link_8" link2="soft_gripper_link" reason="Never" />
+				<disable_collisions link1="link_8" link2="soft_gripper_mount" reason="Never" />
+				<disable_collisions link1="camera_mount" link2="camera_link" reason="Adjacent" />
+				<disable_collisions link1="link_7" link2="camera_mount" reason="Adjacent" />
+				<disable_collisions link1="link_8" link2="camera_mount" reason="Adjacent" />
+				<disable_collisions link1="soft_gripper_mount" link2="soft_gripper_link"
+					reason="Adjacent" />
+
+			</xacro:if>
+
+			<xacro:if value="${camera == 'oakd' and end_effector == 'soft_gripper'}">
+
+				<disable_collisions link1="camera_link" link2="soft_gripper_mount" reason="Never" />
+				<disable_collisions link1="camera_link" link2="soft_gripper_link" reason="Never" />
+				<disable_collisions link1="camera_mount" link2="camera_link" reason="Adjacent" />
+				<disable_collisions link1="camera_mount" link2="soft_gripper_link" reason="Adjacent" />
+				<disable_collisions link1="camera_mount" link2="soft_gripper_mount" reason="Adjacent" />
+				<disable_collisions link1="link_2" link2="soft_gripper_link" reason="Never" />
+				<disable_collisions link1="link_2" link2="soft_gripper_mount" reason="Never" />
+				<disable_collisions link1="link_5" link2="camera_link" reason="Never" />
+				<disable_collisions link1="link_5" link2="camera_mount" reason="Never" />
+				<disable_collisions link1="link_5" link2="soft_gripper_link" reason="Never" />
+				<disable_collisions link1="link_5" link2="soft_gripper_mount" reason="Never" />
+				<disable_collisions link1="link_6" link2="camera_link" reason="Never" />
+				<disable_collisions link1="link_6" link2="camera_mount" reason="Never" />
+				<disable_collisions link1="link_6" link2="soft_gripper_link" reason="Never" />
+				<disable_collisions link1="link_6" link2="soft_gripper_mount" reason="Never" />
+				<disable_collisions link1="link_7" link2="camera_link" reason="Never" />
+				<disable_collisions link1="link_7" link2="camera_mount" reason="Never" />
+				<disable_collisions link1="link_7" link2="soft_gripper_link" reason="Never" />
+				<disable_collisions link1="link_7" link2="soft_gripper_mount" reason="Never" />
+				<disable_collisions link1="link_8" link2="camera_link" reason="Never" />
+				<disable_collisions link1="link_8" link2="camera_mount" reason="Adjacent" />
+				<disable_collisions link1="link_8" link2="soft_gripper_link" reason="Never" />
+				<disable_collisions link1="link_8" link2="soft_gripper_mount" reason="Never" />
+				<disable_collisions link1="soft_gripper_mount" link2="soft_gripper_link"
+					reason="Adjacent" />
 
 			</xacro:if>
 

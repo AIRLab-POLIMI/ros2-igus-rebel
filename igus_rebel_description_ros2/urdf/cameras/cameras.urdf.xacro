@@ -4,11 +4,15 @@
     <xacro:macro name="cameras" params="camera load_gazebo">
 
         <!-- virtual frames for gazebo -->
-        <xacro:if value="${load_gazebo}">
-            <xacro:include
-                filename="$(find igus_rebel_description_ros2)/urdf/cameras/virtual_camera_frames.xacro" />
-            <xacro:virtual_camera_frames />
-        </xacro:if>
+        <xacro:unless value="${camera == 'none'}">
+
+            <xacro:if value="${load_gazebo}">
+                <xacro:include
+                    filename="$(find igus_rebel_description_ros2)/urdf/cameras/virtual_camera_frames.xacro" />
+                <xacro:virtual_camera_frames />
+            </xacro:if>
+
+        </xacro:unless>
 
         <!-- Cameras -->
         <xacro:if value="${camera == 'realsense'}">
