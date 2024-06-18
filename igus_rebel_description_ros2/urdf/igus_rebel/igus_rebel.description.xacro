@@ -65,7 +65,7 @@
 		<joint name="joint2" type="revolute">
 			<parent link="link_1" />
 			<child link="link_2" />
-			<origin rpy="0.0 0.0 0.0" xyz="0.0 0.0 0.149" />
+			<origin rpy="0.0 ${pi/6} 0.0" xyz="0.0 0 0.149" />
 			<axis xyz="0 1 0" />
 			<limit effort="330.0" lower="${-pi*80/180}" upper="${pi*140/180}" velocity="${pi/4.0}" />
 			<dynamics damping="${damping}" friction="${friction}" />
@@ -97,7 +97,7 @@
 		<joint name="joint3" type="revolute">
 			<parent link="link_2" />
 			<child link="link_5" />
-			<origin rpy="0.0 0.0 0.0" xyz="0.0 0.0 0.237" />
+			<origin rpy="0.0 ${pi/6} 0.0" xyz="0.0 0.0 0.2384" />
 			<axis xyz="0 1 0" />
 			<limit effort="330.0" lower="${-pi*80/180}" upper="${pi*140/180}" velocity="${pi/4.0}" />
 			<dynamics damping="${damping}" friction="${friction}" />
@@ -161,7 +161,7 @@
 		<joint name="joint5" type="revolute">
 			<parent link="link_6" />
 			<child link="link_7" />
-			<origin rpy="0.0 0.0 0.0" xyz="0.0 0.0 0.170" />
+			<origin rpy="0.0 ${-pi/24} 0.0" xyz="0.0 0 ${0.14 + 0.03}" />
 			<axis xyz="0 1 0" />
 			<limit effort="330.0" lower="${-pi/2.0}" upper="${pi/2.0}" velocity="${pi/4.0}" />
 			<dynamics damping="${damping}" friction="${friction}" />
