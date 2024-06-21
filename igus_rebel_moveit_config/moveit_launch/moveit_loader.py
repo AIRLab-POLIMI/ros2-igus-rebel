@@ -208,6 +208,13 @@ def load_moveit(with_sensors3d: bool) -> list:
     ompl_planning_pipeline_config = {"move_group": {}}
     ompl_planning_pipeline_config["move_group"].update(ompl_planning_yaml)
 
+    # STOMP planner
+    stomp_planner_yaml = load_yaml(
+        "igus_rebel_moveit_config", "config/stomp_planning.yaml"
+    )
+    stomp_planning_pipeline_config = {"move_group": {}}
+    stomp_planning_pipeline_config["move_group"].update(stomp_planner_yaml)
+
 
     # Pilz cartesian limits
     pilz_cartesian_limits_yaml = load_yaml(
