@@ -40,10 +40,10 @@ Currently, the package can only be used by building it from source.
 
 ### Required ROS2 dependencies 
 
-- `ros2_control`: install with `sudo apt install ros-<ros2-distro>-ros2-control`
-- `ros2_controllers`: install with `sudo apt install ros-<ros2-distro>-ros2-controllers`
-- `tf_transformations`: install with `sudo apt install ros-<ros2-distro>-tf-transformations`
-- `ros-gz`: install with `sudo apt install ros-<ros2-distro>-ros-gz`
+- `ros2_control`: install with `sudo apt install ros-$ROS_DISTRO-ros2-control`
+- `ros2_controllers`: install with `sudo apt install ros-$ROS_DISTRO-ros2-controllers`
+- `tf_transformations`: install with `sudo apt install ros-$ROS_DISTRO-tf-transformations`
+- `ros-gz`: install with `sudo apt install ros-$ROS_DISTRO-ros-gz`
 - `moveit2`: install from source, following the instructions at [this link](https://moveit.ros.org/install-moveit2/source/)
 - `moveit_visual_tools`: install from source from the MoveIt2 repository
 
