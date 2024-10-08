@@ -1,4 +1,0 @@
-# Define an action to trigger the computation and publishing of goal poses based on Aruco markers
-int64 aruco_id
----
----

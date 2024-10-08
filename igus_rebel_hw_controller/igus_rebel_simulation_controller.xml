@@ -4,7 +4,7 @@
 		base_class_type="hardware_interface::SystemInterface">
 		<description>
 			Controller interface used for testing purposes. It mimics the robot movement, similar to the MockComponents in the ros_control package.
-			This package serves to test the movemement commands sent by the ROS2 control interface. It also allows to command the robot via velocity.
+			This package serves to test the movement commands sent by the ROS2 control interface. It also allows to command the robot via velocity.
 			The position feedback is obtained by integrating the velocity commands over time.
 		</description>
 	</class>

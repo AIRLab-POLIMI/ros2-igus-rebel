@@ -30,11 +30,11 @@ def generate_launch_description():
         launch_arguments={"rviz_file": rviz_file}.items(),
     )
 
-    # include launch file from igus_rebel_gazebo_ignition
+    # include launch file from igus_rebel_gazebo
     ignition_launch = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
             [
-                FindPackageShare("igus_rebel_gazebo_ignition"),
+                FindPackageShare("igus_rebel_gazebo"),
                 "/launch",
                 "/ignition.launch.py",
             ]
@@ -47,6 +47,6 @@ def generate_launch_description():
     )
 
     return LaunchDescription([
-        igus_rebel_moveit_config_launch,
         ignition_launch,
+        igus_rebel_moveit_config_launch,
     ])

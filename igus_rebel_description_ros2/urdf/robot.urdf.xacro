@@ -1,18 +1,6 @@
 <?xml version="1.0"?>
 <robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="igus_rebel">
 
-	<!-- Scout base selection -->
-	<xacro:arg name="load_base" default="true" />
-
-	<!-- Mount selection -->
-	<xacro:arg name="mount" default="none" />
-
-	<!-- Camera type selection -->
-	<xacro:arg name="camera" default="none" />
-
-	<!-- End effector type selection -->
-	<xacro:arg name="end_effector" default="none" />
-
 	<!-- Gazebo version -->
 	<xacro:arg name="load_gazebo" default="false" />
 
@@ -22,64 +10,31 @@
 	<!-- Argument that tells if Moveit2 is used or not -->
 	<xacro:arg name="moveit" default="false" />
 
-	<!-- odometry source: world ground truth or wheels encoders -->
-	<xacro:arg name="odometry_source" default="ground_truth" />
-
-	<!-- Set both at 0.0 if collapsing is not interesting in gazebo -->
+	<!-- Set both at 0.0 if collapsing is not interested in gazebo -->
 	<xacro:property name="damping" value="0.0" />
 	<xacro:property name="friction" value="0.0" />
 
-	<!-- Load mobile robot base, load_base must be true -->
-	<xacro:if value="$(arg load_base)">
+    <xacro:if value="$(arg load_gazebo)">
+        <link name="world" />
+        <joint name="world_joint" type="fixed">
+            <parent link="world" />
+            <child link="base_link" />
+        </joint>
+    </xacro:if>
 
-		<!-- virtual joints acting as a link between base_link and igus_rebel_base_link -->
-		<joint name="base_link_to_rebel_support" type="fixed">
-			<parent link="base_link" />
-			<child link="rebel_support" />
-			<origin xyz="-0.28 0.0 0.125" rpy="0 0 ${pi}" />
-		</joint>
+	<link name="base_link" />
+	<joint name="base_link_to_igus_rebel" type="fixed">
+		<parent link="base_link" />
+		<child link="igus_rebel_base_link" />
+		<origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0" />
+	</joint>
 
-		<link name="rebel_support" />
-
-		<joint name="rebel_support_to_igus_rebel" type="fixed">
-			<parent link="rebel_support" />
-			<child link="igus_rebel_base_link" />
-			<origin xyz="0.0 0.0 0.0" rpy="0 0 ${-pi/3}" />
-		</joint>
-
-		<!-- castle with tower mounting sensors, batteries, computer and everyhting else, 
-		attached to mobile_robot_base_link
-		set with_basket to false to remove the extra box on the tower
-		-->
-		<xacro:include filename="$(find igus_rebel_description_ros2)/urdf/mobile_robot/castle.urdf" />
-		<xacro:castle with_basket="true" />
-
-		<!-- load scout robot -->
-		<xacro:include
-			filename="$(find agilex_scout)/urdf/mobile_robot/scout_v2.urdf.xacro" />
-		<xacro:scout_v2
-			load_gazebo="$(arg load_gazebo)" odometry_source="$(arg odometry_source)" />
-
-	</xacro:if>
-
-	<!-- Add base_link attachment when no mobile robot is loaded -->
-	<xacro:unless value="$(arg load_base)">
-
-		<link name="base_link" />
-		<joint name="base_link_to_igus_rebel" type="fixed">
-			<parent link="base_link" />
-			<child link="igus_rebel_base_link" />
-			<origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0" />
-		</joint>
-
-	</xacro:unless>
 
 	<!-- load igus rebel with camera gripper and castle -->
 	<xacro:include
 		filename="$(find igus_rebel_description_ros2)/urdf/igus_rebel/igus_rebel.urdf.xacro" />
 	<xacro:igus_rebel
-		load_base="$(arg load_base)" mount="$(arg mount)" camera="$(arg camera)"
-		end_effector="$(arg end_effector)" hardware_protocol="$(arg hardware_protocol)"
+		hardware_protocol="$(arg hardware_protocol)"
 		load_gazebo="$(arg load_gazebo)" moveit="$(arg moveit)" />
 
 </robot>

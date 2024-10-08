@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
-	<name>igus_rebel_gazebo_ignition</name>
+	<name>igus_rebel_gazebo</name>
 	<version>0.1.0</version>
 	<description>
 		Configurations and the launch file to run the Igus ReBeL 6 DOF robot arm in Gazebo

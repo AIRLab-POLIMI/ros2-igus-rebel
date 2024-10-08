@@ -38,26 +38,26 @@ def declare_arguments():
         description="Path to the RViz configuration file",
     )
 
-    mount_arg = DeclareLaunchArgument(
-        name="mount",
-        default_value="mount_v2",
-        choices=["none", "mount_v1", "mount_v2"],
-        description="Mount to attach to the last joint",
-    )
+    # mount_arg = DeclareLaunchArgument(
+    #     name="mount",
+    #     default_value="mount_v2",
+    #     choices=["none", "mount_v1", "mount_v2"],
+    #     description="Mount to attach to the last joint",
+    # )
 
-    camera_arg = DeclareLaunchArgument(
-        name="camera",
-        default_value="realsense",
-        choices=["realsense", "oakd", "none"],
-        description="Which camera to attach to the mount",
-    )
+    # camera_arg = DeclareLaunchArgument(
+    #     name="camera",
+    #     default_value="realsense",
+    #     choices=["realsense", "oakd", "none"],
+    #     description="Which camera to attach to the mount",
+    # )
 
-    end_effector_arg = DeclareLaunchArgument(
-        name="end_effector",
-        default_value="soft_gripper",
-        choices=["toucher_v1", "soft_gripper", "none"],
-        description="Which end_effector to attach to the mount",
-    )
+    # end_effector_arg = DeclareLaunchArgument(
+    #     name="end_effector",
+    #     default_value="soft_gripper",
+    #     choices=["toucher_v1", "soft_gripper", "none"],
+    #     description="Which end_effector to attach to the mount",
+    # )
 
     hardware_protocol_arg = DeclareLaunchArgument(
         name="hardware_protocol",
@@ -66,12 +66,12 @@ def declare_arguments():
         description="Which hardware protocol or simulation environment should be used",
     )
 
-    load_base_arg = DeclareLaunchArgument(
-        name="load_base",
-        default_value="true",
-        description="Load the mobile robot model and tower",
-        choices=["true", "false"],
-    )
+    # load_base_arg = DeclareLaunchArgument(
+    #     name="load_base",
+    #     default_value="true",
+    #     description="Load the mobile robot model and tower",
+    #     choices=["true", "false"],
+    # )
 
     load_gazebo_arg = DeclareLaunchArgument(
         name="load_gazebo",
@@ -80,27 +80,28 @@ def declare_arguments():
         description="Which Gazebo version to launch",
     )
 
-    load_octomap_arg = DeclareLaunchArgument(
-        name="load_octomap",
-        default_value="false",
-        description="Load the octomap server inside the planning scene",
-        choices=["true", "false"],
-    )
+    # load_octomap_arg = DeclareLaunchArgument(
+    #     name="load_octomap",
+    #     default_value="false",
+    #     description="Load the octomap server inside the planning scene",
+    #     choices=["true", "false"],
+    # )
     return [
         rviz_file_arg,
-        load_base_arg,
-        mount_arg,
-        camera_arg,
-        end_effector_arg,
+        # load_base_arg,
+        # mount_arg,
+        # camera_arg,
+        # end_effector_arg,
         hardware_protocol_arg,
         load_gazebo_arg,
-        load_octomap_arg
+        # load_octomap_arg
     ]
 
 
 def load_robot_description():
     """Load the robot description URDF"""
 
+    # robot_description_filename = "robot.urdf.xacro"
     robot_description_filename = "robot.urdf.xacro"
 
     robot_description_file = PathJoinSubstitution(
@@ -116,14 +117,14 @@ def load_robot_description():
             FindExecutable(name="xacro"),
             " ",
             robot_description_file,
-            " load_base:=",
-            LaunchConfiguration("load_base"),
-            " mount:=",
-            LaunchConfiguration("mount"),
-            " camera:=",
-            LaunchConfiguration("camera"),
-            " end_effector:=",
-            LaunchConfiguration("end_effector"),
+            # " load_base:=",
+            # LaunchConfiguration("load_base"),
+            # " mount:=",
+            # LaunchConfiguration("mount"),
+            # " camera:=",
+            # LaunchConfiguration("camera"),
+            # " end_effector:=",
+            # LaunchConfiguration("end_effector"),
             " hardware_protocol:=",
             LaunchConfiguration("hardware_protocol"),
             " load_gazebo:=",
@@ -154,14 +155,14 @@ def load_robot_description_semantic():
             FindExecutable(name="xacro"),
             " ",
             robot_description_semantic_file,
-            " load_base:=",
-            LaunchConfiguration("load_base"),
-            " mount:=",
-            LaunchConfiguration("mount"),
-            " camera:=",
-            LaunchConfiguration("camera"),
-            " end_effector:=",
-            LaunchConfiguration("end_effector"),
+            # " load_base:=",
+            # LaunchConfiguration("load_base"),
+            # " mount:=",
+            # LaunchConfiguration("mount"),
+            # " camera:=",
+            # LaunchConfiguration("camera"),
+            # " end_effector:=",
+            # LaunchConfiguration("end_effector"),
         ]
     )
 
@@ -186,7 +187,8 @@ def load_ros2_controllers():
     return ros2_controllers_file
 
 
-def load_moveit(with_sensors3d: bool) -> list:
+# def load_moveit(with_sensors3d: bool) -> list:
+def load_moveit() -> list:
     """ Loads parameters required by move_group node interface """
 
     # OMPL planner
@@ -197,11 +199,11 @@ def load_moveit(with_sensors3d: bool) -> list:
     ompl_planning_pipeline_config["move_group"].update(ompl_planning_yaml)
 
     # STOMP planner
-    stomp_planner_yaml = load_yaml(
-        "igus_rebel_moveit_config", "config/stomp_planning.yaml"
-    )
-    stomp_planning_pipeline_config = {"move_group": {}}
-    stomp_planning_pipeline_config["move_group"].update(stomp_planner_yaml)
+    # stomp_planner_yaml = load_yaml(
+    #     "igus_rebel_moveit_config", "config/stomp_planning.yaml"
+    # )
+    # stomp_planning_pipeline_config = {"move_group": {}}
+    # stomp_planning_pipeline_config["move_group"].update(stomp_planner_yaml)
 
     # Pilz cartesian limits
     pilz_cartesian_limits_yaml = load_yaml(
@@ -210,8 +212,14 @@ def load_moveit(with_sensors3d: bool) -> list:
     pilz_cartesian_limits = {"robot_description_planning": pilz_cartesian_limits_yaml}
     
     # Multiple planners: STOMP and OMPL and Pilz industrial motion planner
+    # multiple_planners_yaml = load_yaml(
+    #     "igus_rebel_moveit_config", "config/multiple_planning_pipelines.yaml"
+    # )
+    # planning_pipelines = {"move_group": multiple_planners_yaml}
+
+    # Multiple planners: OMPL and Pilz industrial motion planner
     multiple_planners_yaml = load_yaml(
-        "igus_rebel_moveit_config", "config/multiple_planning_pipelines.yaml"
+        "igus_rebel_moveit_config", "config/ompl_pilz_planning_pipelines.yaml"
     )
     planning_pipelines = {"move_group": multiple_planners_yaml}
     planning_pipelines["move_group"].update(pilz_cartesian_limits)
@@ -237,13 +245,13 @@ def load_moveit(with_sensors3d: bool) -> list:
     )
     joint_limits = {"robot_description_planning": joint_limits_yaml}
 
-    # add sensors3d to the list of moveit parameters
-    if (with_sensors3d):
-        sensors_3d_yaml = load_yaml(
-            "igus_rebel_moveit_config", "config/sensors_3d.yaml"
-        )
-    else:
-        sensors_3d_yaml = {"sensors:": ""}
+    # # add sensors3d to the list of moveit parameters
+    # if with_sensors3d:
+    #     sensors_3d_yaml = load_yaml(
+    #         "igus_rebel_moveit_config", "config/sensors_3d.yaml"
+    #     )
+    # else:
+    #     sensors_3d_yaml = {"sensors:": ""}
 
     return [
         load_robot_description(),
@@ -256,20 +264,20 @@ def load_moveit(with_sensors3d: bool) -> list:
         kinematics,
         moveit_controllers_yaml,
         joint_limits,
-        sensors_3d_yaml
+        # sensors_3d_yaml
     ]
 
 
-def load_camera_frame_arg():
-    camera_config_yaml = load_yaml("aruco_pose_estimation", "config/aruco_parameters.yaml")
-    # get camera frame from the yaml file
-    camera_frame = camera_config_yaml["/aruco_node"]["ros__parameters"]["camera_frame"]
-
-    # camera frame name argument to pass to the node
-    camera_frame_arg = DeclareLaunchArgument(
-        name="camera_frame",
-        # set camera frame arg equal to the camera frame from the yaml file
-        default_value=TextSubstitution(text=camera_frame),
-        description="Camera frame of the aruco markers detected",
-    )
-    return camera_frame_arg
+# def load_camera_frame_arg():
+#     camera_config_yaml = load_yaml("aruco_pose_estimation", "config/aruco_parameters.yaml")
+#     # get camera frame from the yaml file
+#     camera_frame = camera_config_yaml["/aruco_node"]["ros__parameters"]["camera_frame"]
+#
+#     # camera frame name argument to pass to the node
+#     camera_frame_arg = DeclareLaunchArgument(
+#         name="camera_frame",
+#         # set camera frame arg equal to the camera frame from the yaml file
+#         default_value=TextSubstitution(text=camera_frame),
+#         description="Camera frame of the aruco markers detected",
+#     )
+#     return camera_frame_arg

@@ -40,7 +40,7 @@ def generate_launch_description():
 
     env_gazebo_package_arg = DeclareLaunchArgument(
         name="env_gazebo_package",
-        default_value="igus_rebel_gazebo_ignition",
+        default_value="igus_rebel_gazebo",
         description="Package where the gazebo world and configuration are located. Requires full name of the package, otherwise it will default to this package.",
     )
 
@@ -79,7 +79,7 @@ def launch_setup(context, *args, **kwargs):
     env_gazebo_package = LaunchConfiguration("env_gazebo_package").perform(context)
     full_world_name = LaunchConfiguration("full_world_name").perform(context)
 
-    if env_gazebo_package != 'igus_rebel_gazebo_ignition':
+    if env_gazebo_package != 'igus_rebel_gazebo':
         ignition_models_path = os.path.join(
             get_package_share_directory(env_gazebo_package), "models",
         )
@@ -87,7 +87,7 @@ def launch_setup(context, *args, **kwargs):
 
     # Additional bridge for joint state if Moveit is not used (only for visualization of the description)
     # and related gui with or without the joint position controller gui
-    if (LaunchConfiguration("moveit").perform(context) == 'false'):
+    if LaunchConfiguration("moveit").perform(context) == 'false':
         bridge_config_filename = "bridge_description.yaml"
         gazebo_config_gui_filename = "gazebo_gui_description.config"
     else:

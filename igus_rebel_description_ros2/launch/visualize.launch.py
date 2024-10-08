@@ -49,7 +49,7 @@ def generate_launch_description():
     ignition_launch = IncludeLaunchDescription(
         PythonLaunchDescriptionSource([
             FindPackageShare(
-                "igus_rebel_gazebo_ignition"), '/launch', '/ignition.launch.py'
+                "igus_rebel_gazebo"), '/launch', '/ignition.launch.py'
         ]),
         launch_arguments={
             "use_sim_time": "True",

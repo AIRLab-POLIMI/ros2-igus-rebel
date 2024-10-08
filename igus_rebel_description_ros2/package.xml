@@ -25,6 +25,8 @@
 	<test_depend>ament_lint_common</test_depend>
 	<test_depend>ament_cmake_gtest</test_depend>
 
+	<exec_depend>ign_ros2_control</exec_depend>
+
 	<!-- The export tag contains other, unspecified, tags -->
 	<export>
 		<!-- Other tools can request additional information be placed here -->
