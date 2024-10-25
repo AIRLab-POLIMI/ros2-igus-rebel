@@ -165,7 +165,7 @@
 
 			<!-- Default collision checks for base robot and scout. The collision between the scout
 			and the mount are all enabled-->
-			<disable_collisions link1="front_left_wheel_link" link2="front_right_wheel_link"
+			<!-- <disable_collisions link1="front_left_wheel_link" link2="front_right_wheel_link"
 				reason="Never" />
 			<disable_collisions link1="front_left_wheel_link" link2="igus_rebel_base_link"
 				reason="Never" />
@@ -190,30 +190,30 @@
 				reason="Never" />
 			<disable_collisions link1="front_right_wheel_link" link2="rear_right_wheel_link"
 				reason="Never" />
-			<disable_collisions link1="front_right_wheel_link" link2="tower_link" reason="Never" />
+			<disable_collisions link1="front_right_wheel_link" link2="tower_link" reason="Never" /> -->
 			<disable_collisions link1="igus_rebel_base_link" link2="mobile_robot_base_link"
 				reason="Adjacent" />
-			<disable_collisions link1="igus_rebel_base_link" link2="rear_left_wheel_link"
+			<!-- <disable_collisions link1="igus_rebel_base_link" link2="rear_left_wheel_link"
 				reason="Never" />
 			<disable_collisions link1="igus_rebel_base_link" link2="rear_right_wheel_link"
-				reason="Never" />
+				reason="Never" /> -->
 			<disable_collisions link1="igus_rebel_base_link" link2="tower_link" reason="Never" />
 			<disable_collisions link1="link_1" link2="mobile_robot_base_link" reason="Never" />
-			<disable_collisions link1="link_1" link2="rear_left_wheel_link" reason="Never" />
-			<disable_collisions link1="link_1" link2="rear_right_wheel_link" reason="Never" />
+			<!-- <disable_collisions link1="link_1" link2="rear_left_wheel_link" reason="Never" /> -->
+			<!-- <disable_collisions link1="link_1" link2="rear_right_wheel_link" reason="Never" /> -->
 			<disable_collisions link1="link_1" link2="tower_link" reason="Never" />
 			<disable_collisions link1="link_2" link2="mobile_robot_base_link" reason="Never" />
-			<disable_collisions link1="link_2" link2="rear_left_wheel_link" reason="Never" />
-			<disable_collisions link1="link_2" link2="rear_right_wheel_link" reason="Never" />
-			<disable_collisions link1="mobile_robot_base_link" link2="rear_left_wheel_link"
+			<!-- <disable_collisions link1="link_2" link2="rear_left_wheel_link" reason="Never" /> -->
+			<!-- <disable_collisions link1="link_2" link2="rear_right_wheel_link" reason="Never" /> -->
+			<!-- <disable_collisions link1="mobile_robot_base_link" link2="rear_left_wheel_link"
 				reason="Adjacent" />
 			<disable_collisions link1="mobile_robot_base_link" link2="rear_right_wheel_link"
-				reason="Adjacent" />
+				reason="Adjacent" /> -->
 			<disable_collisions link1="mobile_robot_base_link" link2="tower_link" reason="Adjacent" />
-			<disable_collisions link1="rear_left_wheel_link" link2="rear_right_wheel_link"
+			<!-- <disable_collisions link1="rear_left_wheel_link" link2="rear_right_wheel_link"
 				reason="Never" />
 			<disable_collisions link1="rear_left_wheel_link" link2="tower_link" reason="Never" />
-			<disable_collisions link1="rear_right_wheel_link" link2="tower_link" reason="Never" />
+			<disable_collisions link1="rear_right_wheel_link" link2="tower_link" reason="Never" /> -->
 
 		</xacro:if>
 
