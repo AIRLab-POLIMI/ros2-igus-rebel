@@ -60,9 +60,9 @@
 				filename="$(find igus_rebel_description_ros2)/urdf/end_effectors/soft_gripper.description.xacro" />
 
 			<!-- ros2 control of the soft gripper actuator -->
-			<xacro:include
+			<!-- <xacro:include
 				filename="$(find igus_rebel_description_ros2)/urdf/end_effectors/soft_gripper.control.xacro" />
-			<xacro:igus_rebel_gripper use_dummy="false" />
+			<xacro:igus_rebel_gripper use_dummy="false" /> -->
 
 		</xacro:if>
 
