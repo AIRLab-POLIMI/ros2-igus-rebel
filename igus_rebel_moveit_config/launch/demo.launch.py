@@ -31,22 +31,22 @@ def generate_launch_description():
     )
 
     # include launch file from igus_rebel_gazebo
-    ignition_launch = IncludeLaunchDescription(
-        PythonLaunchDescriptionSource(
-            [
-                FindPackageShare("igus_rebel_gazebo"),
-                "/launch",
-                "/ignition.launch.py",
-            ]
-        ),
-        launch_arguments={
-            "moveit": "true",
-            "use_sim_time": "True",
-        }.items(),
-        condition=IfCondition(LaunchConfiguration("load_gazebo")),
-    )
+    # ignition_launch = IncludeLaunchDescription(
+    #     PythonLaunchDescriptionSource(
+    #         [
+    #             FindPackageShare("igus_rebel_gazebo"),
+    #             "/launch",
+    #             "/ignition.launch.py",
+    #         ]
+    #     ),
+    #     launch_arguments={
+    #         "moveit": "true",
+    #         "use_sim_time": "True",
+    #     }.items(),
+    #     condition=IfCondition(LaunchConfiguration("load_gazebo")),
+    # )
 
     return LaunchDescription([
-        ignition_launch,
+        # ignition_launch,
         igus_rebel_moveit_config_launch,
     ])

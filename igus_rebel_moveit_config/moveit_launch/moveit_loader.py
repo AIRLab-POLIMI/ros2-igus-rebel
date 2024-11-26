@@ -264,6 +264,7 @@ def load_moveit() -> list:
         kinematics,
         moveit_controllers_yaml,
         joint_limits,
+        { 'publish_robot_description_semantic': True }
         # sensors_3d_yaml
     ]
 

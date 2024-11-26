@@ -54,7 +54,7 @@ def launch_setup(context, *args, **kwargs):
         arguments=["--ros-args", "--log-level", "info"],
         # IRON_ONLY: listening to /robot_description to have the complete URDF
         # parameters=[{"robot_description": ""}, ros2_controllers_file],
-        # remappings=[("~/robot_description", "/robot_description")],
+        remappings=[("~/robot_description", "/robot_description")],
     )
 
     robot_state_publisher_node = Node(
